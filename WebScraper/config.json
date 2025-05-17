@@ -1,0 +1,26 @@
+{
+    "websites": [
+        {
+            "name": "Example News",
+            "url": "https://example.com/news",
+            "selector": "div.content",
+            "check_interval_minutes": 60,
+            "importance": "high"
+        },
+        {
+            "name": "Example News",
+            "url": "https://cnn.com",
+            "selector": "div.content",
+            "check_interval_minutes": 60,
+            "importance": "high"
+        }
+    ],
+    "alert_thresholds": {
+        "negative": 0.7,
+        "positive": 0.8
+    },
+    "alert_settings": {
+        "speech_enabled": true,
+        "min_change_percent": 10
+    }
+}

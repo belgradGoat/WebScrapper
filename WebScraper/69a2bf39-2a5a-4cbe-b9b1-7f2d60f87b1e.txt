@@ -1,0 +1,199 @@
+# Web Scraper with Sentiment Analysis and Alerts
+
+This web scraper monitors multiple websites for content changes, analyzes the sentiment of changes, categorizes them, and provides alerts based on configurable conditions.
+
+## Features
+
+- **Website Monitoring**: Track changes on multiple websites at configurable intervals
+- **Change Detection**: Identify and quantify changes between website versions
+- **Sentiment Analysis**: Analyze the sentiment (positive/negative) of detected changes
+- **Content Categorization**: Automatically categorize content based on keywords
+- **Alert System**: Receive alerts based on sentiment thresholds and change importance
+- **Voice Alerts**: Optional text-to-speech notifications for important changes
+- **Historical Data**: Store and analyze trends in website content and sentiment
+
+## Installation
+
+1. Clone this repository or download the files
+2. Install the required dependencies:
+
+```bash
+pip install requests beautifulsoup4 transformers schedule pyttsx3
+```
+
+3. Make sure you have a pre-trained sentiment analysis model:
+
+```bash
+python -c "from transformers import pipeline; pipeline('sentiment-analysis', model='distilbert-base-uncased-finetuned-sst-2-english')"
+```
+
+## Usage
+
+### Command Line Interface
+
+The scraper includes a command-line interface for easy management:
+
+#### Start the scraper service:
+```bash
+python cli.py start
+```
+
+#### Add a website to monitor:
+```bash
+python cli.py add --name "Example News" --url "https://example.com/news" --selector "div.content" --interval 60 --importance high
+```
+
+#### List monitored websites:
+```bash
+python cli.py list
+```
+
+#### Check websites immediately:
+```bash
+python cli.py check --all
+# or
+python cli.py check --name "Example News"
+```
+
+#### Update alert settings:
+```bash
+python cli.py settings --speech on --min-change 5 --negative-threshold 0.8 --positive-threshold 0.9
+```
+
+#### View recent changes:
+```bash
+python cli.py recent --limit 20
+```
+
+#### View sentiment statistics:
+```bash
+python cli.py stats --days 14
+```
+
+### Configuration
+
+The scraper is configured using a JSON file (`config.json`). Here's an example configuration:
+
+```json
+{
+    "websites": [
+        {
+            "name": "Example News",
+            "url": "https://example.com/news",
+            "selector": "div.content",
+            "check_interval_minutes": 60,
+            "importance": "high"
+        }
+    ],
+    "alert_thresholds": {
+        "negative": 0.7,
+        "positive": 0.8
+    },
+    "alert_settings": {
+        "speech_enabled": true,
+        "min_change_percent": 10
+    }
+}
+```
+
+## Database Structure
+
+The scraper uses an SQLite database to store website content history and detected changes:
+
+- **website_content**: Stores the content history of each website
+- **content_changes**: Records detected changes, their sentiment analysis, and categorization
+
+## Extending the Scraper
+
+### Adding Custom Sentiment Models
+
+You can replace the default sentiment analysis model with a custom one:
+
+```python
+from transformers import pipeline
+
+# Replace with your preferred model
+custom_model = "your-custom-model"
+sentiment_analyzer = pipeline("sentiment-analysis", model=custom_model)
+```
+
+### Custom Content Categorization
+
+Modify the `categorize_content` method in the `WebScraper` class to add your own categorization logic:
+
+```python
+def categorize_content(self, text):
+    """Customize content categorization logic."""
+    categories = []
+    
+    # Add custom categorization logic here
+    if "finance" in text.lower():
+        categories.append("financial")
+    
+    # You can use more sophisticated methods like NLP-based classification
+    
+    return categories if categories else ["uncategorized"]
+```
+
+### Custom Alert Channels
+
+You can extend the alerting system to send notifications via different channels:
+
+```python
+def trigger_alert(self, website_config, change_id, change_percentage, sentiment_result, categories, reason):
+    # ... existing code ...
+    
+    # Add email alerts
+    if self.config["alert_settings"].get("email_enabled", False):
+        self.send_email_alert(website_config["name"], alert_message)
+    
+    # Add SMS alerts
+    if self.config["alert_settings"].get("sms_enabled", False):
+        self.send_sms_alert(website_config["name"], alert_message)
+```
+
+## Advanced Configuration
+
+### CSS Selectors
+
+For website targeting, you can use any valid CSS selector. Some examples:
+
+- Main content: `main`, `#content`, `.article-body`
+- Headlines: `h1.headline`, `.title` 
+- Specific sections: `div.news-section`, `section#top-stories`
+
+### Alert Thresholds
+
+You can fine-tune alert thresholds based on the importance of websites:
+
+```json
+"alert_thresholds": {
+    "high_importance": {
+        "negative": 0.6,
+        "positive": 0.7,
+        "min_change_percent": 5
+    },
+    "medium_importance": {
+        "negative": 0.7,
+        "positive": 0.8,
+        "min_change_percent": 10
+    },
+    "low_importance": {
+        "negative": 0.8,
+        "positive": 0.9,
+        "min_change_percent": 20
+    }
+}
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **No changes detected**: Check if the CSS selector is correct for the target content
+2. **False positives**: Adjust the minimum change percentage threshold
+3. **Text-to-speech not working**: Ensure pyttsx3 is properly installed and configured for your OS
+
+### Logging
+
+The scraper includes comprehensive logging. Check `webscraper.log` for detailed information about scraper operations and any errors.
