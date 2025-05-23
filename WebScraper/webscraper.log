@@ -57,3 +57,186 @@ Your currently installed version of Keras is Keras 3, but this is not yet suppor
 2025-05-17 09:20:33,901 - WARNING - No content fetched from Example News
 2025-05-17 09:20:33,901 - INFO - Checking website: Example News (https://cnn.com)
 2025-05-17 09:20:34,317 - WARNING - No content fetched from Example News
+2025-05-17 15:14:34,339 - INFO - Configuration loaded from config.json
+2025-05-17 15:14:34,341 - INFO - Database setup complete
+2025-05-17 15:14:34,665 - ERROR - Error: At least one of TensorFlow 2.0 or PyTorch should be installed. To install TensorFlow 2.0, read the instructions at https://www.tensorflow.org/install/ To install PyTorch, read the instructions at https://pytorch.org/.
+2025-05-17 15:18:40,342 - INFO - Configuration loaded from config.json
+2025-05-17 15:18:40,344 - INFO - Database setup complete
+2025-05-17 15:18:40,743 - WARNING - Xet Storage is enabled for this repo, but the 'hf_xet' package is not installed. Falling back to regular HTTP download. For better performance, install the package with: `pip install huggingface_hub[hf_xet]` or `pip install hf_xet`
+2025-05-17 15:18:50,581 - INFO - Starting web scraper service
+2025-05-17 15:18:50,582 - INFO - Scheduled Example News to check every 60 minutes
+2025-05-17 15:18:50,582 - INFO - Scheduled Example News to check every 60 minutes
+2025-05-17 15:18:50,582 - INFO - Checking website: Example News (https://example.com/news)
+2025-05-17 15:18:51,378 - ERROR - Error fetching https://example.com/news: 404 Client Error: Not Found for url: https://example.com/news
+2025-05-17 15:18:51,379 - WARNING - No content fetched from Example News
+2025-05-17 15:18:51,379 - INFO - Checking website: Example News (https://cnn.com)
+2025-05-17 15:18:51,749 - WARNING - No content fetched from Example News
+2025-05-17 15:23:45,779 - INFO - Stopping web scraper service
+2025-05-17 15:30:28,275 - INFO - Configuration loaded from config.json
+2025-05-17 15:30:28,276 - INFO - Database setup complete
+2025-05-17 15:30:29,495 - INFO - Starting web scraper service
+2025-05-17 15:30:29,495 - INFO - Scheduled Example News to check every 60 minutes
+2025-05-17 15:30:29,495 - INFO - Scheduled Example News to check every 60 minutes
+2025-05-17 15:30:29,495 - INFO - Checking website: Example News (https://example.com/news)
+2025-05-17 15:30:30,165 - ERROR - Error fetching https://example.com/news: 404 Client Error: Not Found for url: https://example.com/news
+2025-05-17 15:30:30,166 - WARNING - No content fetched from Example News
+2025-05-17 15:30:30,167 - INFO - Checking website: Example News (https://yahoo.com)
+2025-05-17 15:30:30,840 - WARNING - No content fetched from Example News
+2025-05-17 15:30:39,557 - INFO - Stopping web scraper service
+2025-05-17 15:37:38,190 - INFO - Configuration loaded from config.json
+2025-05-17 15:37:38,192 - INFO - Database setup complete
+2025-05-17 15:37:39,447 - INFO - Starting web scraper service
+2025-05-17 15:37:39,447 - INFO - Scheduled Example News to check every 60 minutes
+2025-05-17 15:37:39,447 - INFO - Scheduled Example News to check every 60 minutes
+2025-05-17 15:37:39,447 - INFO - Checking website: Example News (https://example.com/news)
+2025-05-17 15:37:40,330 - ERROR - Error fetching https://example.com/news: 404 Client Error: Not Found for url: https://example.com/news
+2025-05-17 15:37:40,331 - WARNING - No content fetched from Example News
+2025-05-17 15:37:40,331 - INFO - Checking website: Example News (https://cnn.com)
+2025-05-17 15:37:40,820 - WARNING - No content fetched from Example News
+2025-05-17 15:51:00,224 - INFO - Stopping web scraper service
+2025-05-17 15:51:04,804 - INFO - Configuration loaded from config.json
+2025-05-17 15:51:04,804 - INFO - Database setup complete
+2025-05-17 15:51:06,037 - INFO - Starting web scraper service
+2025-05-17 15:51:06,037 - INFO - Scheduled CNN to check every 60 minutes
+2025-05-17 15:51:06,037 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-17 15:51:06,355 - WARNING - No content fetched from CNN
+2025-05-17 15:51:23,280 - INFO - Stopping web scraper service
+2025-05-17 15:52:33,377 - INFO - Configuration loaded from config.json
+2025-05-17 15:52:33,378 - INFO - Database setup complete
+2025-05-17 15:52:34,415 - INFO - Starting web scraper service
+2025-05-17 15:52:34,415 - INFO - Scheduled CNN to check every 60 minutes
+2025-05-17 15:52:34,415 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-17 15:52:34,824 - WARNING - No content fetched from CNN
+2025-05-17 15:52:43,185 - INFO - Stopping web scraper service
+2025-05-17 15:53:21,384 - INFO - Configuration loaded from config.json
+2025-05-17 15:53:21,385 - INFO - Database setup complete
+2025-05-17 15:53:22,313 - INFO - Starting web scraper service
+2025-05-17 15:53:22,313 - INFO - Scheduled CNN to check every 60 minutes
+2025-05-17 15:53:22,313 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-17 15:53:22,661 - WARNING - No content fetched from CNN
+2025-05-17 15:54:34,366 - INFO - Stopping web scraper service
+2025-05-17 15:54:38,826 - INFO - Configuration loaded from config.json
+2025-05-17 15:54:38,827 - INFO - Database setup complete
+2025-05-17 15:54:39,767 - INFO - Starting web scraper service
+2025-05-17 15:54:39,768 - INFO - Scheduled CNN to check every 60 minutes
+2025-05-17 15:54:39,768 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-17 15:54:40,124 - WARNING - No content fetched from CNN
+2025-05-17 16:54:39,987 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-17 16:54:40,433 - WARNING - No content fetched from CNN
+2025-05-17 18:06:04,663 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-17 18:06:05,724 - WARNING - No content fetched from CNN
+2025-05-17 19:06:28,818 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-17 19:06:29,732 - WARNING - No content fetched from CNN
+2025-05-17 20:20:14,901 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-17 20:20:15,320 - WARNING - No content fetched from CNN
+2025-05-17 21:20:16,118 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-17 21:20:16,495 - WARNING - No content fetched from CNN
+2025-05-17 22:30:41,546 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-17 22:30:41,916 - WARNING - No content fetched from CNN
+2025-05-17 23:30:42,791 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-17 23:30:43,248 - WARNING - No content fetched from CNN
+2025-05-18 00:30:44,016 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-18 00:30:44,362 - WARNING - No content fetched from CNN
+2025-05-18 01:40:53,529 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-18 01:40:53,910 - WARNING - No content fetched from CNN
+2025-05-18 02:41:55,700 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-18 02:41:56,579 - WARNING - No content fetched from CNN
+2025-05-18 03:47:38,915 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-18 03:47:39,874 - WARNING - No content fetched from CNN
+2025-05-18 04:47:40,197 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-18 04:47:40,563 - WARNING - No content fetched from CNN
+2025-05-18 05:53:13,956 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-18 05:53:14,905 - WARNING - No content fetched from CNN
+2025-05-18 06:54:13,899 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-18 06:54:14,945 - WARNING - No content fetched from CNN
+2025-05-18 07:55:15,395 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-18 07:55:15,897 - WARNING - No content fetched from CNN
+2025-05-18 08:55:16,783 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-18 08:55:17,266 - WARNING - No content fetched from CNN
+2025-05-18 09:56:16,491 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-18 09:56:16,946 - WARNING - No content fetched from CNN
+2025-05-18 10:56:17,407 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-18 10:56:17,771 - WARNING - No content fetched from CNN
+2025-05-18 11:57:17,133 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-18 11:57:18,041 - WARNING - No content fetched from CNN
+2025-05-18 12:57:19,002 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-18 12:57:19,457 - WARNING - No content fetched from CNN
+2025-05-18 12:59:12,742 - INFO - Stopping web scraper service
+2025-05-18 13:04:18,177 - INFO - Configuration loaded from config.json
+2025-05-18 13:04:18,179 - INFO - Database setup complete
+2025-05-18 13:04:19,638 - INFO - Starting web scraper service
+2025-05-18 13:04:19,638 - INFO - Scheduled CNN to check every 60 minutes
+2025-05-18 13:04:19,638 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-18 13:04:20,080 - WARNING - Selector '.layout__main layout-homepage__main' did not match any content on https://cnn.com. Using full page content instead.
+2025-05-18 13:04:20,081 - INFO - Saved website content to website_archives/CNN_20250518_130420.txt (17963 characters)
+2025-05-18 13:04:21,262 - INFO - Initial content recorded for CNN
+2025-05-18 13:05:39,404 - INFO - Stopping web scraper service
+2025-05-18 13:05:43,846 - INFO - Configuration loaded from config.json
+2025-05-18 13:05:43,847 - INFO - Database setup complete
+2025-05-18 13:05:44,907 - INFO - Starting web scraper service
+2025-05-18 13:05:44,907 - INFO - Scheduled CNN to check every 60 minutes
+2025-05-18 13:05:44,907 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-18 13:05:45,271 - WARNING - Selector '.layout__main layout-homepage__main' did not match any content on https://cnn.com. Using full page content instead.
+2025-05-18 13:05:45,273 - INFO - Saved website content to website_archives/CNN_20250518_130545.txt (17963 characters)
+2025-05-18 13:05:45,275 - INFO - No changes detected for CNN
+2025-05-18 13:06:19,244 - INFO - Stopping web scraper service
+2025-05-18 13:47:06,840 - INFO - Configuration loaded from config.json
+2025-05-18 13:47:06,841 - INFO - Database setup complete
+2025-05-18 13:47:08,226 - INFO - Starting web scraper service
+2025-05-18 13:47:08,226 - INFO - Scheduled CNN to check every 60 minutes
+2025-05-18 13:47:08,226 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-18 13:47:08,594 - WARNING - Selector '.layout__main layout-homepage__main' did not match any content on https://cnn.com. Using full page content instead.
+2025-05-18 13:47:08,595 - INFO - Saved website content to website_archives/CNN_20250518_134708.txt (18001 characters)
+2025-05-18 13:47:08,669 - INFO - Saved detailed diff to diffs/diff_20250518_134708.txt
+2025-05-18 13:47:08,670 - INFO - Change detected for CNN: 5.65% changed
+2025-05-18 13:47:08,670 - INFO - Change below threshold (5.65% < 10%), no alert triggered
+2025-05-18 14:47:08,295 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-18 14:47:08,659 - WARNING - Selector '.layout__main layout-homepage__main' did not match any content on https://cnn.com. Using full page content instead.
+2025-05-18 14:47:08,661 - INFO - Saved website content to website_archives/CNN_20250518_144708.txt (17972 characters)
+2025-05-18 14:47:08,776 - INFO - Saved detailed diff to diffs/diff_20250518_144708.txt
+2025-05-18 14:47:08,777 - INFO - Change detected for CNN: 2.27% changed
+2025-05-18 14:47:08,777 - INFO - Change below threshold (2.27% < 10%), no alert triggered
+2025-05-18 15:47:09,631 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-18 15:47:10,019 - WARNING - Selector '.layout__main layout-homepage__main' did not match any content on https://cnn.com. Using full page content instead.
+2025-05-18 15:47:10,021 - INFO - Saved website content to website_archives/CNN_20250518_154710.txt (17950 characters)
+2025-05-18 15:47:10,177 - INFO - Saved detailed diff to diffs/diff_20250518_154710.txt
+2025-05-18 15:47:10,178 - INFO - Change detected for CNN: 1.21% changed
+2025-05-18 15:47:10,178 - INFO - Change below threshold (1.21% < 10%), no alert triggered
+2025-05-18 16:47:10,322 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-18 16:47:10,695 - WARNING - Selector '.layout__main layout-homepage__main' did not match any content on https://cnn.com. Using full page content instead.
+2025-05-18 16:47:10,697 - INFO - Saved website content to website_archives/CNN_20250518_164710.txt (17996 characters)
+2025-05-18 16:47:10,872 - INFO - Saved detailed diff to diffs/diff_20250518_164710.txt
+2025-05-18 16:47:10,874 - INFO - Change detected for CNN: 2.69% changed
+2025-05-18 16:47:10,874 - INFO - Change below threshold (2.69% < 10%), no alert triggered
+2025-05-18 17:47:10,959 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-18 17:47:11,337 - WARNING - Selector '.layout__main layout-homepage__main' did not match any content on https://cnn.com. Using full page content instead.
+2025-05-18 17:47:11,339 - INFO - Saved website content to website_archives/CNN_20250518_174711.txt (17382 characters)
+2025-05-18 17:47:11,466 - INFO - Saved detailed diff to diffs/diff_20250518_174711.txt
+2025-05-18 17:47:11,468 - INFO - Change detected for CNN: 8.67% changed
+2025-05-18 17:47:11,468 - INFO - Change below threshold (8.67% < 10%), no alert triggered
+2025-05-18 18:47:11,802 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-18 18:47:12,229 - WARNING - Selector '.layout__main layout-homepage__main' did not match any content on https://cnn.com. Using full page content instead.
+2025-05-18 18:47:12,230 - INFO - Saved website content to website_archives/CNN_20250518_184712.txt (17403 characters)
+2025-05-18 18:47:12,409 - INFO - Saved detailed diff to diffs/diff_20250518_184712.txt
+2025-05-18 18:47:12,410 - INFO - Change detected for CNN: 1.64% changed
+2025-05-18 18:47:12,410 - INFO - Change below threshold (1.64% < 10%), no alert triggered
+2025-05-18 19:47:13,237 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-18 19:47:13,633 - WARNING - Selector '.layout__main layout-homepage__main' did not match any content on https://cnn.com. Using full page content instead.
+2025-05-18 19:47:13,635 - INFO - Saved website content to website_archives/CNN_20250518_194713.txt (17485 characters)
+2025-05-18 19:47:13,823 - INFO - Saved detailed diff to diffs/diff_20250518_194713.txt
+2025-05-18 19:47:13,824 - INFO - Change detected for CNN: 4.02% changed
+2025-05-18 19:47:13,824 - INFO - Change below threshold (4.02% < 10%), no alert triggered
+2025-05-18 20:30:33,261 - INFO - Stopping web scraper service
+2025-05-20 06:41:20,513 - INFO - Configuration loaded from config.json
+2025-05-20 06:41:20,515 - INFO - Database setup complete
+2025-05-20 06:41:22,613 - INFO - Starting web scraper service
+2025-05-20 06:41:22,613 - INFO - Scheduled CNN to check every 60 minutes
+2025-05-20 06:41:22,613 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-20 06:41:23,027 - WARNING - Selector '.layout__main layout-homepage__main' did not match any content on https://cnn.com. Using full page content instead.
+2025-05-20 06:41:23,029 - INFO - Saved website content to website_archives/CNN_20250520_064123.txt (18654 characters)
+2025-05-20 06:41:23,129 - INFO - Saved detailed diff to diffs/diff_20250520_064123.txt
+2025-05-20 06:41:23,131 - INFO - Change detected for CNN: 29.43% changed
+2025-05-20 06:41:23,132 - INFO - ALERT: Alert for CNN: 29.4% content changed. Sentiment: POSITIVE (0.99). Categories: politics, environment, business, technology. Reason: High positive sentiment (0.99), High importance website
+
+Change summary: 240 lines added, 192 lines removed | Sample addition: + | Sample removal: -
+2025-05-20 06:41:35,435 - INFO - Stopping web scraper service

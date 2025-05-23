@@ -1,0 +1,113 @@
+==== DETAILED CONTENT CHANGES ====
+
+---- DIFF OUTPUT ----
+--- 
++++ 
+@@ -272,6 +272,8 @@
+ CNN
+ Watch the latest CNN Headlines
+ CNN Headlines is a curated channel covering major news events across politics, international, business, and entertainment, and showcasing the most impactful stories of the day.
++Matt York/AP
++Scottie Scheffler captures first PGA Championship and third major win
+ Cura for the World
+ A man had heart attack symptoms on a flight. A cardiologist and a pocket-sized tool on board may have helped save his life
+ Westend61/Getty Images
+@@ -283,11 +285,10 @@
+ Video
+ Watch Scarlett Johansson make ‘SNL’ history
+ 0:43
+-Jeff Spicer/Getty Images for Atlantis The Royal
+-After years of flying high, celebrity tequila braces for impact
+ More top stories
+ Daniel Mihailescu/AFP/Getty Images
+ Romania’s pro-EU candidate beats hard-right rival to win presidential election
++New Jersey Transit reaches tentative deal with engineers union that could end strike
+ Here’s how the nighttime escape of 10 Louisiana inmates from a New Orleans jail unfolded
+ From ‘Rolexgate’ to rhinoplasty,’ problems mount for Peruvian President Dina Boluarte
+ Video
+@@ -295,7 +296,6 @@
+ 4:27
+ Utah GOP Sen. John Curtis vows to be independent voice as he breaks with Trump over key issues
+ Israel begins extensive Gaza ground operation after intense airstrikes kill more than 100 overnight
+-James Comey’s ‘weird’ social media approach lands him in hot water
+ Video
+ Why pigs are better than other animals for organ transplants
+ 1:28
+@@ -337,8 +337,6 @@
+ Check these out
+ Antonino Cuschera
+ There are plenty of one-euro homes hidden all over Sicily. These brothers want to find them for you
+-CNN
+-Don’t call these small plates ‘tapas.’ They’re pintxos
+ •
+ Video
+ 2:42
+@@ -346,6 +344,8 @@
+ Video
+ CNN anchor finds happiness with horses in an unlikely metropolis
+ 2:42
++Jeff Spicer/Getty Images for Atlantis The Royal
++After years of flying high, celebrity tequila braces for impact
+ •
+ Jumble Crossword
+ Jumble Crossword
+@@ -426,18 +426,18 @@
+ Remember when Salma Hayek ‘took a chance’ by wearing a fuzzy cardigan to Cannes?
+ How this Boston physics student became one of Murano’s youngest master glassmakers
+ health and wellness
+-Jacob Wackerhausen/iStockphoto/Getty Images
++Ramsey Solutions
++Meet Dr. John Delony, the internet’s hard-rock mental health advocate
+ The surprising benefits of going to bed angry at your partner
+-Meet Dr. John Delony, the internet’s hard-rock mental health advocate
+ #SkinnyTok, the latest weight-loss trend, is more dangerous than you think
+ Dangerous levels of arsenic and cadmium found in store-bought rice, report finds
+ More Politics
+ Show all
+ John J. Kim/Chicago Tribune/Tribune News Service via Getty Images
+ Device that makes semi-automatic rifles fire quicker allowed by Trump administration
++James Comey’s ‘weird’ social media approach lands him in hot water
+ Nonprofit leaders brace for possible targeting by the Trump administration after tax measure advances in Congress
+ Trump is digging up old immigration policies to help his crackdown. Here’s a timeline for how we got here
+-Social Security drops controversial anti-fraud review amid growing claims backlog
+ US
+ Show all
+ Seth Herald/Reuters
+@@ -462,12 +462,19 @@
+ How pregnancy reshapes the brain
+ Sports
+ Show all
+-Thunder rout Nuggets to reach WCF for first time since 2016
++Scottie Scheffler earns $3.4M after winning first PGA Championship
++Thunder rout Nuggets to reach conference finals
++South Africa’s Rayno Nel wins World Strongest Man title
+ Michael Jordan Bulls jersey sells for $2.6M at auction
+ WNBA Investigating ‘inappropriate fan conduct’ during Fever-Sky game
+-Results from 2025 Bay to Breakers
+-Stars advance to third-straight Western Conference Finals
+-Video
++Video
++•
++Video
++1:32
++Clipped From Video
++Video
++Seoul’s biggest seafood market is a feast for the senses – but what should you eat?
++1:32
+ •
+ Video
+ 4:27
+@@ -489,13 +496,6 @@
+ Video
+ CNN anchor finds happiness with horses in an unlikely metropolis
+ 2:42
+-•
+-Video
+-1:28
+-CNN
+-Video
+-This is the world’s thinnest tourbillon watch. It’s yours for $678,000.
+-1:28
+ Food and Home
+ Food Network
+ Chicken sandwich recipes to keep in your back pocket

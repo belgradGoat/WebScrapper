@@ -5,12 +5,14 @@ import json
 import time
 import os
 import re
+import glob
 from datetime import datetime
 import sqlite3
 import schedule
 from transformers import pipeline
 import pyttsx3
 import logging
+import difflib
 
 # Set up logging
 logging.basicConfig(
@@ -116,7 +118,8 @@ class WebScraper:
         logger.info("Database setup complete")
         
     def fetch_website_content(self, website_config):
-        """Fetch content from a website based on configuration."""
+        """Fetch content from a website based on configuration.
+        Downloads the entire website content as text if no selector is specified."""
         try:
             headers = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
@@ -126,18 +129,43 @@ class WebScraper:
             
             soup = BeautifulSoup(response.text, "html.parser")
             
+            # Remove script and style elements as they don't contain visible text
+            for script_or_style in soup(["script", "style"]):
+                script_or_style.decompose()
+                
+            # Store the entire website as text if no selector is provided
             if "selector" in website_config and website_config["selector"]:
                 content = soup.select(website_config["selector"])
-                content_text = "\n".join([elem.get_text(strip=True) for elem in content])
+                if not content:
+                    logger.warning(f"Selector '{website_config['selector']}' did not match any content on {website_config['url']}. Using full page content instead.")
+                    content_text = soup.get_text(separator="\n", strip=True)
+                else:
+                    content_text = "\n".join([elem.get_text(separator="\n", strip=True) for elem in content])
             else:
-                # If no selector is provided, get the body content
-                content = soup.body
-                content_text = content.get_text(strip=True) if content else ""
+                # Get the full page content as text
+                content_text = soup.get_text(separator="\n", strip=True)
+                
+            # Save to a text file for archival purposes
+            site_filename = self._get_site_filename(website_config["name"])
+            with open(site_filename, "w", encoding="utf-8") as f:
+                f.write(content_text)
+            
+            logger.info(f"Saved website content to {site_filename} ({len(content_text)} characters)")
                 
             return content_text
         except Exception as e:
             logger.error(f"Error fetching {website_config['url']}: {str(e)}")
             return None
+            
+    def _get_site_filename(self, website_name):
+        """Generate a filename for storing website content."""
+        # Create archives directory if it doesn't exist
+        os.makedirs("website_archives", exist_ok=True)
+        
+        # Create a safe filename from the website name
+        safe_name = re.sub(r'[^\w\-_]', '_', website_name)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        return f"website_archives/{safe_name}_{timestamp}.txt"
             
     def calculate_hash(self, content):
         """Calculate SHA-256 hash of content."""
@@ -182,36 +210,84 @@ class WebScraper:
         return list(set(categories)) if categories else ["uncategorized"]
         
     def calculate_content_change(self, old_content, new_content):
-        """Calculate the percentage of content change and describe changes."""
+        """Calculate the percentage of content change and describe changes between old and new content."""
         if not old_content or not old_content.strip():
             return 100.0, "New content added"
         
-        # Simple difference calculation based on character count
-        total_chars = len(old_content)
-        if total_chars == 0:
+        # Use difflib for sophisticated diff calculation
+        import difflib
+        
+        # Split content into lines
+        old_lines = old_content.splitlines()
+        new_lines = new_content.splitlines()
+        
+        # Create a unified diff
+        diff = list(difflib.unified_diff(old_lines, new_lines, lineterm=''))
+        
+        # Extract changes (lines starting with + or -)
+        changes = [line for line in diff if line.startswith('+') or line.startswith('-')]
+        added = [line for line in changes if line.startswith('+')]
+        removed = [line for line in changes if line.startswith('-')]
+        
+        # Calculate change percentage based on number of modified lines
+        total_lines = len(old_lines)
+        if total_lines == 0:
             return 100.0, "New content added"
             
-        # Use difflib for more sophisticated diff calculation
-        import difflib
-        diff = difflib.ndiff(old_content.splitlines(), new_content.splitlines())
-        changes = [line for line in diff if line.startswith('+ ') or line.startswith('- ')]
+        change_percentage = (len(changes) / (total_lines * 2)) * 100  # Multiply by 2 to normalize percentage
+        change_percentage = min(change_percentage, 100.0)  # Cap at 100%
         
-        change_chars = sum(len(line) for line in changes)
-        change_percentage = (change_chars / total_chars) * 100
-        
-        # Generate change description
-        added_lines = [line[2:] for line in changes if line.startswith('+ ')]
-        removed_lines = [line[2:] for line in changes if line.startswith('- ')]
-        
+        # Generate a detailed change description
         description = []
-        if added_lines:
-            added_sample = added_lines[0][:50] + "..." if len(added_lines[0]) > 50 else added_lines[0]
-            description.append(f"Added: {added_sample}")
-        if removed_lines:
-            removed_sample = removed_lines[0][:50] + "..." if len(removed_lines[0]) > 50 else removed_lines[0]
-            description.append(f"Removed: {removed_sample}")
+        
+        # Show number of changes
+        description.append(f"{len(added)} lines added, {len(removed)} lines removed")
+        
+        # Sample of added content (up to 3 examples)
+        if added:
+            description.append("Added content samples:")
+            for i, line in enumerate(added[:3]):  # Limit to 3 examples
+                if len(line) > 2:  # Skip the '+' prefix
+                    sample = line[2:].strip()
+                    if len(sample) > 50:
+                        sample = sample[:47] + "..."
+                    description.append(f"+ {sample}")
+                if i >= 2 and len(added) > 3:  # Show indication of more changes
+                    description.append(f"+ ...and {len(added) - 3} more additions")
+                    break
+                    
+        # Sample of removed content (up to 3 examples)
+        if removed:
+            description.append("Removed content samples:")
+            for i, line in enumerate(removed[:3]):  # Limit to 3 examples
+                if len(line) > 2:  # Skip the '-' prefix
+                    sample = line[2:].strip()
+                    if len(sample) > 50:
+                        sample = sample[:47] + "..."
+                    description.append(f"- {sample}")
+                if i >= 2 and len(removed) > 3:  # Show indication of more changes
+                    description.append(f"- ...and {len(removed) - 3} more removals")
+                    break
+                    
+        # Save the detailed diff to a file
+        self._save_diff_file(old_content, new_content, diff)
             
-        return change_percentage, " | ".join(description)
+        return change_percentage, "\n".join(description)
+        
+    def _save_diff_file(self, old_content, new_content, diff):
+        """Save detailed diff information to a file for later reference."""
+        os.makedirs("diffs", exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        diff_filename = f"diffs/diff_{timestamp}.txt"
+        
+        with open(diff_filename, "w", encoding="utf-8") as f:
+            f.write("==== DETAILED CONTENT CHANGES ====\n\n")
+            f.write("---- DIFF OUTPUT ----\n")
+            for line in diff:
+                f.write(line + "\n")
+                
+        logger.info(f"Saved detailed diff to {diff_filename}")
+        return diff_filename
         
     def check_website(self, website_config):
         """Check a website for changes and process if found."""
@@ -235,13 +311,16 @@ class WebScraper:
         )
         last_record = cursor.fetchone()
         
+        # Get the path to the latest saved text file
+        latest_file = self._get_latest_saved_file(website_name)
+        
         # Check if content has changed
         if last_record and last_record[0] == content_hash:
             logger.info(f"No changes detected for {website_name}")
             conn.close()
             return
             
-        # Analyze sentiment
+        # Analyze sentiment 
         sentiment_result = self.analyze_sentiment(content)
         
         # Categorize content
@@ -266,8 +345,13 @@ class WebScraper:
         change_percentage, change_description = self.calculate_content_change(last_record[1], content)
         
         cursor.execute(
-            "INSERT INTO content_changes (website_name, url, previous_hash, new_hash, change_description, change_percentage, sentiment_score, sentiment_label, categorization, detection_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (website_name, url, last_record[0], content_hash, change_description, change_percentage, sentiment_result["score"], sentiment_result["label"], categories_json, current_time)
+            """INSERT INTO content_changes 
+               (website_name, url, previous_hash, new_hash, change_description, 
+                change_percentage, sentiment_score, sentiment_label, categorization, detection_time) 
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (website_name, url, last_record[0], content_hash, change_description, 
+             change_percentage, sentiment_result["score"], sentiment_result["label"], 
+             categories_json, current_time)
         )
         
         change_id = cursor.lastrowid
@@ -277,9 +361,22 @@ class WebScraper:
         logger.info(f"Change detected for {website_name}: {change_percentage:.2f}% changed")
         
         # Check if alert should be triggered
-        self.check_alert_conditions(website_config, change_id, change_percentage, sentiment_result, categories)
+        self.check_alert_conditions(website_config, change_id, change_percentage, sentiment_result, categories, change_description)
         
-    def check_alert_conditions(self, website_config, change_id, change_percentage, sentiment_result, categories):
+    def _get_latest_saved_file(self, website_name):
+        """Get the path to the latest saved text file for a website."""
+        safe_name = re.sub(r'[^\w\-_]', '_', website_name)
+        pattern = f"website_archives/{safe_name}_*.txt"
+        files = glob.glob(pattern)
+        
+        if not files:
+            return None
+            
+        # Sort by modification time (newest first)
+        files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
+        return files[0]
+        
+    def check_alert_conditions(self, website_config, change_id, change_percentage, sentiment_result, categories, change_description):
         """Check if alert conditions are met for a detected change."""
         # Skip if change percentage is below threshold
         min_change_percent = self.config["alert_settings"].get("min_change_percent", 10)
@@ -310,9 +407,9 @@ class WebScraper:
             alert_reason.append(f"High importance website")
             
         if should_alert:
-            self.trigger_alert(website_config, change_id, change_percentage, sentiment_result, categories, ", ".join(alert_reason))
+            self.trigger_alert(website_config, change_id, change_percentage, sentiment_result, categories, change_description, ", ".join(alert_reason))
             
-    def trigger_alert(self, website_config, change_id, change_percentage, sentiment_result, categories, reason):
+    def trigger_alert(self, website_config, change_id, change_percentage, sentiment_result, categories, change_description, reason):
         """Trigger an alert for a website change."""
         website_name = website_config["name"]
         
@@ -329,15 +426,60 @@ class WebScraper:
         alert_message += f"Categories: {', '.join(categories)}. "
         alert_message += f"Reason: {reason}"
         
+        # Add a summary of changes
+        change_summary = self._get_change_summary(change_description)
+        if change_summary:
+            alert_message += f"\n\nChange summary: {change_summary}"
+        
         logger.info(f"ALERT: {alert_message}")
         
         # Text-to-speech alert if enabled
         if self.config["alert_settings"].get("speech_enabled", False):
             try:
-                self.tts_engine.say(alert_message)
+                # Create a shorter version for speech
+                speech_message = f"Alert for {website_name}. {change_percentage:.1f} percent content changed. "
+                speech_message += f"Sentiment is {sentiment_result['label']}. "
+                
+                self.tts_engine.say(speech_message)
                 self.tts_engine.runAndWait()
             except Exception as e:
                 logger.error(f"Text-to-speech error: {str(e)}")
+                
+    def _get_change_summary(self, change_description):
+        """Extract a concise summary from the change description."""
+        # If change description is already short, return it directly
+        if len(change_description) < 100:
+            return change_description
+            
+        # Otherwise extract just the first few lines
+        lines = change_description.split('\n')
+        summary_lines = []
+        
+        # Get the first line, which has the count of additions/removals
+        if lines:
+            summary_lines.append(lines[0])
+            
+        # Get the first sample of added content
+        added_index = -1
+        for i, line in enumerate(lines):
+            if line == "Added content samples:":
+                added_index = i
+                break
+                
+        if added_index >= 0 and added_index + 1 < len(lines):
+            summary_lines.append("Sample addition: " + lines[added_index + 1][2:])
+            
+        # Get the first sample of removed content
+        removed_index = -1
+        for i, line in enumerate(lines):
+            if line == "Removed content samples:":
+                removed_index = i
+                break
+                
+        if removed_index >= 0 and removed_index + 1 < len(lines):
+            summary_lines.append("Sample removal: " + lines[removed_index + 1][2:])
+            
+        return " | ".join(summary_lines)
                 
     def run_scheduled_checks(self):
         """Run all scheduled website checks."""
