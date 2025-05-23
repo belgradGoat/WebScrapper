@@ -1,0 +1,199 @@
+==== DETAILED CONTENT CHANGES ====
+
+---- DIFF OUTPUT ----
+--- 
++++ 
+@@ -230,10 +230,10 @@
+ Video
+ David Axelrod reacts to Biden’s cancer diagnosis
+ 3:49
+-Live Updates
+-Biden’s cancer diagnosis draws outpouring of well-wishes from across the political spectrum
+ For Subscribers
+ Cracks emerge in MAHA-MAGA alliance as RFK Jr. builds out his team of health ‘renegades’
++For Subscribers
++‘She’s trying to figure out what it means to be governor’: Inside Harris’ deliberations over her political future
+ •
+ Video
+ 1:10
+@@ -272,48 +272,41 @@
+ CNN
+ Watch the latest CNN Headlines
+ CNN Headlines is a curated channel covering major news events across politics, international, business, and entertainment, and showcasing the most impactful stories of the day.
+-Matt York/AP
+-Scottie Scheffler captures first PGA Championship and third major win
+ Cura for the World
+ A man had heart attack symptoms on a flight. A cardiologist and a pocket-sized tool on board may have helped save his life
++Antonino Cuschera
++There are plenty of one-euro homes hidden all over Sicily. These brothers want to find them for you
++•
++Video
++0:43
++NBC
++Video
++Watch Scarlett Johansson make ‘SNL’ history
++0:43
+ Westend61/Getty Images
+ ‘Bare beating’: The annoying public transport trend driving commuters crazy
+-•
+-Video
+-0:43
+-NBC
+-Video
+-Watch Scarlett Johansson make ‘SNL’ history
+-0:43
+ More top stories
++Orleans Parish Sheriff's Office
++Here’s how the nighttime escape of 10 Louisiana inmates from a New Orleans jail unfolded
++Video
++Billionaire responds to her husband saying she should run for president
++4:27
++Tornado-spawning storms leave 25 dead in 2 states and swaths of destruction across central US
++Israel begins extensive Gaza ground operation after intense airstrikes kill more than 100 overnight
++Pope Leo condemns exploitation of poor and calls for unity in the church at inaugural Mass
++How Pope Leo dealt with years of abuse allegations in a powerful Catholic society in Peru
++Video
++Why pigs are better than other animals for organ transplants
++1:28
++Sports report
++Zach Beeker/NBAE/Getty Images
++Gilgeous-Alexander, Thunder oust Jokic, Nuggets in Game 7 rout
++Scottie Scheffler captures first PGA Championship and third major win
++Caitlin Clark gets triple-double and flagrant foul for shoving Angel Reese in eventful season opener
++Global politics
+ Daniel Mihailescu/AFP/Getty Images
+ Romania’s pro-EU candidate beats hard-right rival to win presidential election
+-New Jersey Transit reaches tentative deal with engineers union that could end strike
+-Here’s how the nighttime escape of 10 Louisiana inmates from a New Orleans jail unfolded
+ From ‘Rolexgate’ to rhinoplasty,’ problems mount for Peruvian President Dina Boluarte
+-Video
+-Billionaire responds to her husband saying she should run for president
+-4:27
+-Utah GOP Sen. John Curtis vows to be independent voice as he breaks with Trump over key issues
+-Israel begins extensive Gaza ground operation after intense airstrikes kill more than 100 overnight
+-Video
+-Why pigs are better than other animals for organ transplants
+-1:28
+-Latest politics
+-•
+-For Subscribers
+-For Subscribers
+-Camille Cohen/AFP/Getty Images
+-For Subscribers
+-‘She’s trying to figure out what it means to be governor’: Inside Harris’ deliberations over her political future
+-Trump says he will speak to Putin on the phone Monday
+-Video
+-Bodycam video shows residents trying to stop ICE agents from arresting woman
+-1:10
+-Pope Leo
+-Pool
+-Pope Leo condemns exploitation of poor and calls for unity in the church at inaugural Mass
+-How Pope Leo dealt with years of abuse allegations in a powerful Catholic society in Peru
+ Ad Feedback
+ Ad Feedback
+ CNN Podcasts
+@@ -327,25 +320,25 @@
+ How pregnancy reshapes the brain
+ May 16, 2025
+ Ad Feedback
+-Sports spotlight
+-Grace Smith/Imagn Images/Reuters
+-Caitlin Clark gets triple-double and flagrant foul for shoving Angel Reese in eventful season opener
+-Aleksandra Szmigiel/Reuters
+-Jasmine Paolini beats Coco Gauff in Italian Open final to become first home winner in 40 years
+-Sam Hodde/Getty Images
+-Winnipeg Jets’ Mark Scheifele scores goal in Game 6 loss, just hours after his father’s unexpected death
++CNN original programs
++Amanda Sealy/CNN
++He was tired of just surviving. A pig kidney gave him a shot at living
++CNN
++Don’t call these small plates ‘tapas.’ They’re pintxos
++Tanveer Badal for CNN
++Why this massive city park might be the best in the US
+ Check these out
+-Antonino Cuschera
+-There are plenty of one-euro homes hidden all over Sicily. These brothers want to find them for you
+-•
+-Video
+-2:42
+-CNN
+-Video
+-CNN anchor finds happiness with horses in an unlikely metropolis
+-2:42
+-Jeff Spicer/Getty Images for Atlantis The Royal
+-After years of flying high, celebrity tequila braces for impact
++•
++Video
++1:32
++Clipped From Video
++Video
++Seoul’s biggest seafood market is a feast for the senses – but what should you eat?
++1:32
++Martin Meissner/AP
++Austria’s JJ wins Eurovision 2025 with ‘Wasted Love’
++AP
++Melania Trump bronze statue disappearance investigated by police
+ •
+ Jumble Crossword
+ Jumble Crossword
+@@ -385,11 +378,10 @@
+ Got Hilton Honors points? Here’s how to maximize them like a pro
+ Business
+ Show all
+-O2O Creative/E+/Getty Images
++Kena Betancur/Getty Images
++New Jersey Transit reaches tentative deal with engineers union that could end strike
+ Worried how to pay for college? Here’s how to maximize your chances of getting the aid you need
+ Trump lowered tariffs on China. Why that won’t spare Americans from price hikes and shortages
+-Trump tells Walmart to ‘eat the tariffs’
+-The US just lost its last perfect credit rating
+ Entertainment
+ Show all
+ •
+@@ -398,7 +390,6 @@
+ Eli Adé/Warner Bros.
+ Analysis
+ ‘Sinners’ offers a horrifying message about our nation’s original sin
+-Austria’s JJ wins Eurovision 2025 with ‘Wasted Love’
+ ‘Eddington’ ignites an already politically charged Cannes Film Festival
+ Sean ‘Diddy’ Combs used to be incredibly influential. Many of the people he helped to make stars aren’t talking about him
+ Ad Feedback
+@@ -433,11 +424,11 @@
+ Dangerous levels of arsenic and cadmium found in store-bought rice, report finds
+ More Politics
+ Show all
+-John J. Kim/Chicago Tribune/Tribune News Service via Getty Images
++Getty Images, Reuters
++Trump says he will speak to Putin on the phone Monday
++Utah GOP Sen. John Curtis vows to be independent voice as he breaks with Trump over key issues
+ Device that makes semi-automatic rifles fire quicker allowed by Trump administration
+ James Comey’s ‘weird’ social media approach lands him in hot water
+-Nonprofit leaders brace for possible targeting by the Trump administration after tax measure advances in Congress
+-Trump is digging up old immigration policies to help his crackdown. Here’s a timeline for how we got here
+ US
+ Show all
+ Seth Herald/Reuters
+@@ -569,17 +560,15 @@
+ Weekly news quiz
+ What do you remember from the week that was?
+ In case you missed it
+-Ramsey Solutions
++Jeff Spicer/Getty Images for Atlantis The Royal
++After years of flying high, celebrity tequila braces for impact
++Trump tells Walmart to ‘eat the tariffs’
++Nonprofit leaders brace for possible targeting by the Trump administration after tax measure advances in Congress
++Winnipeg Jets’ Mark Scheifele scores goal in Game 6 loss, just hours after his father’s unexpected death
++Jasmine Paolini beats Coco Gauff in Italian Open final to become first home winner in 40 years
+ Why podcaster’s approach to talking about uncomfortable topics is resonating with millions
+-History of organ transplantation: From the first successful human transplant in 1954 to now
+ 4 people sought shelter from the eruption of Mount Vesuvius — and sealed their own fates
+-Pope Leo’s personal trainer reveals shock at learning client became next pontiff
+-Veteran air-traffic controller speaks out about staffing and tech problems amid blackouts and delays at Newark airport
+ Iran dismisses Trump ‘threats,’ says nuclear talks will continue
+-Trump slams Springsteen after the rocker called him ‘treasonous’
+-Officials across US government scramble to implement Trump’s surprise Syria announcement
+-A crucial system of ocean currents is slowing. It’s already supercharging sea level rise in the US.
+-Melania Trump bronze statue disappearance investigated by police
+ Subscribe
+ Sign in
+ My Account

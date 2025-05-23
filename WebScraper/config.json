@@ -1,16 +1,9 @@
 {
     "websites": [
         {
-            "name": "Example News",
-            "url": "https://example.com/news",
-            "selector": "div.content",
-            "check_interval_minutes": 60,
-            "importance": "high"
-        },
-        {
-            "name": "Example News",
+            "name": "CNN",
             "url": "https://cnn.com",
-            "selector": "div.content",
+            "selector": ".layout__main layout-homepage__main",
             "check_interval_minutes": 60,
             "importance": "high"
         }
