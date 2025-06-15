@@ -211,21 +211,6 @@
             margin-top: 5px;
         }
 
-        .translation-indicator {
-            display: inline-block;
-            background: #17a2b8;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.75em;
-            margin-left: 8px;
-        }
-
-        .social-feed {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
         .social-item {
             padding: 12px;
             border-bottom: 1px solid #eee;
@@ -234,6 +219,26 @@
 
         .social-item:hover {
             background-color: #f8f9fa;
+        }
+
+        .reddit-post-text {
+            margin: 8px 0;
+            line-height: 1.4;
+        }
+        
+        .reddit-show-more-btn {
+            background: none;
+            border: none;
+            color: #4a90e2;
+            cursor: pointer;
+            font-size: 0.85em;
+            padding: 2px 0;
+            text-decoration: underline;
+            margin-top: 5px;
+        }
+        
+        .reddit-show-more-btn:hover {
+            color: #357abd;
         }
 
         .controls-bar {
@@ -265,44 +270,6 @@
             color: #212529;
         }
 
-        .api-status {
-            background: #17a2b8;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.75em;
-            margin-left: 8px;
-        }
-
-        .source-indicator {
-            display: inline-block;
-            background: #28a745;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 8px;
-            font-size: 0.7em;
-            margin-left: 5px;
-        }
-
-        .source-api { background: #17a2b8; }
-        .source-scraping { background: #fd7e14; }
-        .source-rss { background: #6f42c1; }
-
-        @media (max-width: 768px) {
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .controls-bar {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            .header h1 {
-                font-size: 2em;
-            }
-        }
-        
         .show-more-container {
             text-align: center;
             margin-top: 20px;
@@ -333,61 +300,93 @@
             transform: none;
             box-shadow: none;
         }
-        
-        .pagination-info {
-            color: #6c757d;
-            font-size: 0.9em;
-            margin-top: 10px;
-        }
-        
-        .section-content {
-            position: relative;
-        }
-        
-        .loading-more {
-            text-align: center;
+
+        /* Weather section styles */
+        .weather-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
             padding: 20px;
-            color: #6c757d;
-            font-style: italic;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
         }
-        
-        .global-search-container input:focus {
-            border-color: #4CAF50;
-            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+
+        .weather-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
         }
-        
-        .search-status {
-            background: #e3f2fd;
-            color: #1976d2;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.9em;
-            margin: 10px 0;
+
+        .weather-header h2 {
+            margin: 0;
+            color: #2c3e50;
+            font-size: 1.3em;
+        }
+
+        .weather-current {
+            background: linear-gradient(135deg, #4a90e2, #357abd);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .weather-current h3 {
+            margin: 0 0 5px 0;
+            font-size: 1.1em;
+        }
+
+        .weather-current .temperature {
+            font-size: 2.5em;
+            font-weight: 300;
+            margin: 8px 0;
+        }
+
+        .weather-forecast {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .weather-forecast h4 {
+            margin: 0 0 15px 0;
+            color: #2c3e50;
+        }
+
+        .weather-forecast .forecast-period {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
             text-align: center;
+            border: 1px solid #e9ecef;
         }
-        
-        .search-progress {
-            background: linear-gradient(90deg, #4CAF50 0%, #2196F3 100%);
-            height: 3px;
-            border-radius: 2px;
-            margin: 5px 0;
-            animation: pulse 2s infinite;
+
+        .weather-forecast .forecast-period.today {
+            border-color: #4a90e2;
+            background: #f0f8ff;
         }
-        
-        @keyframes pulse {
-            0% { opacity: 0.6; }
-            50% { opacity: 1; }
-            100% { opacity: 0.6; }
+
+        .weather-updated {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.8em;
+            color: #6c757d;
         }
-        
+
         @media (max-width: 768px) {
-            .global-search-container {
-                flex-direction: column;
-                gap: 15px;
+            .dashboard-grid {
+                grid-template-columns: 1fr;
             }
             
-            .global-search-container > div {
-                width: 100%;
+            .controls-bar {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .header h1 {
+                font-size: 2em;
             }
         }
     </style>
@@ -421,6 +420,9 @@
                 </div>
             </div>
             
+            <!-- WEATHER SECTION -->
+            <div id="weather-container"></div>
+            
             <!-- Secondary Controls -->
             <div style="display: flex; justify-content: center; gap: 15px;">
                 <button class="btn btn-primary" onclick="addNewSection()">+ Add News Section</button>
@@ -446,10 +448,6 @@
                     <option value="es">Spanish</option>
                     <option value="fr">French</option>
                     <option value="de">German</option>
-                    <option value="it">Italian</option>
-                    <option value="ja">Japanese</option>
-                    <option value="ko">Korean</option>
-                    <option value="zh">Chinese</option>
                 </select>
             </div>
             <div style="display: flex; gap: 10px;">
@@ -459,7 +457,7 @@
         </div>
 
         <div class="dashboard-grid" id="dashboardGrid">
-            <div class="section" id="global-brief-section" style="grid-column: 1 / -1; display: none;"> {/* Ensure this spans full width if desired, 1 / -1 does that */}
+            <div class="section" id="global-brief-section" style="grid-column: 1 / -1; display: none;">
                 <div class="section-header">
                     <h2 class="section-title">🌎 Global Situation Update</h2>
                     <div class="section-controls">
@@ -470,1131 +468,875 @@
                     <div class="loading">Generating brief... Please wait.</div>
                 </div>
             </div>
-
-            <!-- News sections will be dynamically added here -->
         </div>
     </div>
 
     <div class="status-indicator" id="statusIndicator"></div>
 
-    <script>
-        // Configuration - Updated to fetch 100 articles but display 10 at a time
-        const CONFIG = {
-            gnewsApiKey: '', // Remove from frontend for security
-            gnewsApiUrl: 'http://localhost:3000/api/news', // Use your proxy
-            translationEnabled: true,
-            maxArticlesPerSection: 100, // Fetch 100 articles total
-            articlesPerPage: 10, // Display 10 articles per page
-            refreshInterval: 300000,
-            supportedLanguages: ['en', 'pl']
-        };
-
-        // ADD MISSING CACHE SYSTEM
-        const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
-        const apiCache = new Map();
-
-        // Data storage - Enhanced with pagination data
-        let newsSections = [
-            // { id: 1, title: 'Foreign Ministers', keyword: 'Foreign Minister', language: 'en', articles: [], displayedCount: 0 },
-            //{ id: 2, title: 'Department of State', keyword: 'Department of State', language: 'en', articles: [], displayedCount: 0 },
-            { id: 3, title: 'Conflicts', keyword: 'Conflict', language: 'en', articles: [], displayedCount: 0 }
-        ];
-
-        // Add this new function
-        async function generateGlobalBrief() {
-            const briefSection = document.getElementById('global-brief-section');
-            const briefContent = document.getElementById('global-brief-content');
-
-            // Show the section and a loading message
-            briefSection.style.display = 'block';
-            briefContent.innerHTML = '<div class="loading">Gathering and analyzing news data...</div>';
-            
-            // Smoothly scroll to the new section
-            briefSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-            // 1. Collect ALL articles from all sections
-            let allArticlesText = [];
-            if (typeof newsSections !== 'undefined' && newsSections.length > 0) {
-                newsSections.forEach(section => {
-                    if (section.articles && section.articles.length > 0) {
-                        // Take ALL articles from each section (the Python script will rank them)
-                        section.articles.forEach(article => {
-                            const articleText = `Title: ${article.title}\nDescription: ${article.description || 'No description.'}\nSource: ${article.source?.name || 'Unknown'}\nPublished: ${article.publishedAt || 'N/A'}`;
-                            allArticlesText.push(articleText);
-                        });
-                    }
-                });
-            }
-
-            if (allArticlesText.length === 0) {
-                briefContent.innerHTML = '<div class="error">No news articles have been fetched yet. Please refresh the sections first.</div>';
-                return;
-            }
-
-            briefContent.innerHTML = `<div class="loading">Analyzing ${allArticlesText.length} articles to select the 50 most relevant... This may take a moment.</div>`;
-
-            // 2. Send ALL collected articles (Python script will select top 50 most relevant)
-            try {
-                const response = await fetch('http://localhost:3000/api/summarize', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        articles: allArticlesText, // Send all articles
-                        prompt: `Analyze all provided articles, select the 50 most relevant and important ones, then create a comprehensive global situation update.`
-                    }),
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
-                
-                // 3. Display the AI-generated brief
-                let formattedBrief = data.summary;
-                
-                // Enhanced Markdown to HTML conversion
-                formattedBrief = formattedBrief.replace(/^### (.*$)/gim, '<h3 style="color: #2c3e50; margin-top: 20px; margin-bottom: 10px;">$1</h3>');
-                formattedBrief = formattedBrief.replace(/^## (.*$)/gim, '<h2 style="color: #34495e; margin-top: 25px; margin-bottom: 15px; border-bottom: 2px solid #3498db; padding-bottom: 5px;">$1</h2>');
-                formattedBrief = formattedBrief.replace(/^# (.*$)/gim, '<h1 style="color: #2c3e50; margin-bottom: 20px;">$1</h1>');
-                formattedBrief = formattedBrief.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #2980b9;">$1</strong>');
-                formattedBrief = formattedBrief.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-                
-                // Handle numbered lists
-                formattedBrief = formattedBrief.replace(/^(\d+)\. (.+)$/gim, '<div style="margin: 8px 0; padding-left: 20px;"><strong>$1.</strong> $2</div>');
-                
-                // Handle paragraphs and line breaks
-                formattedBrief = formattedBrief.replace(/\n\n/g, '</p><p style="margin: 15px 0; line-height: 1.6;">');
-                formattedBrief = formattedBrief.replace(/\n/g, '<br>');
-                
-                briefContent.innerHTML = `<div style="text-align: left; line-height: 1.6; padding: 20px;"><p style="margin: 15px 0; line-height: 1.6;">${formattedBrief}</p></div>`;
-
-            } catch (error) {
-                console.error('Error generating brief:', error);
-                
-                // Fallback: Create a simple manual summary
-                const fallbackBrief = createFallbackBrief(allArticlesText);
-                briefContent.innerHTML = `
-                    <div class="error" style="margin-bottom: 20px; padding: 15px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 5px; color: #721c24;">
-                        <strong>AI summarization failed:</strong> ${error.message}
-                    </div>
-                    <hr style="margin: 20px 0;">
-                    <div style="text-align: left; line-height: 1.6; padding: 20px;">
-                        <h2 style="color: #34495e; margin-bottom: 15px;">Manual Analysis (Fallback)</h2>
-                        ${fallbackBrief}
-                    </div>
-                `;
-            }
-        }
-
-        function createFallbackBrief(articles) {
-            // Create a simple fallback summary when AI fails
-            const topics = {};
-            const sources = new Set();
-            
-            articles.forEach(articleText => {
-                const lines = articleText.split('\n');
-                let title = '';
-                let source = '';
-                
-                lines.forEach(line => {
-                    if (line.startsWith('Title: ')) title = line.substring(7);
-                    if (line.startsWith('Source: ')) source = line.substring(8);
-                });
-                
-                if (title && source) {
-                    sources.add(source);
-                    
-                    // Extract key topics
-                    const lowerTitle = title.toLowerCase();
-                    if (lowerTitle.includes('ukraine') || lowerTitle.includes('russia')) {
-                        topics['Ukraine/Russia'] = (topics['Ukraine/Russia'] || 0) + 1;
-                    } else if (lowerTitle.includes('china') || lowerTitle.includes('taiwan')) {
-                        topics['China/Taiwan'] = (topics['China/Taiwan'] || 0) + 1;
-                    } else if (lowerTitle.includes('minister') || lowerTitle.includes('diplomacy')) {
-                        topics['Diplomacy'] = (topics['Diplomacy'] || 0) + 1;
-                    } else {
-                        topics['General News'] = (topics['General News'] || 0) + 1;
-                    }
-                }
-            });
-            
-            let summary = `<p><strong>Coverage Summary:</strong> Analyzed ${articles.length} articles from ${sources.size} sources.</p>`;
-            summary += `<p><strong>Main Topics:</strong></p><ul>`;
-            
-            Object.entries(topics).forEach(([topic, count]) => {
-                summary += `<li>${topic}: ${count} articles</li>`;
-            });
-            
-            summary += `</ul>`;
-            summary += `<p><strong>Sources:</strong> ${Array.from(sources).slice(0, 10).join(', ')}${sources.size > 10 ? '...' : ''}</p>`;
-            
-            return summary;
-        }
-
-                // Initialize when page loads
-        function initDashboard() {
-            updateLastUpdate();
-            renderSections();
-            startAutoRefresh();
-            
-            // Load initial data with default keyword
-            setTimeout(() => {
-                const defaultKeyword = document.getElementById('globalKeyword').value || 'Foreign Affairs Minister';
-                console.log('🔄 Loading initial data for:', defaultKeyword);
-                globalSearch(); // This will trigger all searches
-            }, 500);
-        }
-
-        function updateLastUpdate() {
-            const now = new Date();
-            document.getElementById('lastUpdate').textContent = 
-                `Last updated: ${now.toLocaleString()}`;
-        }
-
-        // FIX THE renderSections FUNCTION TO PRESERVE THE BRIEF SECTION
-        function renderSections() {
-            const grid = document.getElementById('dashboardGrid');
-            
-            // Store reference to the brief section before clearing
-            const briefSection = document.getElementById('global-brief-section');
-            
-            // Remove only the dynamically created sections, not the brief section
-            const sectionsToRemove = grid.querySelectorAll('.section:not(#global-brief-section)');
-            sectionsToRemove.forEach(section => section.remove());
-
-            // Render news sections
-            newsSections.forEach(section => {
-                const sectionElement = createNewsSection(section);
-                grid.appendChild(sectionElement);
-            });
-
-            // Render Bluesky feed section
-            const blueskySection = createBlueskySection();
-            grid.appendChild(blueskySection);
-
-            // Render Reddit feed section
-            const redditSection = createRedditSection();
-            grid.appendChild(redditSection);
-
-            // Render social feed sections (if socialFeeds is defined and populated)
-            if (typeof socialFeeds !== 'undefined' && Array.isArray(socialFeeds)) {
-                socialFeeds.forEach(feed => {
-                    const socialSection = createSocialSection(feed);
-                    grid.appendChild(socialSection);
-                });
-            }
-        }
-
-        function createNewsSection(section) {
-            const div = document.createElement('div');
-            div.className = 'section';
-            div.id = `section-${section.id}`;
-            
-            div.innerHTML = `
-                <div class="section-header">
-                    <h2 class="section-title">${section.title} <span class="api-status">GNews API</span></h2>
-                    <div class="section-controls">
-                        <button class="btn btn-secondary" onclick="refreshSection(${section.id})">🔄</button>
-                        <button class="btn btn-secondary" onclick="removeSection(${section.id})">❌</button>
-                    </div>
-                </div>
-                <div class="section-content" id="content-${section.id}">
-                    <div class="loading">Loading news from GNews API...</div>
-                </div>
-                <div class="show-more-container" id="showmore-${section.id}" style="display: none;">
-                    <button class="btn-show-more" onclick="showMoreArticles(${section.id})" id="showmore-btn-${section.id}">
-                        Show More Articles
-                    </button>
-                    <div class="pagination-info" id="pagination-${section.id}"></div>
-                </div>
-            `;
-
-            return div;
-        }
-
-        // ===================================================================
-        // MISSING CORE FUNCTIONS - ADD THESE
-        // ===================================================================
-        
-        // Enhanced news loading with pagination support
-        async function loadNewsForSection(section) {
-            try {
-                console.log(`Loading news for section: ${section.title}`);
-                const articles = await fetchGNewsArticles(section.keyword, section.language, CONFIG.maxArticlesPerSection);
-                const processedArticles = await processArticles(articles, section.language);
-                
-                // Store all articles in the section object
-                section.articles = processedArticles;
-                section.displayedCount = 0;
-                
-                // Display first page of articles
-                displayNewsArticlesWithPagination(section.id, section);
-                showStatus(`Loaded ${articles.length} articles for ${section.title}`);
-                
-            } catch (error) {
-                console.error('Error loading news:', error);
-                displayError(section.id, `Failed to load news: ${error.message}`);
-                showStatus('Failed to load news section', 'error');
-            }
-        }
-
-        // Fetch articles from your backend API
-        async function fetchGNewsArticles(keyword, language, maxResults) {
-            console.log(`Fetching articles for keyword: "${keyword}" (language: ${language}, max: ${maxResults})`);
-            
-            // Check cache first
-            const cacheKey = `${keyword}-${language}-${maxResults}`;
-            const cached = apiCache.get(cacheKey);
-            if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
-                console.log('Using cached articles for', keyword);
-                return cached.data;
-            }
-
-            try {
-                const params = new URLSearchParams({
-                    q: keyword,
-                    lang: language,
-                    max: maxResults
-                });
-
-                const response = await fetch(`${CONFIG.gnewsApiUrl}?${params.toString()}`);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
-                
-                if (data.articles && Array.isArray(data.articles)) {
-                    // Cache the results
-                    apiCache.set(cacheKey, {
-                        data: data.articles,
-                        timestamp: Date.now()
-                    });
-                    
-                    return data.articles;
-                } else {
-                    throw new Error('Invalid response format from news API');
-                }
-            } catch (error) {
-                console.error('Error fetching news:', error);
-                throw error;
-            }
-        }
-
-        // Process articles (translation, filtering, etc.)
-        async function processArticles(articles, language) {
-            return articles.map(article => {
-                // Add source type indicator for display
-                const sourceType = article.source?.type || 'Unknown';
-                
-                return {
-                    ...article,
-                    processedDate: new Date(article.publishedAt || new Date()).toLocaleDateString(),
-                    sourceType: sourceType,
-                    isTranslated: CONFIG.translationEnabled && language !== 'en'
-                };
-            });
-        }
-
-        // Display articles with pagination
-        function displayNewsArticlesWithPagination(sectionId, section) {
-            const contentDiv = document.getElementById(`content-${sectionId}`);
-            const showMoreContainer = document.getElementById(`showmore-${sectionId}`);
-            const showMoreBtn = document.getElementById(`showmore-btn-${sectionId}`);
-            const paginationInfo = document.getElementById(`pagination-${sectionId}`);
-            
-            if (!section.articles || section.articles.length === 0) {
-                contentDiv.innerHTML = '<p>No articles found for this search.</p>';
-                showMoreContainer.style.display = 'none';
-                return;
-            }
-
-            // Calculate how many articles to show
-            const articlesPerPage = CONFIG.articlesPerPage;
-            const currentlyShowing = Math.min(
-                section.displayedCount + articlesPerPage, 
-                section.articles.length
-            );
-            
-            // Get articles to display (from 0 to currentlyShowing)
-            const articlesToShow = section.articles.slice(0, currentlyShowing);
-            
-            // Generate HTML for articles
-            const articlesHTML = articlesToShow.map(article => {
-                const sourceIndicator = getSourceIndicatorClass(article.sourceType);
-                const translationBadge = article.isTranslated ? '<span class="translation-indicator">Translated</span>' : '';
-                
-                return `
-                    <div class="news-item">
-                        <div class="news-title">
-                            <a href="${article.url}" target="_blank">${article.title}</a>
-                            <span class="source-indicator ${sourceIndicator}">${article.sourceType}</span>
-                            ${translationBadge}
-                        </div>
-                        <div class="news-meta">
-                            ${article.source?.name || 'Unknown Source'} • ${article.processedDate}
-                        </div>
-                        <div class="news-summary">${article.description || 'No description available.'}</div>
-                    </div>
-                `;
-            }).join('');
-
-            contentDiv.innerHTML = articlesHTML;
-            
-            // Update displayed count
-            section.displayedCount = currentlyShowing;
-            
-            // Show/hide pagination controls
-            if (section.articles.length > articlesPerPage) {
-                showMoreContainer.style.display = 'block';
-                
-                // Update pagination info
-                paginationInfo.textContent = `Showing ${currentlyShowing} of ${section.articles.length} articles`;
-                
-                // Enable/disable Show More button
-                if (currentlyShowing >= section.articles.length) {
-                    showMoreBtn.disabled = true;
-                    showMoreBtn.textContent = 'All Articles Loaded';
-                } else {
-                    showMoreBtn.disabled = false;
-                    const remaining = section.articles.length - currentlyShowing;
-                    const nextBatch = Math.min(remaining, articlesPerPage);
-                    showMoreBtn.textContent = `Show ${nextBatch} More Articles`;
-                }
-            } else {
-                showMoreContainer.style.display = 'none';
-            }
-        }
-
-        // Show more articles for a section
-        function showMoreArticles(sectionId) {
-            const section = newsSections.find(s => s.id === sectionId);
-            if (!section) return;
-            
-            const showMoreBtn = document.getElementById(`showmore-btn-${sectionId}`);
-            const contentDiv = document.getElementById(`content-${sectionId}`);
-            
-            // Show loading state
-            showMoreBtn.disabled = true;
-            showMoreBtn.textContent = 'Loading...';
-            
-            // Add loading indicator
-            const loadingDiv = document.createElement('div');
-            loadingDiv.className = 'loading-more';
-            loadingDiv.textContent = 'Loading more articles...';
-            contentDiv.appendChild(loadingDiv);
-            
-            // Simulate loading delay for better UX
-            setTimeout(() => {
-                // Remove loading indicator
-                if (contentDiv.contains(loadingDiv)) {
-                    contentDiv.removeChild(loadingDiv);
-                }
-                
-                // Update pagination and redisplay
-                displayNewsArticlesWithPagination(sectionId, section);
-                
-                // Smooth scroll to new content
-                const articles = contentDiv.children;
-                if (articles.length > section.displayedCount - CONFIG.articlesPerPage) {
-                    const targetArticle = articles[section.displayedCount - CONFIG.articlesPerPage];
-                    if (targetArticle) {
-                        targetArticle.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                    }
-                }
-            }, 800);
-        }
-
-        // Utility function for source indicators
-        function getSourceIndicatorClass(sourceType) {
-            if (sourceType?.includes('API')) return 'source-api';
-            if (sourceType?.includes('Guardian')) return 'source-api'; // Guardian API gets blue color
-            if (sourceType?.includes('Scrape')) return 'source-scraping';
-            if (sourceType?.includes('RSS')) return 'source-rss';
-            return 'source-api'; // default
-        }
-
-        // Remove duplicates utility function
-        function removeDuplicates(articles) {
-            const seen = new Set();
-            return articles.filter(article => {
-                const key = `${article.title}-${article.url}`;
-                if (seen.has(key)) {
-                    return false;
-                }
-                seen.add(key);
-                return true;
-            });
-        }
-
-        // ===================================================================
-        // BLUESKY FEED FUNCTIONALITY (UPDATED)
-        // ===================================================================
-        let blueskyData = {
-            posts: [],
-            displayedCount: 0,
-            query: 'Foreign Affairs Minister',
-            loading: false
-        };
-
-        function createBlueskySection() {
-            const div = document.createElement('div');
-            div.className = 'section';
-            div.id = 'bluesky-section';
-            div.innerHTML = `
-                <div class="section-header">
-                    <h2 class="section-title">🦋 Bluesky Feed</h2>
-                    <div class="section-controls">
-                        <button class="btn btn-secondary" onclick="refreshBluesky()">🔄</button>
-                    </div>
-                </div>
-                <div class="bluesky-search-form" style="margin-bottom: 20px;">
-                    <div class="form-group">
-                        <label for="blueskyKeyword">Search Bluesky:</label>
-                        <div style="display: flex; gap: 10px;">
-                            <input type="text" id="blueskyKeyword" placeholder="Enter keyword to search..." value="Foreign Affairs Minister" style="flex: 1;">
-                            <button class="btn btn-primary" onclick="searchBluesky()">Search</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="section-content" id="bluesky-content">
-                    <div class="loading">Loading Bluesky posts...</div>
-                </div>
-                <div class="show-more-container" id="bluesky-showmore" style="display: none;">
-                    <button class="btn-show-more" onclick="showMoreBlueskyPosts()" id="bluesky-showmore-btn">
-                        Show More Posts
-                    </button>
-                    <div class="pagination-info" id="bluesky-pagination"></div>
-                </div>
-            `;
-            
-            return div;
-        }
-
-        async function searchBluesky() {
-            const keywordInput = document.getElementById('blueskyKeyword');
-            const query = keywordInput.value.trim();
-            
-            if (!query) {
-                showStatus('Please enter a search keyword', 'error');
-                return;
-            }
-            
-            blueskyData.query = query;
-            blueskyData.posts = [];
-            blueskyData.displayedCount = 0;
-            blueskyData.loading = true;
-            
-            const contentDiv = document.getElementById('bluesky-content');
-            const showMoreContainer = document.getElementById('bluesky-showmore');
-            
-            contentDiv.innerHTML = `<div class="loading">Searching Bluesky for "${query}"...</div>`;
-            showMoreContainer.style.display = 'none';
-            
-            try {
-                await searchBlueskyInternal(query);
-                showStatus(`Found ${blueskyData.posts.length} Bluesky posts for "${query}"`, 'success');
-            } catch (error) {
-                showStatus('Failed to search Bluesky', 'error');
-            } finally {
-                blueskyData.loading = false;
-            }
-        }
-
-        async function searchBlueskyInternal(query) {
-            try {
-                blueskyData.loading = true;
-                blueskyData.query = query;
-                blueskyData.posts = [];
-                blueskyData.displayedCount = 0;
-                
-                const contentDiv = document.getElementById('bluesky-content');
-                if (contentDiv) {
-                    contentDiv.innerHTML = `<div class="loading">Searching Bluesky for "${query}"...</div>`;
-                }
-                
-                const response = await fetch('http://localhost:3000/api/bluesky', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query: query, limit: 100 })
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                const data = await response.json();
-                
-                if (data.success && data.posts) {
-                    blueskyData.posts = data.posts;
-                    displayBlueskyPostsWithPagination();
-                    console.log(`✅ Found ${data.posts.length} Bluesky posts for "${query}"`);
-                } else {
-                    throw new Error(data.error || 'Invalid response from Bluesky API');
-                }
-            } catch (error) {
-                console.error('❌ Bluesky search error:', error);
-                const contentDiv = document.getElementById('bluesky-content');
-                if (contentDiv) {
-                    contentDiv.innerHTML = `<div class="error">Failed to search Bluesky: ${error.message}</div>`;
-                }
-                throw error;
-            } finally {
-                blueskyData.loading = false;
-            }
-        }
-
-        // ===================================================================
-        // REDDIT FEED FUNCTIONALITY (NEW)
-        // ===================================================================
-        let redditData = {
-            posts: [],
-            displayedCount: 0,
-            query: 'Foreign Affairs Minister',
-            loading: false
-        };
-
-        function createRedditSection() {
-            const div = document.createElement('div');
-            div.className = 'section';
-            div.id = 'reddit-section';
-            div.innerHTML = `
-                <div class="section-header">
-                    <h2 class="section-title">🟠 Reddit Feed</h2>
-                    <div class="section-controls">
-                        <button class="btn btn-secondary" onclick="refreshReddit()">🔄</button>
-                    </div>
-                </div>
-                <div class="reddit-search-form" style="margin-bottom: 20px;">
-                    <div class="form-group">
-                        <label for="redditKeyword">Search Reddit:</label>
-                        <div style="display: flex; gap: 10px;">
-                            <input type="text" id="redditKeyword" placeholder="Enter keyword to search..." value="Foreign Affairs Minister" style="flex: 1;">
-                            <button class="btn btn-primary" onclick="searchReddit()">Search</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="section-content" id="reddit-content">
-                    <div class="loading">Loading Reddit posts...</div>
-                </div>
-                <div class="show-more-container" id="reddit-showmore" style="display: none;">
-                    <button class="btn-show-more" onclick="showMoreRedditPosts()" id="reddit-showmore-btn">
-                        Show More Posts
-                    </button>
-                    <div class="pagination-info" id="reddit-pagination"></div>
-                </div>
-            `;
-            
-            return div;
-        }
-
-        async function searchReddit() {
-            const keywordInput = document.getElementById('redditKeyword');
-            const query = keywordInput.value.trim();
-            
-            if (!query) {
-                showStatus('Please enter a search keyword', 'error');
-                return;
-            }
-            
-            try {
-                await searchRedditInternal(query);
-                showStatus(`Found ${redditData.posts.length} Reddit posts for "${query}"`, 'success');
-            } catch (error) {
-                showStatus('Failed to search Reddit', 'error');
-            }
-        }
-
-        async function searchRedditInternal(query) {
-            try {
-                redditData.loading = true;
-                redditData.query = query;
-                redditData.posts = [];
-                redditData.displayedCount = 0;
-                
-                const contentDiv = document.getElementById('reddit-content');
-                if (contentDiv) {
-                    contentDiv.innerHTML = `<div class="loading">Searching Reddit for "${query}"...</div>`;
-                }
-                
-                const response = await fetch('http://localhost:3000/api/reddit', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query: query, limit: 100 })
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                const data = await response.json();
-                
-                if (data.success && data.posts) {
-                    redditData.posts = data.posts;
-                    displayRedditPostsWithPagination();
-                    console.log(`✅ Found ${data.posts.length} Reddit posts for "${query}"`);
-                } else {
-                    throw new Error(data.error || 'Invalid response from Reddit API');
-                }
-            } catch (error) {
-                console.error('❌ Reddit search error:', error);
-                const contentDiv = document.getElementById('reddit-content');
-                if (contentDiv) {
-                    contentDiv.innerHTML = `<div class="error">Failed to search Reddit: ${error.message}</div>`;
-                }
-                throw error;
-            } finally {
-                redditData.loading = false;
-            }
-        }
-
-        function displayBlueskyPostsWithPagination() {
-            const contentDiv = document.getElementById('bluesky-content');
-            const showMoreContainer = document.getElementById('bluesky-showmore');
-            const showMoreBtn = document.getElementById('bluesky-showmore-btn');
-            const paginationInfo = document.getElementById('bluesky-pagination');
-            
-            if (!blueskyData.posts || blueskyData.posts.length === 0) {
-                contentDiv.innerHTML = '<p>No posts found for this search.</p>';
-                showMoreContainer.style.display = 'none';
-                return;
-            }
-
-            const postsPerPage = 10;
-            const currentlyShowing = Math.min(
-                blueskyData.displayedCount + postsPerPage, 
-                blueskyData.posts.length
-            );
-            
-            const postsToShow = blueskyData.posts.slice(0, currentlyShowing);
-            
-            const postsHTML = postsToShow.map(post => {
-                const timeAgo = getTimeAgoFromISO(post.createdAt);
-                const isRecent = (Date.now() - new Date(post.createdAt).getTime()) < (2 * 60 * 60 * 1000);
-                
-                return `
-                    <div class="bluesky-post" style="margin-bottom: 20px; padding: 15px; background: #f0f8ff; border-radius: 10px; border-left: 4px solid #00bcd4;">
-                        <div class="post-header" style="display: flex; align-items: center; margin-bottom: 10px;">
-                            <div style="flex: 1;">
-                                <div style="font-weight: 600; color: #1f3143;">
-                                    @${post.author.handle}
-                                    ${isRecent ? '<span style="background: #00bcd4; color: white; padding: 2px 6px; border-radius: 8px; font-size: 0.7em; margin-left: 5px;">Fresh</span>' : ''}
-                                </div>
-                                <div style="font-size: 0.85em; color: #6c757d;">${timeAgo}</div>
-                            </div>
-                        </div>
-                        <div class="post-content" style="margin-bottom: 10px; line-height: 1.5; color: #495057;">
-                            ${post.text || 'Post content unavailable'}
-                        </div>
-                        <div class="post-engagement" style="display: flex; gap: 15px; font-size: 0.85em; color: #6c757d;">
-                            <span>❤️ ${post.engagement.likes}</span>
-                            <span>🔄 ${post.engagement.reposts}</span>
-                            <span>💬 ${post.engagement.replies}</span>
-                            <a href="${post.url}" target="_blank" style="color: #00bcd4; text-decoration: none;">View on Bluesky</a>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            contentDiv.innerHTML = postsHTML;
-            blueskyData.displayedCount = currentlyShowing;
-            
-            if (blueskyData.posts.length > postsPerPage) {
-                showMoreContainer.style.display = 'block';
-                paginationInfo.textContent = `Showing ${currentlyShowing} of ${blueskyData.posts.length} posts`;
-                
-                if (currentlyShowing >= blueskyData.posts.length) {
-                    showMoreBtn.disabled = true;
-                    showMoreBtn.textContent = 'All Posts Loaded';
-                } else {
-                    showMoreBtn.disabled = false;
-                    const remaining = blueskyData.posts.length - currentlyShowing;
-                    const nextBatch = Math.min(remaining, postsPerPage);
-                    showMoreBtn.textContent = `Show ${nextBatch} More Posts`;
-                }
-            } else {
-                showMoreContainer.style.display = 'none';
-            }
-        }
-
-        function displayRedditPostsWithPagination() {
-            const contentDiv = document.getElementById('reddit-content');
-            const showMoreContainer = document.getElementById('reddit-showmore');
-            const showMoreBtn = document.getElementById('reddit-showmore-btn');
-            const paginationInfo = document.getElementById('reddit-pagination');
-            
-            if (!redditData.posts || redditData.posts.length === 0) {
-                contentDiv.innerHTML = '<p>No posts found for this search.</p>';
-                showMoreContainer.style.display = 'none';
-                return;
-            }
-
-            const postsPerPage = 10;
-            const currentlyShowing = Math.min(
-                redditData.displayedCount + postsPerPage, 
-                redditData.posts.length
-            );
-            
-            const postsToShow = redditData.posts.slice(0, currentlyShowing);
-            
-            const postsHTML = postsToShow.map((post, index) => {
-                const timeAgo = getTimeAgoFromISO(post.createdAt);
-                const isRecent = (Date.now() - new Date(post.createdAt).getTime()) < (2 * 60 * 60 * 1000);
-                const scoreColor = post.engagement.score > 0 ? '#28a745' : post.engagement.score < 0 ? '#dc3545' : '#6c757d';
-                
-                const fullText = post.text || 'Link post - click to view on Reddit';
-                const isLongText = fullText.length > 200;
-                const truncatedText = isLongText ? fullText.substring(0, 200) + '...' : fullText;
-                const postId = `reddit-post-${post.id || index}`;
-                
-                return `
-                    <div class="reddit-post" style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px; border-left: 4px solid #FF4500;">
-                        <div class="post-header" style="display: flex; align-items: center; margin-bottom: 10px;">
-                            <div style="margin-right: 10px; text-align: center;">
-                                <div style="font-weight: bold; color: ${scoreColor};">${post.engagement.score}</div>
-                                <div style="font-size: 0.7em; color: #6c757d;">score</div>
-                            </div>
-                            <div style="flex: 1;">
-                                <div style="font-weight: 600; color: #1f3143;">
-                                    r/${post.subreddit} • u/${post.author.username}
-                                    ${isRecent ? '<span style="background: #ff6b6b; color: white; padding: 2px 6px; border-radius: 8px; font-size: 0.7em; margin-left: 5px;">Fresh</span>' : ''}
-                                </div>
-                                <div style="font-size: 0.85em; color: #6c757d;">${timeAgo}</div>
-                            </div>
-                        </div>
-                        <div class="post-title" style="font-weight: 600; margin-bottom: 8px; color: #1f3143;">
-                            ${post.title}
-                        </div>
-                        <div class="post-content" style="margin-bottom: 10px; line-height: 1.5; color: #495057;">
-                            <div id="${postId}-text" class="post-text">
-                                ${isLongText ? truncatedText : fullText}
-                            </div>
-                            ${isLongText ? `
-                                <div style="margin-top: 8px;">
-                                    <button 
-                                        id="${postId}-expand-btn" 
-                                        onclick="toggleRedditPostText('${postId}', \`${fullText.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`, \`${truncatedText.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)"
-                                        style="background: none; border: none; color: #FF4500; cursor: pointer; font-size: 0.9em; padding: 0; text-decoration: underline;"
-                                    >
-                                        See more
-                                    </button>
-                                </div>
-                            ` : ''}
-                        </div>
-                        <div class="post-engagement" style="display: flex; gap: 15px; font-size: 0.85em; color: #6c757d;">
-                            <span>💬 ${post.engagement.comments}</span>
-                            <span>👍 ${post.engagement.upvotes}%</span>
-                            ${post.flair ? `<span style="background: #e9ecef; padding: 2px 6px; border-radius: 4px;">${post.flair}</span>` : ''}
-                            <a href="${post.url}" target="_blank" style="color: #FF4500; text-decoration: none;">View on Reddit</a>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            contentDiv.innerHTML = postsHTML;
-            redditData.displayedCount = currentlyShowing;
-            
-            if (redditData.posts.length > postsPerPage) {
-                showMoreContainer.style.display = 'block';
-                paginationInfo.textContent = `Showing ${currentlyShowing} of ${redditData.posts.length} posts`;
-                
-                if (currentlyShowing >= redditData.posts.length) {
-                    showMoreBtn.disabled = true;
-                    showMoreBtn.textContent = 'All Posts Loaded';
-                } else {
-                    showMoreBtn.disabled = false;
-                    const remaining = redditData.posts.length - currentlyShowing;
-                    const nextBatch = Math.min(remaining, postsPerPage);
-                    showMoreBtn.textContent = `Show ${nextBatch} More Posts`;
-                }
-            } else {
-                showMoreContainer.style.display = 'none';
-            }
-        }
-
-        function toggleRedditPostText(postId, fullText, truncatedText) {
-            const textElement = document.getElementById(`${postId}-text`);
-            const buttonElement = document.getElementById(`${postId}-expand-btn`);
-            
-            if (!textElement || !buttonElement) return;
-            
-            const isExpanded = buttonElement.textContent === 'See less';
-            
-            if (isExpanded) {
-                textElement.innerHTML = truncatedText;
-                buttonElement.textContent = 'See more';
-            } else {
-                textElement.innerHTML = fullText;
-                buttonElement.textContent = 'See less';
-            }
-        }
-
-        function showMoreRedditPosts() {
-            const showMoreBtn = document.getElementById('reddit-showmore-btn');
-            const contentDiv = document.getElementById('reddit-content');
-            
-            showMoreBtn.disabled = true;
-            showMoreBtn.textContent = 'Loading...';
-            
-            const loadingDiv = document.createElement('div');
-            loadingDiv.className = 'loading-more';
-            loadingDiv.textContent = 'Loading more posts...';
-            contentDiv.appendChild(loadingDiv);
-            
-            setTimeout(() => {
-                if (contentDiv.contains(loadingDiv)) {
-                    contentDiv.removeChild(loadingDiv);
-                }
-                displayRedditPostsWithPagination();
-            }, 800);
-        }
-
-        function refreshReddit() {
-            const query = redditData.query || 'Foreign Affairs Minister';
-            document.getElementById('redditKeyword').value = query;
-            searchReddit();
-        }
-
-        // ===================================================================
-        // MISSING SEARCH FUNCTIONS - ADD THESE
-        // ===================================================================
-
-        async function globalSearch() {
-            const keyword = document.getElementById('globalKeyword').value.trim();
-            
-            if (!keyword) {
-                showStatus('Please enter a search keyword', 'error');
-                return;
-            }
-            
-            showStatus(`Searching all feeds for "${keyword}"...`, 'info');
-            
-            // Update all sections with new keyword
-            newsSections.forEach(section => {
-                section.keyword = keyword;
-                section.articles = [];
-                section.displayedCount = 0;
-            });
-            
-            // Update social media searches
-            blueskyData.query = keyword;
-            redditData.query = keyword;
-            
-            // Load all data
-            await Promise.all([
-                // Load news sections
-                ...newsSections.map(section => loadNewsForSection(section)),
-                // Load social media
-                searchBlueskyInternal(keyword),
-                searchRedditInternal(keyword)
-            ]);
-            
-            showStatus(`Search completed for "${keyword}"`, 'success');
-        }
-
-        // ===================================================================
-        // MISSING UTILITY FUNCTIONS
-        // ===================================================================
-
-        function getTimeAgoFromISO(isoString) {
-            const postDate = new Date(isoString);
-            const now = new Date();
-            const diffInSeconds = Math.floor((now - postDate) / 1000);
-            
-            if (diffInSeconds < 60) return `${diffInSeconds}s ago`;
-            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-            return `${Math.floor(diffInSeconds / 86400)}d ago`;
-        }
-
-        function showStatus(message, type = 'info') {
-            const indicator = document.getElementById('statusIndicator');
-            if (!indicator) return;
-            
-            indicator.textContent = message;
-            indicator.className = `status-indicator ${type}`;
-            indicator.style.display = 'block';
-            
-            setTimeout(() => {
-                indicator.style.display = 'none';
-            }, 5000);
-        }
-
-        function refreshAll() {
-            const keyword = document.getElementById('globalKeyword').value || 'Foreign Affairs Minister';
-            globalSearch();
-        }
-
-        function refreshSection(sectionId) {
-            const section = newsSections.find(s => s.id === sectionId);
-            if (section) {
-                section.articles = [];
-                section.displayedCount = 0;
-                loadNewsForSection(section);
-            }
-        }
-
-        function removeSection(sectionId) {
-            newsSections = newsSections.filter(s => s.id !== sectionId);
-            renderSections();
-        }
-
-        function addNewSection() {
-            const form = document.getElementById('addSectionForm');
-            if (form) form.classList.add('active');
-        }
-
-        function cancelAddSection() {
-            const form = document.getElementById('addSectionForm');
-            if (form) form.classList.remove('active');
-        }
-
-        function createSection() {
-            const keyword = document.getElementById('sectionKeyword').value.trim();
-            const title = document.getElementById('sectionTitle').value.trim();
-            const language = document.getElementById('sectionLanguage').value;
-            
-            if (!keyword || !title) {
-                showStatus('Please fill in all fields', 'error');
-                return;
-            }
-            
-            const newSection = {
-                id: Date.now(),
-                title: title,
-                keyword: keyword,
-                language: language,
-                articles: [],
-                displayedCount: 0
-            };
-            
-            newsSections.push(newSection);
-            renderSections();
-            cancelAddSection();
-            
-            document.getElementById('sectionKeyword').value = '';
-            document.getElementById('sectionTitle').value = '';
-            
-            showStatus(`Added new section: ${title}`, 'success');
-        }
-
-        function toggleTranslation() {
-            CONFIG.translationEnabled = !CONFIG.translationEnabled;
-            const status = document.getElementById('translationStatus');
-            if (status) status.textContent = CONFIG.translationEnabled ? 'ON' : 'OFF';
-            showStatus(`Translation ${CONFIG.translationEnabled ? 'enabled' : 'disabled'}`, 'info');
-        }
-
-        function displayError(sectionId, message) {
-            const contentDiv = document.getElementById(`content-${sectionId}`);
-            if (contentDiv) {
-                contentDiv.innerHTML = `<div class="error">${message}</div>`;
-            }
-        }
-
-        function startAutoRefresh() {
-            setInterval(() => {
-                console.log('Auto-refreshing all sections...');
-                refreshAll();
-            }, CONFIG.refreshInterval);
-        }
-        
-        // ===================================================================
-        // INITIALIZE DASHBOARD
-        // ===================================================================
-        
-        // Start the dashboard when page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('🚀 Initializing Eagle Watchtower Dashboard...');
-            initDashboard();
-        });
-        
-        // Also initialize if already loaded
-        if (document.readyState === 'complete' || document.readyState === 'interactive') {
-            console.log('🚀 Document already loaded, initializing dashboard...');
-            initDashboard();
-        }
-
-        // Implement virtual scrolling for large datasets
-function createVirtualScrolling(containerId, items, renderItem, itemHeight = 100) {
-    const container = document.getElementById(containerId);
-    const viewport = container.parentElement;
-    const visibleCount = Math.ceil(viewport.clientHeight / itemHeight) + 2;
+<script>
+// Configuration
+const CONFIG = {
+    gnewsApiUrl: 'http://localhost:3000/api/news',
+    translationEnabled: true,
+    maxArticlesPerSection: 100,
+    articlesPerPage: 10,
+    refreshInterval: 300000,
+    supportedLanguages: ['en', 'pl']
+};
+
+// Cache system
+const CACHE_DURATION = 5 * 60 * 1000;
+const apiCache = new Map();
+
+// Data storage
+let newsSections = [
+    { id: 3, title: 'Conflicts', keyword: 'Conflict', language: 'en', articles: [], displayedCount: 0 }
+];
+
+let blueskyData = {
+    posts: [],
+    displayedCount: 0,
+    query: 'Foreign Affairs Minister',
+    loading: false
+};
+
+let redditData = {
+    posts: [],
+    displayedCount: 0,
+    postsPerPage: 10,
+    query: 'Foreign Affairs Minister',
+    loading: false
+};
+
+let weatherData = {
+    current: null,
+    forecast: [],
+    location: null,
+    alerts: [],
+    loading: false,
+    lastUpdate: null
+};
+
+// ===================================================================
+// INITIALIZATION
+// ===================================================================
+function initDashboard() {
+    console.log('🚀 Initializing dashboard...');
+    updateLastUpdate();
     
-    let startIndex = 0;
-    
-    function renderVisible() {
-        const endIndex = Math.min(startIndex + visibleCount, items.length);
-        const visibleItems = items.slice(startIndex, endIndex);
-        
-        container.innerHTML = visibleItems.map(renderItem).join('');
-        container.style.transform = `translateY(${startIndex * itemHeight}px)`;
+    // Create weather section
+    const weatherContainer = document.getElementById('weather-container');
+    if (weatherContainer && !weatherContainer.querySelector('.weather-section')) {
+        const weatherSection = createWeatherSection();
+        weatherContainer.appendChild(weatherSection);
     }
     
-    viewport.addEventListener('scroll', () => {
-        const newStartIndex = Math.floor(viewport.scrollTop / itemHeight);
-        if (newStartIndex !== startIndex) {
-            startIndex = newStartIndex;
-            renderVisible();
-        }
+    // Render all sections
+    renderSections();
+    startAutoRefresh();
+    
+    // Load initial data
+    setTimeout(() => {
+        const defaultKeyword = document.getElementById('globalKeyword').value || 'Foreign Affairs Minister';
+        console.log('🔄 Loading initial data for:', defaultKeyword);
+        
+        Promise.all([
+            loadWeatherData(),
+            globalSearch()
+        ]).then(() => {
+            console.log('✅ Initial load complete');
+        }).catch(error => {
+            console.error('❌ Error during initial load:', error);
+        });
+    }, 1000);
+}
+
+function updateLastUpdate() {
+    const now = new Date();
+    const element = document.getElementById('lastUpdate');
+    if (element) {
+        element.textContent = `Last updated: ${now.toLocaleString()}`;
+    }
+}
+
+function renderSections() {
+    const grid = document.getElementById('dashboardGrid');
+    if (!grid) return;
+    
+    // Keep the global brief section
+    const briefSection = document.getElementById('global-brief-section');
+    
+    // Remove only dynamically created sections
+    const sectionsToRemove = grid.querySelectorAll('.section:not(#global-brief-section)');
+    sectionsToRemove.forEach(section => section.remove());
+
+    // Render news sections
+    newsSections.forEach(section => {
+        const sectionElement = createNewsSection(section);
+        grid.appendChild(sectionElement);
+    });
+
+    // Render social sections
+    const blueskySection = createBlueskySection();
+    grid.appendChild(blueskySection);
+
+    const redditSection = createRedditSection();
+    grid.appendChild(redditSection);
+}
+
+// ===================================================================
+// GLOBAL SEARCH & REFRESH
+// ===================================================================
+async function globalSearch() {
+    const keyword = document.getElementById('globalKeyword')?.value?.trim();
+    
+    if (!keyword) {
+        showStatus('Please enter a search keyword', 'error');
+        return;
+    }
+    
+    showStatus(`Searching all feeds for "${keyword}"...`, 'info');
+    
+    // Update all sections with new keyword
+    newsSections.forEach(section => {
+        section.keyword = keyword;
+        section.articles = [];
+        section.displayedCount = 0;
     });
     
-    renderVisible();
+    // Update social media searches
+    blueskyData.query = keyword;
+    redditData.query = keyword;
+    redditData.displayedCount = 0;
+    
+    // Update input fields
+    const blueskyInput = document.getElementById('blueskyKeyword');
+    const redditInput = document.getElementById('redditKeyword');
+    if (blueskyInput) blueskyInput.value = keyword;
+    if (redditInput) redditInput.value = keyword;
+    
+    try {
+        // Load all data
+        await Promise.all([
+            ...newsSections.map(section => loadNewsForSection(section)),
+            searchBlueskyInternal(keyword),
+            searchRedditInternal(keyword)
+        ]);
+        
+        showStatus(`Search completed for "${keyword}"`, 'success');
+    } catch (error) {
+        console.error('Global search error:', error);
+        showStatus('Some searches failed', 'warning');
+    }
 }
 
-// Implement debounced search
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
+function refreshAll() {
+    showStatus('Refreshing all sections...', 'info');
+    apiCache.clear();
+    refreshWeather();
+    globalSearch();
 }
 
-// Update search functions
-const debouncedSearch = debounce(globalSearch, 500);
+function showStatus(message, type = 'info') {
+    const indicator = document.getElementById('statusIndicator');
+    if (indicator) {
+        indicator.textContent = message;
+        indicator.className = `status-indicator ${type}`;
+        indicator.style.display = 'block';
+        
+        setTimeout(() => {
+            indicator.style.display = 'none';
+        }, 3000);
+    }
+}
 
-// Add to news_dashboard.html
-class DashboardState {
-    constructor() {
-        this.state = {
-            sections: [],
-            socialFeeds: {
-                bluesky: { posts: [], loading: false },
-                reddit: { posts: [], loading: false }
+// ===================================================================
+// WEATHER FUNCTIONALITY
+// ===================================================================
+function createWeatherSection() {
+    const div = document.createElement('div');
+    div.className = 'weather-section';
+    div.innerHTML = `
+        <div class="weather-header">
+            <h2>🌦️ Weather Forecast (US National Weather Service)</h2>
+            <div class="section-controls">
+                <button class="btn btn-secondary" onclick="refreshWeather()">🔄 Refresh</button>
+                <button class="btn btn-secondary" onclick="getCurrentLocationWeather()">📍 My Location</button>
+            </div>
+        </div>
+        <div class="weather-content" id="weather-content">
+            <div class="loading">Loading official US weather data...</div>
+        </div>
+    `;
+    return div;
+}
+
+async function loadWeatherData(lat = null, lon = null) {
+    try {
+        weatherData.loading = true;
+        const contentDiv = document.getElementById('weather-content');
+        
+        if (contentDiv) {
+            contentDiv.innerHTML = '<div class="loading">Getting official US weather forecast...</div>';
+        }
+        
+        const requestBody = {};
+        if (lat && lon) {
+            requestBody.lat = lat;
+            requestBody.lon = lon;
+        }
+        
+        const response = await fetch('http://localhost:3000/api/weather', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            weatherData.current = data.current;
+            weatherData.forecast = data.forecast;
+            weatherData.location = data.location;
+            weatherData.alerts = data.alerts || [];
+            weatherData.lastUpdate = new Date();
+            displayWeatherData();
+            console.log(`✅ Weather data loaded for ${data.location.city}, ${data.location.state}`);
+        } else {
+            throw new Error(data.error || 'Invalid response from weather API');
+        }
+    } catch (error) {
+        console.error('❌ Weather loading error:', error);
+        const contentDiv = document.getElementById('weather-content');
+        if (contentDiv) {
+            contentDiv.innerHTML = `
+                <div class="error" style="background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 15px; border-radius: 8px;">
+                    <strong>Weather Error:</strong> ${error.message}
+                </div>
+            `;
+        }
+    } finally {
+        weatherData.loading = false;
+    }
+}
+
+function displayWeatherData() {
+    const contentDiv = document.getElementById('weather-content');
+    if (!contentDiv || !weatherData.forecast) return;
+    
+    const current = weatherData.current;
+    const location = weatherData.location;
+    const forecast = weatherData.forecast;
+    
+    let currentHTML = '';
+    if (current && current.temperature_f) {
+        currentHTML = `
+            <div class="weather-current">
+                <h3>📍 ${location.city}, ${location.state}</h3>
+                <div class="temperature">${current.temperature_f}°F</div>
+                <div class="description">${current.description || 'Current conditions'}</div>
+                <div class="station">Station: ${current.station_name || current.station}</div>
+            </div>
+        `;
+    }
+    
+    const forecastHTML = `
+        <div class="weather-forecast">
+            <h4>📅 Extended Forecast</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px;">
+                ${forecast.slice(0, 6).map(period => `
+                    <div class="forecast-period ${period.name.toLowerCase().includes('today') ? 'today' : ''}">
+                        <h5>${period.name}</h5>
+                        <div style="font-size: 1.4em;">${period.is_daytime ? '☀️' : '🌙'}</div>
+                        <div class="temperature">${period.temperature}°${period.temperature_unit}</div>
+                        <div class="short-forecast">${period.short_forecast}</div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+    
+    const weatherHTML = `
+        ${currentHTML}
+        ${forecastHTML}
+        <div class="weather-updated">
+            Last updated: ${weatherData.lastUpdate ? weatherData.lastUpdate.toLocaleTimeString() : 'Unknown'} | 
+            Data from US National Weather Service
+        </div>
+    `;
+    
+    contentDiv.innerHTML = weatherHTML;
+}
+
+function refreshWeather() {
+    if (weatherData.location) {
+        loadWeatherData(weatherData.location.lat, weatherData.location.lon);
+    } else {
+        loadWeatherData();
+    }
+}
+
+function getCurrentLocationWeather() {
+    if (navigator.geolocation) {
+        showStatus('Getting your location...', 'info');
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                try {
+                    await loadWeatherData(lat, lon);
+                    showStatus('Weather updated with your location', 'success');
+                } catch (error) {
+                    showStatus('Failed to get weather for your location', 'error');
+                }
             },
-            ui: { activeSearch: null, loading: false }
-        };
-        this.listeners = [];
-    }
-    
-    setState(newState) {
-        this.state = { ...this.state, ...newState };
-        this.notifyListeners();
-    }
-    
-    subscribe(listener) {
-        this.listeners.push(listener);
-        return () => {
-            this.listeners = this.listeners.filter(l => l !== listener);
-        };
-    }
-    
-    notifyListeners() {
-        this.listeners.forEach(listener => listener(this.state));
+            (error) => {
+                showStatus('Location access denied', 'warning');
+                loadWeatherData();
+            }
+        );
+    } else {
+        showStatus('Geolocation not supported', 'warning');
+        loadWeatherData();
     }
 }
 
-const dashboardState = new DashboardState();
-    </script>
+// ===================================================================
+// NEWS SECTIONS
+// ===================================================================
+function createNewsSection(section) {
+    const div = document.createElement('div');
+    div.className = 'section';
+    div.id = `section-${section.id}`;
+    
+    div.innerHTML = `
+        <div class="section-header">
+            <h2 class="section-title">${section.title}</h2>
+            <div class="section-controls">
+                <button class="btn btn-secondary" onclick="refreshSection(${section.id})">🔄</button>
+                <button class="btn btn-secondary" onclick="removeSection(${section.id})">❌</button>
+            </div>
+        </div>
+        <div class="section-content" id="content-${section.id}">
+            <div class="loading">Loading news...</div>
+        </div>
+        <div class="show-more-container" id="showmore-${section.id}" style="display: none;">
+            <button class="btn-show-more" onclick="showMoreArticles(${section.id})" id="showmore-btn-${section.id}">
+                Show More Articles
+            </button>
+        </div>
+    `;
+    
+    return div;
+}
+
+async function loadNewsForSection(section) {
+    try {
+        console.log(`Loading news for section: ${section.title}`);
+        const articles = await fetchGNewsArticles(section.keyword, section.language, CONFIG.maxArticlesPerSection);
+        
+        section.articles = articles;
+        section.displayedCount = 0;
+        
+        displayNewsArticlesWithPagination(section.id, section);
+        showStatus(`Loaded ${articles.length} articles for ${section.title}`, 'success');
+        
+    } catch (error) {
+        console.error('Error loading news:', error);
+        displayError(section.id, `Failed to load news: ${error.message}`);
+    }
+}
+
+async function fetchGNewsArticles(keyword, language, maxResults) {
+    const cacheKey = `${keyword}-${language}-${maxResults}`;
+    const cached = apiCache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+        return cached.data;
+    }
+
+    try {
+        const params = new URLSearchParams({
+            q: keyword,
+            lang: language,
+            max: maxResults
+        });
+
+        const response = await fetch(`${CONFIG.gnewsApiUrl}?${params.toString()}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        if (data.articles && Array.isArray(data.articles)) {
+            apiCache.set(cacheKey, {
+                data: data.articles,
+                timestamp: Date.now()
+            });
+            return data.articles;
+        } else {
+            throw new Error('Invalid response format from news API');
+        }
+    } catch (error) {
+        console.error('Error fetching news:', error);
+        throw error;
+    }
+}
+
+function displayNewsArticlesWithPagination(sectionId, section) {
+    const contentDiv = document.getElementById(`content-${sectionId}`);
+    const showMoreContainer = document.getElementById(`showmore-${sectionId}`);
+    
+    if (!section.articles || section.articles.length === 0) {
+        contentDiv.innerHTML = '<p>No articles found for this search.</p>';
+        showMoreContainer.style.display = 'none';
+        return;
+    }
+
+    const articlesPerPage = CONFIG.articlesPerPage;
+    const currentlyShowing = Math.min(
+        section.displayedCount + articlesPerPage, 
+        section.articles.length
+    );
+    
+    const articlesToShow = section.articles.slice(0, currentlyShowing);
+    
+    const articlesHTML = articlesToShow.map(article => `
+        <div class="news-item">
+            <div class="news-title">
+                <a href="${article.url}" target="_blank">${article.title}</a>
+            </div>
+            <div class="news-meta">
+                ${article.source?.name || 'Unknown Source'} • ${new Date(article.publishedAt).toLocaleDateString()}
+            </div>
+            <div class="news-summary">${article.description || 'No description available.'}</div>
+        </div>
+    `).join('');
+
+    contentDiv.innerHTML = articlesHTML;
+    section.displayedCount = currentlyShowing;
+    
+    if (section.articles.length > articlesPerPage) {
+        showMoreContainer.style.display = 'block';
+        const showMoreBtn = document.getElementById(`showmore-btn-${sectionId}`);
+        
+        if (currentlyShowing >= section.articles.length) {
+            showMoreBtn.disabled = true;
+            showMoreBtn.textContent = 'All Articles Loaded';
+        } else {
+            showMoreBtn.disabled = false;
+            showMoreBtn.textContent = `Show More Articles`;
+        }
+    } else {
+        showMoreContainer.style.display = 'none';
+    }
+}
+
+function showMoreArticles(sectionId) {
+    const section = newsSections.find(s => s.id === sectionId);
+    if (section) {
+        displayNewsArticlesWithPagination(sectionId, section);
+    }
+}
+
+function refreshSection(sectionId) {
+    const section = newsSections.find(s => s.id === sectionId);
+    if (section) {
+        section.articles = [];
+        section.displayedCount = 0;
+        loadNewsForSection(section);
+    }
+}
+
+function removeSection(sectionId) {
+    newsSections = newsSections.filter(s => s.id !== sectionId);
+    renderSections();
+    showStatus('Section removed', 'info');
+}
+
+function displayError(sectionId, message) {
+    const contentDiv = document.getElementById(`content-${sectionId}`);
+    if (contentDiv) {
+        contentDiv.innerHTML = `<div class="error">${message}</div>`;
+    }
+}
+
+// ===================================================================
+// BLUESKY SECTION
+// ===================================================================
+function createBlueskySection() {
+    const div = document.createElement('div');
+    div.className = 'section';
+    div.id = 'bluesky-section';
+    div.innerHTML = `
+        <div class="section-header">
+            <h2 class="section-title">🦋 Bluesky Feed</h2>
+            <div class="section-controls">
+                <button class="btn btn-secondary" onclick="refreshBluesky()">🔄</button>
+            </div>
+        </div>
+        <div style="margin-bottom: 20px;">
+            <input type="text" id="blueskyKeyword" placeholder="Search Bluesky..." value="Foreign Affairs Minister" style="width: 70%; padding: 8px;">
+            <button class="btn btn-primary" onclick="searchBluesky()" style="margin-left: 10px;">Search</button>
+        </div>
+        <div class="section-content" id="bluesky-content">
+            <div class="loading">Loading Bluesky posts...</div>
+        </div>
+    `;
+    return div;
+}
+
+async function searchBluesky() {
+    const keywordInput = document.getElementById('blueskyKeyword');
+    const query = keywordInput.value.trim();
+    
+    if (!query) {
+        showStatus('Please enter a search keyword', 'error');
+        return;
+    }
+    
+    await searchBlueskyInternal(query);
+}
+
+async function searchBlueskyInternal(query) {
+    try {
+        blueskyData.loading = true;
+        blueskyData.query = query;
+        
+        const contentDiv = document.getElementById('bluesky-content');
+        if (contentDiv) {
+            contentDiv.innerHTML = `<div class="loading">Searching Bluesky for "${query}"...</div>`;
+        }
+        
+        const response = await fetch('http://localhost:3000/api/bluesky', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: query, limit: 100 })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success && data.posts) {
+            blueskyData.posts = data.posts;
+            displayBlueskyPosts();
+            console.log(`✅ Found ${data.posts.length} Bluesky posts`);
+        } else {
+            throw new Error(data.error || 'Invalid response from Bluesky API');
+        }
+    } catch (error) {
+        console.error('❌ Bluesky search error:', error);
+        const contentDiv = document.getElementById('bluesky-content');
+        if (contentDiv) {
+            contentDiv.innerHTML = `<div class="error">Failed to search Bluesky: ${error.message}</div>`;
+        }
+    } finally {
+        blueskyData.loading = false;
+    }
+}
+
+function displayBlueskyPosts() {
+    const contentDiv = document.getElementById('bluesky-content');
+    if (!blueskyData.posts || blueskyData.posts.length === 0) {
+        contentDiv.innerHTML = '<p>No posts found.</p>';
+        return;
+    }
+
+    const postsHTML = blueskyData.posts.slice(0, 10).map(post => `
+        <div class="social-item">
+            <div style="font-weight: 600;">@${post.author.handle}</div>
+            <div style="margin: 8px 0;">${post.text}</div>
+            <div style="font-size: 0.85em; color: #6c757d;">
+                ❤️ ${post.engagement.likes} | 🔄 ${post.engagement.reposts} | 💬 ${post.engagement.replies}
+            </div>
+        </div>
+    `).join('');
+
+    contentDiv.innerHTML = postsHTML;
+}
+
+function refreshBluesky() {
+    const keyword = document.getElementById('blueskyKeyword')?.value || blueskyData.query;
+    searchBlueskyInternal(keyword);
+}
+
+// ===================================================================
+// REDDIT SECTION (FIXED)
+// ===================================================================
+function createRedditSection() {
+    const div = document.createElement('div');
+    div.className = 'section';
+    div.id = 'reddit-section';
+    div.innerHTML = `
+        <div class="section-header">
+            <h2 class="section-title">🟠 Reddit Feed</h2>
+            <div class="section-controls">
+                <button class="btn btn-secondary" onclick="refreshReddit()">🔄</button>
+            </div>
+        </div>
+        <div style="margin-bottom: 20px;">
+            <input type="text" id="redditKeyword" placeholder="Search Reddit..." value="Foreign Affairs Minister" style="width: 70%; padding: 8px;">
+            <button class="btn btn-primary" onclick="searchReddit()" style="margin-left: 10px;">Search</button>
+        </div>
+        <div class="section-content" id="reddit-content">
+            <div class="loading">Loading Reddit posts...</div>
+        </div>
+    `;
+    return div;
+}
+
+async function searchReddit() {
+    const keywordInput = document.getElementById('redditKeyword');
+    const query = keywordInput.value.trim();
+    
+    if (!query) {
+        showStatus('Please enter a search keyword', 'error');
+        return;
+    }
+    
+    await searchRedditInternal(query);
+}
+
+async function searchRedditInternal(query) {
+    try {
+        redditData.loading = true;
+        redditData.query = query;
+        redditData.displayedCount = 0;
+        
+        const contentDiv = document.getElementById('reddit-content');
+        if (contentDiv) {
+            contentDiv.innerHTML = `<div class="loading">Searching Reddit for "${query}"...</div>`;
+        }
+        
+        const response = await fetch('http://localhost:3000/api/reddit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: query, limit: 100 })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success && data.posts) {
+            redditData.posts = data.posts;
+            displayRedditPosts();
+            console.log(`✅ Found ${data.posts.length} Reddit posts`);
+        } else {
+            throw new Error(data.error || 'Invalid response from Reddit API');
+        }
+    } catch (error) {
+        console.error('❌ Reddit search error:', error);
+        const contentDiv = document.getElementById('reddit-content');
+        if (contentDiv) {
+            contentDiv.innerHTML = `<div class="error">Failed to search Reddit: ${error.message}</div>`;
+        }
+    } finally {
+        redditData.loading = false;
+    }
+}
+
+function displayRedditPosts() {
+    const contentDiv = document.getElementById('reddit-content');
+    if (!redditData.posts || redditData.posts.length === 0) {
+        contentDiv.innerHTML = '<p>No posts found.</p>';
+        return;
+    }
+
+    // Calculate how many posts to show
+    const currentlyShowing = Math.min(
+        redditData.displayedCount + redditData.postsPerPage,
+        redditData.posts.length
+    );
+    
+    const postsToShow = redditData.posts.slice(0, currentlyShowing);
+
+    const postsHTML = postsToShow.map((post, index) => {
+        // Truncate text to 200 characters
+        const fullText = post.text || '';
+        const isLongText = fullText.length > 200;
+        const truncatedText = isLongText ? fullText.substring(0, 200) + '...' : fullText;
+        
+        return `
+            <div class="social-item">
+                <div style="font-weight: 600;">${post.title}</div>
+                <div style="margin: 8px 0; font-size: 0.9em;">r/${post.subreddit} • u/${post.author.username}</div>
+                <div class="reddit-post-text" id="reddit-text-${index}">
+                    <span id="reddit-preview-${index}" ${isLongText ? '' : 'style="display:none;"'}>${truncatedText}</span>
+                    <span id="reddit-full-${index}" style="display:none;">${fullText}</span>
+                    ${isLongText ? `
+                        <button class="reddit-show-more-btn" id="reddit-btn-${index}" onclick="toggleRedditPost(${index})">
+                            Show More
+                        </button>
+                    ` : ''}
+                </div>
+                <div style="font-size: 0.85em; color: #6c757d;">
+                    Score: ${post.engagement.score} | 💬 ${post.engagement.comments} | 👍 ${post.engagement.upvotes}%
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // Update displayed count
+    redditData.displayedCount = currentlyShowing;
+
+    // Add show more posts button if needed
+    const showMorePostsBtn = redditData.posts.length > currentlyShowing ? `
+        <div class="show-more-container" style="text-align: center; margin-top: 20px;">
+            <button class="btn-show-more" onclick="showMoreRedditPosts()" id="reddit-posts-btn">
+                Show More Posts (${redditData.posts.length - currentlyShowing} remaining)
+            </button>
+        </div>
+    ` : `
+        <div class="pagination-info" style="text-align: center; margin-top: 15px; color: #6c757d;">
+            Showing all ${redditData.posts.length} posts
+        </div>
+    `;
+
+    contentDiv.innerHTML = postsHTML + showMorePostsBtn;
+}
+
+function toggleRedditPost(index) {
+    const previewSpan = document.getElementById(`reddit-preview-${index}`);
+    const fullSpan = document.getElementById(`reddit-full-${index}`);
+    const button = document.getElementById(`reddit-btn-${index}`);
+    
+    if (previewSpan && fullSpan && button) {
+        const isExpanded = fullSpan.style.display !== 'none';
+        
+        if (isExpanded) {
+            // Show preview, hide full text
+            previewSpan.style.display = 'inline';
+            fullSpan.style.display = 'none';
+            button.textContent = 'Show More';
+        } else {
+            // Show full text, hide preview
+            previewSpan.style.display = 'none';
+            fullSpan.style.display = 'inline';
+            button.textContent = 'Show Less';
+        }
+    }
+}
+
+function showMoreRedditPosts() {
+    const button = document.getElementById('reddit-posts-btn');
+    if (button) {
+        button.disabled = true;
+        button.textContent = 'Loading more posts...';
+        
+        // Add a small delay for better UX
+        setTimeout(() => {
+            displayRedditPosts();
+        }, 500);
+    }
+}
+
+function refreshReddit() {
+    const keyword = document.getElementById('redditKeyword')?.value || redditData.query;
+    searchRedditInternal(keyword);
+}
+
+// ===================================================================
+// UTILITY FUNCTIONS
+// ===================================================================
+function startAutoRefresh() {
+    setInterval(() => {
+        updateLastUpdate();
+    }, CONFIG.refreshInterval);
+}
+
+// Section management
+function addNewSection() {
+    const form = document.getElementById('addSectionForm');
+    if (form) form.classList.add('active');
+}
+
+function cancelAddSection() {
+    const form = document.getElementById('addSectionForm');
+    if (form) form.classList.remove('active');
+    
+    const inputs = ['sectionKeyword', 'sectionTitle', 'sectionLanguage'];
+    inputs.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) element.value = id === 'sectionLanguage' ? 'en' : '';
+    });
+}
+
+function createSection() {
+    const keyword = document.getElementById('sectionKeyword')?.value?.trim();
+    const title = document.getElementById('sectionTitle')?.value?.trim();
+    const language = document.getElementById('sectionLanguage')?.value;
+    
+    if (!keyword || !title) {
+        showStatus('Please fill in all required fields', 'error');
+        return;
+    }
+    
+    const newSection = {
+        id: Date.now(),
+        title: title,
+        keyword: keyword,
+        language: language,
+        articles: [],
+        displayedCount: 0
+    };
+    
+    newsSections.push(newSection);
+    renderSections();
+    loadNewsForSection(newSection);
+    cancelAddSection();
+    showStatus(`Created new section: ${title}`, 'success');
+}
+
+function toggleTranslation() {
+    CONFIG.translationEnabled = !CONFIG.translationEnabled;
+    const status = document.getElementById('translationStatus');
+    if (status) {
+        status.textContent = CONFIG.translationEnabled ? 'ON' : 'OFF';
+    }
+    showStatus(`Translation ${CONFIG.translationEnabled ? 'enabled' : 'disabled'}`, 'info');
+}
+
+// Global Brief
+async function generateGlobalBrief() {
+    const briefSection = document.getElementById('global-brief-section');
+    const briefContent = document.getElementById('global-brief-content');
+
+    if (briefSection) briefSection.style.display = 'block';
+    if (briefContent) briefContent.innerHTML = '<div class="loading">Generating brief...</div>';
+    
+    // Simple fallback brief
+    setTimeout(() => {
+        if (briefContent) {
+            briefContent.innerHTML = `
+                <div style="padding: 20px;">
+                    <h3>Global Situation Update</h3>
+                    <p>Dashboard is operational with ${newsSections.length} news sections monitoring global events.</p>
+                    <p>Weather service is providing official US National Weather Service data.</p>
+                    <p>Social media feeds are tracking discussions on Bluesky and Reddit platforms.</p>
+                </div>
+            `;
+        }
+    }, 1000);
+}
+
+// ===================================================================
+// INITIALIZATION
+// ===================================================================
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Initializing Eagle Watchtower Dashboard...');
+    initDashboard();
+});
+</script>
 </body>
 </html>
