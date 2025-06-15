@@ -1,0 +1,28 @@
+{
+  "name": "WebScraper",
+  "version": "1.0.0",
+  "description": "A web scraper that fetches news articles and provides summaries using the Google Gemini API.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "cors": "^2.8.5",
+    "node-fetch": "^2.6.1",
+    "cheerio": "^1.0.0-rc.3",
+    "puppeteer": "^10.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.7"
+  },
+  "keywords": [
+    "web scraping",
+    "news",
+    "API",
+    "Google Gemini"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}

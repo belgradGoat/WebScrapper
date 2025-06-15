@@ -41,3 +41,4 @@ if __name__ == "__main__":
         print("Usage: python save_page.py <URL>")
         sys.exit(1)
     main(sys.argv[1])
+Thanks for reading! Subscribe for free to receive new posts and support my work.

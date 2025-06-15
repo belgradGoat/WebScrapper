@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eagle Watchtower</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #041c88 0%, #3d418e 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 10px;
+        }
+
+        .last-update {
+            color: rgba(255,255,255,0.9);
+            font-size: 0.9em;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .section-title {
+            font-size: 1.4em;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .section-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #6c757d;
+            border: 1px solid #dee2e6;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .news-item {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .news-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .news-title {
+            font-weight: 600;
+            color: #1f3143;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .news-title a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .news-title a:hover {
+            color: #2a376f;
+        }
+
+        .news-meta {
+            font-size: 0.85em;
+            color: #6c757d;
+            margin-bottom: 8px;
+        }
+
+        .news-summary {
+            font-size: 0.9em;
+            line-height: 1.5;
+            color: #495057;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .add-section-form {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .add-section-form.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .error {
+            color: #dc3545;
+            font-size: 0.85em;
+            margin-top: 5px;
+        }
+
+        .translation-indicator {
+            display: inline-block;
+            background: #17a2b8;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            margin-left: 8px;
+        }
+
+        .social-feed {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .social-item {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.3s ease;
+        }
+
+        .social-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .controls-bar {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .status-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: #28a745;
+            color: white;
+            border-radius: 20px;
+            font-size: 0.9em;
+            z-index: 1000;
+            display: none;
+        }
+
+        .status-indicator.error {
+            background: #dc3545;
+        }
+
+        .status-indicator.warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .api-status {
+            background: #17a2b8;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            margin-left: 8px;
+        }
+
+        .source-indicator {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-size: 0.7em;
+            margin-left: 5px;
+        }
+
+        .source-api { background: #17a2b8; }
+        .source-scraping { background: #fd7e14; }
+        .source-rss { background: #6f42c1; }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls-bar {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+        
+        .show-more-container {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+        }
+        
+        .btn-show-more {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+        
+        .btn-show-more:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+        
+        .btn-show-more:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .pagination-info {
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+        
+        .section-content {
+            position: relative;
+        }
+        
+        .loading-more {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📰 Eagle Watchtower</h1>
+            <div class="last-update" id="lastUpdate">Last updated: Loading...</div>
+        </div>
+
+        <div class="controls-bar">
+            <button class="btn btn-primary" onclick="addNewSection()">+ Add News Section</button>
+            <button class="btn btn-primary" onclick="refreshAll()">🔄 Refresh All</button>
+            
+            <button class="btn btn-primary" style="background: linear-gradient(45deg, #17a2b8, #28a745);" onclick="generateGlobalBrief()">✨ Provide Brief</button>
+            
+            <button class="btn btn-secondary" onclick="toggleTranslation()">🌐 Translation: <span id="translationStatus">ON</span></button>
+        </div>
+
+        <div class="add-section-form" id="addSectionForm">
+            <h3>Add New News Section</h3>
+            <div class="form-group">
+                <label for="sectionKeyword">Keyword:</label>
+                <input type="text" id="sectionKeyword" placeholder="e.g., technology, sports, politics">
+            </div>
+            <div class="form-group">
+                <label for="sectionTitle">Section Title:</label>
+                <input type="text" id="sectionTitle" placeholder="e.g., Technology News">
+            </div>
+            <div class="form-group">
+                <label for="sectionLanguage">Language:</label>
+                <select id="sectionLanguage">
+                    <option value="en">English</option>
+                    <option value="pl">Polish</option>
+                    <option value="es">Spanish</option>
+                    <option value="fr">French</option>
+                    <option value="de">German</option>
+                    <option value="it">Italian</option>
+                    <option value="ja">Japanese</option>
+                    <option value="ko">Korean</option>
+                    <option value="zh">Chinese</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-primary" onclick="createSection()">Create Section</button>
+                <button class="btn btn-secondary" onclick="cancelAddSection()">Cancel</button>
+            </div>
+        </div>
+
+        <div class="dashboard-grid" id="dashboardGrid">
+            <div class="section" id="global-brief-section" style="grid-column: 1 / -1; display: none;"> {/* Ensure this spans full width if desired, 1 / -1 does that */}
+                <div class="section-header">
+                    <h2 class="section-title">🌎 Global Situation Update</h2>
+                    <div class="section-controls">
+                        <button class="btn btn-secondary" onclick="document.getElementById('global-brief-section').style.display='none'">❌ Close</button>
+                    </div>
+                </div>
+                <div class="section-content" id="global-brief-content">
+                    <div class="loading">Generating brief... Please wait.</div>
+                </div>
+            </div>
+
+            <!-- News sections will be dynamically added here -->
+        </div>
+    </div>
+
+    <div class="status-indicator" id="statusIndicator"></div>
+
+    <script>
+        // Configuration - Updated to fetch 100 articles but display 10 at a time
+        const CONFIG = {
+            gnewsApiKey: '', // Remove from frontend for security
+            gnewsApiUrl: 'http://localhost:3000/api/news', // Use your proxy
+            translationEnabled: true,
+            maxArticlesPerSection: 100, // Fetch 100 articles total
+            articlesPerPage: 10, // Display 10 articles per page
+            refreshInterval: 300000,
+            supportedLanguages: ['en', 'pl']
+        };
+
+        // ADD MISSING CACHE SYSTEM
+        const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
+        const apiCache = new Map();
+
+        // Data storage - Enhanced with pagination data
+        let newsSections = [
+            { id: 1, title: 'Foreign Ministers', keyword: 'Foreign Minister', language: 'en', articles: [], displayedCount: 0 },
+            { id: 2, title: 'Department of State', keyword: 'Department of State', language: 'en', articles: [], displayedCount: 0 },
+            { id: 3, title: 'Conflicts', keyword: 'Conflict', language: 'en', articles: [], displayedCount: 0 }
+        ];
+
+        // Add this new function
+        async function generateGlobalBrief() {
+            const briefSection = document.getElementById('global-brief-section');
+            const briefContent = document.getElementById('global-brief-content');
+
+            // Show the section and a loading message
+            briefSection.style.display = 'block';
+            briefContent.innerHTML = '<div class="loading">Gathering and analyzing news data...</div>';
+            
+            // Smoothly scroll to the new section
+            briefSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            // 1. Collect ALL articles from all sections
+            let allArticlesText = [];
+            if (typeof newsSections !== 'undefined' && newsSections.length > 0) {
+                newsSections.forEach(section => {
+                    if (section.articles && section.articles.length > 0) {
+                        // Take ALL articles from each section (the Python script will rank them)
+                        section.articles.forEach(article => {
+                            const articleText = `Title: ${article.title}\nDescription: ${article.description || 'No description.'}\nSource: ${article.source?.name || 'Unknown'}\nPublished: ${article.publishedAt || 'N/A'}`;
+                            allArticlesText.push(articleText);
+                        });
+                    }
+                });
+            }
+
+            if (allArticlesText.length === 0) {
+                briefContent.innerHTML = '<div class="error">No news articles have been fetched yet. Please refresh the sections first.</div>';
+                return;
+            }
+
+            briefContent.innerHTML = `<div class="loading">Analyzing ${allArticlesText.length} articles to select the 50 most relevant... This may take a moment.</div>`;
+
+            // 2. Send ALL collected articles (Python script will select top 50 most relevant)
+            try {
+                const response = await fetch('http://localhost:3000/api/summarize', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        articles: allArticlesText, // Send all articles
+                        prompt: `Analyze all provided articles, select the 50 most relevant and important ones, then create a comprehensive global situation update.`
+                    }),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                // 3. Display the AI-generated brief
+                let formattedBrief = data.summary;
+                
+                // Enhanced Markdown to HTML conversion
+                formattedBrief = formattedBrief.replace(/^### (.*$)/gim, '<h3 style="color: #2c3e50; margin-top: 20px; margin-bottom: 10px;">$1</h3>');
+                formattedBrief = formattedBrief.replace(/^## (.*$)/gim, '<h2 style="color: #34495e; margin-top: 25px; margin-bottom: 15px; border-bottom: 2px solid #3498db; padding-bottom: 5px;">$1</h2>');
+                formattedBrief = formattedBrief.replace(/^# (.*$)/gim, '<h1 style="color: #2c3e50; margin-bottom: 20px;">$1</h1>');
+                formattedBrief = formattedBrief.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #2980b9;">$1</strong>');
+                formattedBrief = formattedBrief.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+                
+                // Handle numbered lists
+                formattedBrief = formattedBrief.replace(/^(\d+)\. (.+)$/gim, '<div style="margin: 8px 0; padding-left: 20px;"><strong>$1.</strong> $2</div>');
+                
+                // Handle paragraphs and line breaks
+                formattedBrief = formattedBrief.replace(/\n\n/g, '</p><p style="margin: 15px 0; line-height: 1.6;">');
+                formattedBrief = formattedBrief.replace(/\n/g, '<br>');
+                
+                briefContent.innerHTML = `<div style="text-align: left; line-height: 1.6; padding: 20px;"><p style="margin: 15px 0; line-height: 1.6;">${formattedBrief}</p></div>`;
+
+            } catch (error) {
+                console.error('Error generating brief:', error);
+                
+                // Fallback: Create a simple manual summary
+                const fallbackBrief = createFallbackBrief(allArticlesText);
+                briefContent.innerHTML = `
+                    <div class="error" style="margin-bottom: 20px; padding: 15px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 5px; color: #721c24;">
+                        <strong>AI summarization failed:</strong> ${error.message}
+                    </div>
+                    <hr style="margin: 20px 0;">
+                    <div style="text-align: left; line-height: 1.6; padding: 20px;">
+                        <h2 style="color: #34495e; margin-bottom: 15px;">Manual Analysis (Fallback)</h2>
+                        ${fallbackBrief}
+                    </div>
+                `;
+            }
+        }
+
+        function createFallbackBrief(articles) {
+            // Create a simple fallback summary when AI fails
+            const topics = {};
+            const sources = new Set();
+            
+            articles.forEach(articleText => {
+                const lines = articleText.split('\n');
+                let title = '';
+                let source = '';
+                
+                lines.forEach(line => {
+                    if (line.startsWith('Title: ')) title = line.substring(7);
+                    if (line.startsWith('Source: ')) source = line.substring(8);
+                });
+                
+                if (title && source) {
+                    sources.add(source);
+                    
+                    // Extract key topics
+                    const lowerTitle = title.toLowerCase();
+                    if (lowerTitle.includes('ukraine') || lowerTitle.includes('russia')) {
+                        topics['Ukraine/Russia'] = (topics['Ukraine/Russia'] || 0) + 1;
+                    } else if (lowerTitle.includes('china') || lowerTitle.includes('taiwan')) {
+                        topics['China/Taiwan'] = (topics['China/Taiwan'] || 0) + 1;
+                    } else if (lowerTitle.includes('minister') || lowerTitle.includes('diplomacy')) {
+                        topics['Diplomacy'] = (topics['Diplomacy'] || 0) + 1;
+                    } else {
+                        topics['General News'] = (topics['General News'] || 0) + 1;
+                    }
+                }
+            });
+            
+            let summary = `<p><strong>Coverage Summary:</strong> Analyzed ${articles.length} articles from ${sources.size} sources.</p>`;
+            summary += `<p><strong>Main Topics:</strong></p><ul>`;
+            
+            Object.entries(topics).forEach(([topic, count]) => {
+                summary += `<li>${topic}: ${count} articles</li>`;
+            });
+            
+            summary += `</ul>`;
+            summary += `<p><strong>Sources:</strong> ${Array.from(sources).slice(0, 10).join(', ')}${sources.size > 10 ? '...' : ''}</p>`;
+            
+            return summary;
+        }
+
+        // Initialize when page loads
+        function initDashboard() {
+            updateLastUpdate();
+            renderSections(); // Call renderSections to build the initial layout
+            startAutoRefresh();
+            
+            // Load real data for news sections
+            setTimeout(() => {
+                newsSections.forEach(section => {
+                    loadNewsForSection(section);
+                });
+            }, 500); // Delay slightly to ensure DOM is ready
+        }
+
+        function updateLastUpdate() {
+            const now = new Date();
+            document.getElementById('lastUpdate').textContent = 
+                `Last updated: ${now.toLocaleString()}`;
+        }
+
+        // FIX THE renderSections FUNCTION TO PRESERVE THE BRIEF SECTION
+        function renderSections() {
+            const grid = document.getElementById('dashboardGrid');
+            
+            // Store reference to the brief section before clearing
+            const briefSection = document.getElementById('global-brief-section');
+            const briefSectionParent = briefSection ? briefSection.parentNode : null;
+            
+            // Remove only the dynamically created sections, not the brief section
+            const sectionsToRemove = grid.querySelectorAll('.section:not(#global-brief-section)');
+            sectionsToRemove.forEach(section => section.remove());
+
+            // Render news sections
+            newsSections.forEach(section => {
+                const sectionElement = createNewsSection(section);
+                grid.appendChild(sectionElement);
+            });
+
+            // Render RSS feed section
+            const rssSection = createRSSSection();
+            grid.appendChild(rssSection);
+
+            // Render social feed sections (if socialFeeds is defined and populated)
+            if (typeof socialFeeds !== 'undefined' && Array.isArray(socialFeeds)) {
+                socialFeeds.forEach(feed => {
+                    const socialSection = createSocialSection(feed);
+                    grid.appendChild(socialSection);
+                });
+            }
+        }
+
+        function createNewsSection(section) {
+            const div = document.createElement('div');
+            div.className = 'section';
+            div.id = `section-${section.id}`;
+            
+            div.innerHTML = `
+                <div class="section-header">
+                    <h2 class="section-title">${section.title} <span class="api-status">GNews API</span></h2>
+                    <div class="section-controls">
+                        <button class="btn btn-secondary" onclick="refreshSection(${section.id})">🔄</button>
+                        <button class="btn btn-secondary" onclick="removeSection(${section.id})">❌</button>
+                    </div>
+                </div>
+                <div class="section-content" id="content-${section.id}">
+                    <div class="loading">Loading news from GNews API...</div>
+                </div>
+                <div class="show-more-container" id="showmore-${section.id}" style="display: none;">
+                    <button class="btn-show-more" onclick="showMoreArticles(${section.id})" id="showmore-btn-${section.id}">
+                        Show More Articles
+                    </button>
+                    <div class="pagination-info" id="pagination-${section.id}"></div>
+                </div>
+            `;
+
+            return div;
+        }
+
+        function createRSSSection() {
+            const div = document.createElement('div');
+            div.className = 'section';
+            div.innerHTML = `
+                <div class="section-header">
+                    <h2 class="section-title">📡 RSS Feeds</h2>
+                    <div class="section-controls">
+                        <button class="btn btn-secondary" onclick="refreshRSS()">🔄</button>
+                    </div>
+                </div>
+                <div class="section-content" id="rss-content">
+                    <div class="loading">Loading RSS feeds...</div>
+                </div>
+            `;
+            
+            loadRSSFeeds();
+            return div;
+        }
+
+        function createSocialSection(feed) {
+            const div = document.createElement('div');
+            div.className = 'section';
+            div.innerHTML = `
+                <div class="section-header">
+                    <h2 class="section-title">${feed.type === 'discord' ? '💬' : '📱'} ${feed.title}</h2>
+                    <div class="section-controls">
+                        <button class="btn btn-secondary" onclick="refreshSocial('${feed.id}')">🔄</button>
+                    </div>
+                </div>
+                <div class="section-content social-feed" id="social-${feed.id}">
+                    <div class="loading">Loading ${feed.type} feed...</div>
+                </div>
+            `;
+            
+            loadSocialFeed(feed);
+            return div;
+        }
+
+        // Enhanced GNews API integration with 100 articles
+        async function fetchGNewsArticles(keyword, language = 'en', maxResults = 100) {
+            const cacheKey = `${keyword}-${language}-${maxResults}`;
+            const cached = apiCache.get(cacheKey);
+            
+            if (cached && (Date.now() - cached.timestamp < CACHE_DURATION)) {
+                console.log('Using cached data for:', keyword);
+                return cached.data;
+            }
+
+            try {
+                const params = new URLSearchParams({
+                    q: keyword,
+                    lang: language,
+                    country: language === 'pl' ? 'pl' : 'us',
+                    max: maxResults // Now requesting 100 articles
+                });
+
+                const apiUrl = `${CONFIG.gnewsApiUrl}?${params.toString()}`;
+                console.log(`Fetching ${maxResults} articles from proxy:`, keyword);
+                
+                const response = await fetch(apiUrl);
+                
+                if (!response.ok) {
+                    throw new Error(`Proxy error: ${response.status} - ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.articles && Array.isArray(data.articles)) {
+                    apiCache.set(cacheKey, {
+                        data: data.articles,
+                        timestamp: Date.now()
+                    });
+                    
+                    console.log(`Fetched ${data.articles.length} articles for "${keyword}"`);
+                    return data.articles;
+                } else {
+                    throw new Error('Invalid response format from GNews API');
+                }
+
+            } catch (error) {
+                console.error('GNews API Error:', error);
+                showStatus(`API Error: Using fallback data`, 'warning');
+                return getFallbackNews(keyword, language, maxResults);
+            }
+        }
+
+        function getFallbackNews(keyword, language, maxResults = 100) {
+            // Generate more fallback articles for pagination testing
+            const fallbackArticles = [];
+            for (let i = 0; i < Math.min(maxResults, 50); i++) {
+                const minutesAgo = Math.floor(Math.random() * 180) + 15 + (i * 10);
+                const publishedAt = new Date(Date.now() - (minutesAgo * 60 * 1000));
+                
+                fallbackArticles.push({
+                    title: `[Fallback] ${keyword} developments - Article ${i + 1}`,
+                    description: `Sample news content for ${keyword}. API integration needs backend setup to avoid CORS issues. This is article number ${i + 1}.`,
+                    url: '#',
+                    publishedAt: publishedAt.toISOString(),
+                    source: { name: 'Fallback Source', type: 'Mock Data' },
+                    image: null
+                });
+            }
+            return fallbackArticles;
+        }
+
+        // Enhanced news loading with pagination support
+        async function loadNewsForSection(section) {
+            try {
+                console.log(`Loading news for section: ${section.title}`);
+                const articles = await fetchGNewsArticles(section.keyword, section.language, CONFIG.maxArticlesPerSection);
+                const processedArticles = await processArticles(articles, section.language);
+                
+                // Store all articles in the section object
+                section.articles = processedArticles;
+                section.displayedCount = 0;
+                
+                // Display first page of articles
+                displayNewsArticlesWithPagination(section.id, section);
+                showStatus(`Loaded ${articles.length} articles for ${section.title}`);
+                
+            } catch (error) {
+                console.error('Error loading news:', error);
+                displayError(section.id, `Failed to load news: ${error.message}`);
+                showStatus('Failed to load news section', 'error');
+            }
+        }
+
+        async function processArticles(articles, sourceLanguage) {
+            if (!CONFIG.translationEnabled || CONFIG.supportedLanguages.includes(sourceLanguage)) {
+                return articles.map(article => ({
+                    ...article,
+                    originalLanguage: sourceLanguage,
+                    translated: false
+                }));
+            }
+
+            // For non-supported languages, simulate translation
+            return articles.map(article => ({
+                ...article,
+                title: `[Translated from ${sourceLanguage.toUpperCase()}] ${article.title}`,
+                description: `[Translated] ${article.description || ''}`,
+                originalLanguage: sourceLanguage,
+                translated: true
+            }));
+        }
+
+        // New function to display articles with pagination
+        function displayNewsArticlesWithPagination(sectionId, section) {
+            const contentDiv = document.getElementById(`content-${sectionId}`);
+            const showMoreContainer = document.getElementById(`showmore-${sectionId}`);
+            const showMoreBtn = document.getElementById(`showmore-btn-${sectionId}`);
+            const paginationInfo = document.getElementById(`pagination-${sectionId}`);
+            
+            if (!section.articles || section.articles.length === 0) {
+                contentDiv.innerHTML = '<p>No articles found for this keyword.</p>';
+                showMoreContainer.style.display = 'none';
+                return;
+            }
+
+            // Sort articles by recency
+            const sortedArticles = section.articles.sort((a, b) => 
+                new Date(b.publishedAt) - new Date(a.publishedAt)
+            );
+
+            // Calculate how many articles to show
+            const currentlyShowing = Math.min(
+                section.displayedCount + CONFIG.articlesPerPage, 
+                sortedArticles.length
+            );
+            
+            // Get articles to display (from 0 to currentlyShowing)
+            const articlesToShow = sortedArticles.slice(0, currentlyShowing);
+            
+            // Generate HTML for articles
+            const articlesHTML = articlesToShow.map(article => {
+                const publishedDate = new Date(article.publishedAt);
+                const timeAgo = getTimeAgo(publishedDate);
+                const isRecent = (Date.now() - publishedDate.getTime()) < (2 * 60 * 60 * 1000);
+                
+                // Determine source type for styling
+                const sourceType = article.source?.type || 'Unknown';
+                let sourceClass = 'source-indicator';
+                if (sourceType.includes('API')) sourceClass += ' source-api';
+                else if (sourceType.includes('Scraping')) sourceClass += ' source-scraping';
+                else if (sourceType.includes('RSS')) sourceClass += ' source-rss';
+                
+                return `
+                    <div class="news-item">
+                        <div class="news-title">
+                            <a href="${article.url}" target="_blank" rel="noopener noreferrer">${article.title}</a>
+                            ${article.translated ? '<span class="translation-indicator">Translated</span>' : ''}
+                            ${isRecent ? '<span class="fresh-indicator">🔥 Fresh</span>' : ''}
+                            <span class="${sourceClass}">${sourceType}</span>
+                        </div>
+                        <div class="news-meta">
+                            ${article.source?.name || 'Unknown Source'} • ${timeAgo}
+                        </div>
+                        <div class="news-summary">${article.description || 'No description available.'}</div>
+                    </div>
+                `;
+            }).join('');
+
+            contentDiv.innerHTML = articlesHTML;
+            
+            // Update displayed count
+            section.displayedCount = currentlyShowing;
+            
+            // Show/hide pagination controls
+            if (sortedArticles.length > CONFIG.articlesPerPage) {
+                showMoreContainer.style.display = 'block';
+                
+                // Update pagination info
+                paginationInfo.textContent = `Showing ${currentlyShowing} of ${sortedArticles.length} articles`;
+                
+                // Enable/disable Show More button
+                if (currentlyShowing >= sortedArticles.length) {
+                    showMoreBtn.disabled = true;
+                    showMoreBtn.textContent = 'All Articles Loaded';
+                } else {
+                    showMoreBtn.disabled = false;
+                    const remaining = sortedArticles.length - currentlyShowing;
+                    const nextBatch = Math.min(remaining, CONFIG.articlesPerPage);
+                    showMoreBtn.textContent = `Show ${nextBatch} More Articles`;
+                }
+            } else {
+                showMoreContainer.style.display = 'none';
+            }
+        }
+
+        // New function to handle "Show More" button clicks
+        function showMoreArticles(sectionId) {
+            const section = newsSections.find(s => s.id === sectionId);
+            if (!section) return;
+            
+            const showMoreBtn = document.getElementById(`showmore-btn-${sectionId}`);
+            const contentDiv = document.getElementById(`content-${sectionId}`);
+            
+            // Show loading state
+            showMoreBtn.disabled = true;
+            showMoreBtn.textContent = 'Loading...';
+            
+            // Add loading indicator
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'loading-more';
+            loadingDiv.textContent = 'Loading more articles...';
+            contentDiv.appendChild(loadingDiv);
+            
+            // Simulate loading delay for better UX
+            setTimeout(() => {
+                // Remove loading indicator
+                contentDiv.removeChild(loadingDiv);
+                
+                // Update pagination and redisplay
+                displayNewsArticlesWithPagination(sectionId, section);
+                
+                // Smooth scroll to new content
+                const newArticles = contentDiv.children;
+                if (newArticles.length > section.displayedCount - CONFIG.articlesPerPage) {
+                    const targetArticle = newArticles[section.displayedCount - CONFIG.articlesPerPage];
+                    if (targetArticle) {
+                        targetArticle.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                }
+            }, 800); // Short delay to show loading state
+        }
+
+        function getTimeAgo(date) {
+            const now = new Date();
+            const diffMs = now - date;
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffDays = Math.floor(diffHours / 24);
+            
+            if (diffDays > 0) {
+                return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+            } else if (diffHours > 0) {
+                return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+            } else {
+                return 'Less than an hour ago';
+            }
+        }
+
+        // Updated section management functions
+        function addNewSection() {
+            document.getElementById('addSectionForm').classList.add('active');
+        }
+
+        function cancelAddSection() {
+            document.getElementById('addSectionForm').classList.remove('active');
+            clearForm();
+        }
+
+        function createSection() {
+            const keyword = document.getElementById('sectionKeyword').value.trim();
+            const title = document.getElementById('sectionTitle').value.trim();
+            const language = document.getElementById('sectionLanguage').value;
+
+            if (!keyword || !title) {
+                showStatus('Please fill all fields', 'error');
+                return;
+            }
+
+            const newSection = {
+                id: Date.now(),
+                title: title,
+                keyword: keyword,
+                language: language,
+                articles: [],
+                displayedCount: 0
+            };
+
+            newsSections.push(newSection);
+            renderSections();
+            
+            // Load news for the new section
+            setTimeout(() => {
+                loadNewsForSection(newSection);
+            }, 100);
+            
+            cancelAddSection();
+            showStatus('Section added successfully');
+        }
+
+        function removeSection(sectionId) {
+            if (confirm('Are you sure you want to remove this section?')) {
+                newsSections = newsSections.filter(section => section.id !== sectionId);
+                renderSections();
+                showStatus('Section removed');
+            }
+        }
+
+        function refreshSection(sectionId) {
+            const section = newsSections.find(s => s.id === sectionId);
+            if (section) {
+                const contentDiv = document.getElementById(`content-${sectionId}`);
+                const showMoreContainer = document.getElementById(`showmore-${sectionId}`);
+                
+                contentDiv.innerHTML = '<div class="loading">Refreshing from GNews API...</div>';
+                showMoreContainer.style.display = 'none';
+                
+                // Reset pagination
+                section.articles = [];
+                section.displayedCount = 0;
+                
+                // Clear cache for this section
+                const cacheKey = `${section.keyword}-${section.language}-${CONFIG.maxArticlesPerSection}`;
+                apiCache.delete(cacheKey);
+                
+                loadNewsForSection(section);
+            }
+        }
+
+        function refreshAll() {
+            showStatus('Refreshing all sections...');
+            
+            // Clear all cache
+            apiCache.clear();
+            
+            // Reset all sections
+            newsSections.forEach(section => {
+                section.articles = [];
+                section.displayedCount = 0;
+            });
+            
+            renderSections();
+            updateLastUpdate();
+            
+            // Load news for all sections
+            setTimeout(() => {
+                newsSections.forEach(section => {
+                    loadNewsForSection(section);
+                });
+            }, 100);
+        }
+
+        // Keep existing RSS and Social functions unchanged
+        async function loadRSSFeeds() {
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            const rssContent = document.getElementById('rss-content');
+            rssContent.innerHTML = `
+                <div class="news-item">
+                    <div class="news-title"><a href="#" target="_blank">RSS Feed Article 1</a></div>
+                    <div class="news-meta">RSS Source • Today</div>
+                    <div class="news-summary">Sample RSS content from external feeds...</div>
+                </div>
+                <div class="news-item">
+                    <div class="news-title"><a href="#" target="_blank">RSS Feed Article 2</a></div>
+                    <div class="news-meta">RSS Source • Yesterday</div>
+                    <div class="news-summary">More RSS content for your dashboard...</div>
+                </div>
+            `;
+        }
+
+        async function loadSocialFeed(feed) {
+            await new Promise(resolve => setTimeout(resolve, 1200));
+            
+            const socialContent = document.getElementById(`social-${feed.id}`);
+            const feedType = feed.type === 'discord' ? 'Discord' : 'Telegram';
+            
+            socialContent.innerHTML = `
+                <div class="social-item">
+                    <strong>User1:</strong> Latest update from ${feedType} channel
+                    <div style="font-size: 0.8em; color: #666; margin-top: 5px;">2 hours ago</div>
+                </div>
+                <div class="social-item">
+                    <strong>User2:</strong> Important announcement about the project
+                    <div style="font-size: 0.8em; color: #666; margin-top: 5px;">4 hours ago</div>
+                </div>
+                <div class="social-item">
+                    <strong>Bot:</strong> Daily summary is ready
+                    <div style="font-size: 0.8em; color: #666; margin-top: 5px;">6 hours ago</div>
+                </div>
+            `;
+        }
+
+        function refreshRSS() {
+            const rssContent = document.getElementById('rss-content');
+            rssContent.innerHTML = '<div class="loading">Refreshing RSS...</div>';
+            loadRSSFeeds();
+        }
+
+        function refreshSocial(feedId) {
+            const socialContent = document.getElementById(`social-${feedId}`);
+            socialContent.innerHTML = '<div class="loading">Refreshing...</div>';
+            const feed = socialFeeds.find(f => f.id === feedId);
+            if (feed) loadSocialFeed(feed);
+        }
+
+        function toggleTranslation() {
+            CONFIG.translationEnabled = !CONFIG.translationEnabled;
+            const status = document.getElementById('translationStatus');
+            status.textContent = CONFIG.translationEnabled ? 'ON' : 'OFF';
+            showStatus(`Translation ${CONFIG.translationEnabled ? 'enabled' : 'disabled'}`);
+        }
+
+        // Utility functions
+        function displayError(sectionId, message) {
+            const contentDiv = document.getElementById(`content-${sectionId}`);
+            contentDiv.innerHTML = `<div class="error">${message}</div>`;
+            const showMoreContainer = document.getElementById(`showmore-${sectionId}`);
+            if (showMoreContainer) showMoreContainer.style.display = 'none';
+        }
+
+        function clearForm() {
+            document.getElementById('sectionKeyword').value = '';
+            document.getElementById('sectionTitle').value = '';
+            document.getElementById('sectionLanguage').value = 'en';
+        }
+
+        function showStatus(message, type = 'success') {
+            const indicator = document.getElementById('statusIndicator');
+            indicator.textContent = message;
+            indicator.className = `status-indicator ${type}`;
+            indicator.style.display = 'block';
+            
+            console.log(`Status (${type}): ${message}`);
+            
+            setTimeout(() => {
+                indicator.style.display = 'none';
+            }, 4000);
+        }
+
+        function startAutoRefresh() {
+            setInterval(() => {
+                console.log('Auto-refreshing feeds...');
+                newsSections.forEach(section => {
+                    loadNewsForSection(section);
+                });
+            }, CONFIG.refreshInterval);
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', initDashboard);
+
+        // Add error handling for unhandled promise rejections
+        window.addEventListener('unhandledrejection', event => {
+            console.error('Unhandled promise rejection:', event.reason);
+            showStatus('An unexpected error occurred', 'error');
+        });
+    </script>
+</body>
+</html>
