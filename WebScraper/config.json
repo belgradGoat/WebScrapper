@@ -4,8 +4,23 @@
             "name": "CNN",
             "url": "https://cnn.com",
             "selector": ".layout__main layout-homepage__main",
-            "check_interval_minutes": 60,
+            "check_interval_minutes": 1,
             "importance": "high"
+        },
+        {
+            "name": "Baidu",
+            "url": "https://www.baidu.com/",
+            "selector": null,
+            "check_interval_minutes": 1,
+            "importance": "medium"
+        },
+        {
+            "name": "Onet",
+            "url": "https://onet.pl",
+            "selector": "",
+            "check_interval_minutes": 1,
+            "importance": "medium",
+            "translate_changes_to_en": true
         }
     ],
     "alert_thresholds": {

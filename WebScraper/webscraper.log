@@ -240,3 +240,257 @@ Your currently installed version of Keras is Keras 3, but this is not yet suppor
 
 Change summary: 240 lines added, 192 lines removed | Sample addition: + | Sample removal: -
 2025-05-20 06:41:35,435 - INFO - Stopping web scraper service
+2025-05-29 21:20:45,425 - INFO - Configuration loaded from config.json
+2025-05-29 21:20:54,045 - INFO - Configuration loaded from config.json
+2025-05-29 21:20:54,923 - INFO - Starting web scraper service
+2025-05-29 21:20:54,923 - INFO - Scheduled CNN to check every 60 minutes
+2025-05-29 21:20:54,923 - INFO - Checking website: CNN (https://cnn.com)
+2025-05-29 21:20:55,320 - WARNING - Selector '.layout__main layout-homepage__main' did not match any content on https://cnn.com. Using full page content instead.
+2025-05-29 21:20:55,321 - INFO - Saved website content to website_archives/CNN_20250529_212055.txt (17447 characters)
+2025-05-29 21:20:55,322 - INFO - No changes detected for CNN
+2025-05-29 21:41:18,334 - INFO - Stopping web scraper service
+2025-05-29 21:45:11,463 - INFO - Configuration loaded from config.json
+2025-05-29 21:45:12,571 - INFO - Configuration saved to config.json
+2025-05-29 21:45:12,571 - INFO - Checking website: Baidu (https://www.baidu.com/)
+2025-05-29 21:45:13,558 - INFO - Saved website content to website_archives/Baidu_20250529_214513.txt (243885 characters)
+2025-05-29 21:45:13,562 - INFO - No changes detected for Baidu
+2025-05-29 21:45:13,562 - INFO - Scheduled CNN to check every 60 minutes
+2025-05-29 21:45:13,562 - INFO - Scheduled Baidu to check every 60 minutes
+2025-05-29 21:45:13,562 - INFO - Added new website: Baidu (https://www.baidu.com/)
+2025-05-29 22:34:47,586 - INFO - Configuration loaded from config.json
+2025-05-29 22:34:48,320 - INFO - Sentiment analysis pipeline initialized.
+2025-05-29 22:34:48,768 - INFO - Text-to-speech engine initialized.
+2025-05-29 22:34:48,768 - INFO - Translator initialized (auto-detect to English).
+2025-05-29 22:34:48,768 - ERROR - Error: 'WebScraper' object has no attribute 'start'
+2025-05-29 22:37:07,968 - INFO - Configuration loaded from config.json
+2025-05-29 22:37:08,459 - INFO - Sentiment analysis pipeline initialized.
+2025-05-29 22:37:08,889 - INFO - Text-to-speech engine initialized.
+2025-05-29 22:37:08,889 - INFO - Translator initialized (auto-detect to English).
+2025-05-29 22:37:08,889 - ERROR - Error: 'WebScraper' object has no attribute 'start'
+2025-05-29 22:45:54,539 - INFO - Configuration loaded from config.json
+2025-05-29 22:45:55,048 - INFO - Sentiment analysis pipeline initialized.
+2025-05-29 22:45:55,479 - INFO - Text-to-speech engine initialized.
+2025-05-29 22:45:55,479 - INFO - Translator initialized (auto-detect to English).
+2025-05-29 22:45:55,479 - INFO - Web scraper service starting...
+2025-05-29 22:45:55,479 - INFO - Scheduling checks to run every 60 minutes.
+2025-05-29 22:45:55,479 - INFO - Scheduler started. Will run checks every 60 minutes. Press Ctrl+C to exit.
+2025-05-29 22:52:21,337 - INFO - Configuration loaded from config.json
+2025-05-29 22:52:22,246 - INFO - Sentiment analysis pipeline initialized.
+2025-05-29 22:52:22,689 - INFO - Text-to-speech engine initialized.
+2025-05-29 22:52:22,689 - INFO - Translator initialized (auto-detect to English).
+2025-05-29 22:52:22,689 - INFO - Configuration saved to config.json
+2025-05-29 22:52:22,689 - INFO - Added website 'Onet' to configuration.
+2025-05-29 22:52:36,008 - INFO - Configuration loaded from config.json
+2025-05-29 22:52:36,439 - INFO - Sentiment analysis pipeline initialized.
+2025-05-29 22:52:36,863 - INFO - Text-to-speech engine initialized.
+2025-05-29 22:52:36,863 - INFO - Translator initialized (auto-detect to English).
+2025-05-29 22:52:36,863 - INFO - Web scraper service starting...
+2025-05-29 22:52:36,863 - INFO - Scheduling checks to run every 60 minutes.
+2025-05-29 22:52:36,863 - INFO - Scheduler started. Will run checks every 60 minutes. Press Ctrl+C to exit.
+2025-05-29 22:57:44,859 - INFO - Scheduler stopped by user (Ctrl+C).
+2025-05-29 22:57:49,360 - INFO - Configuration loaded from config.json
+2025-05-29 22:57:49,926 - INFO - Sentiment analysis pipeline initialized.
+2025-05-29 22:57:50,349 - INFO - Text-to-speech engine initialized.
+2025-05-29 22:57:50,349 - INFO - Translator initialized (auto-detect to English).
+2025-05-29 22:57:50,349 - INFO - Web scraper service starting...
+2025-05-29 22:57:50,349 - INFO - Scheduling checks to run every 60 minutes.
+2025-05-29 22:57:50,349 - INFO - Scheduler started. Will run checks every 60 minutes. Press Ctrl+C to exit.
+2025-05-29 22:58:15,205 - INFO - Scheduler stopped by user (Ctrl+C).
+2025-05-29 23:03:11,479 - INFO - Configuration loaded from config.json
+2025-05-29 23:03:12,120 - INFO - Sentiment analysis pipeline initialized.
+2025-05-29 23:03:12,545 - INFO - Text-to-speech engine initialized.
+2025-05-29 23:03:12,545 - INFO - Translator initialized (auto-detect to English).
+2025-05-29 23:03:12,545 - INFO - Web scraper service starting...
+2025-05-29 23:03:12,545 - INFO - Scheduling checks to run every 60 minutes.
+2025-05-29 23:03:12,545 - INFO - Scheduler started. Will run checks every 60 minutes. Press Ctrl+C to exit.
+2025-05-29 23:04:02,115 - INFO - Scheduler stopped by user (Ctrl+C).
+2025-05-29 23:04:07,269 - INFO - Configuration loaded from config.json
+2025-05-29 23:04:07,732 - INFO - Sentiment analysis pipeline initialized.
+2025-05-29 23:04:08,155 - INFO - Text-to-speech engine initialized.
+2025-05-29 23:04:08,155 - INFO - Translator initialized (auto-detect to English).
+2025-05-29 23:04:08,155 - INFO - Web scraper service starting...
+2025-05-29 23:04:08,155 - INFO - Scheduling checks to run every 60 minutes.
+2025-05-29 23:04:08,155 - INFO - Scheduler started. Will run checks every 60 minutes. Press Ctrl+C to exit.
+2025-05-29 23:05:46,950 - INFO - Scheduler stopped by user (Ctrl+C).
+2025-05-29 23:05:53,046 - INFO - Configuration loaded from config.json
+2025-05-29 23:05:53,587 - INFO - Sentiment analysis pipeline initialized.
+2025-05-29 23:05:54,023 - INFO - Text-to-speech engine initialized.
+2025-05-29 23:05:54,023 - INFO - Translator initialized (auto-detect to English).
+2025-05-29 23:06:06,898 - INFO - Configuration loaded from config.json
+2025-05-29 23:06:07,352 - INFO - Sentiment analysis pipeline initialized.
+2025-05-29 23:06:07,768 - INFO - Text-to-speech engine initialized.
+2025-05-29 23:06:07,768 - INFO - Translator initialized (auto-detect to English).
+2025-05-29 23:06:07,768 - INFO - Starting a single run of all website checks...
+2025-05-29 23:06:07,768 - INFO - Starting check for website: CNN
+2025-05-29 23:06:07,768 - INFO - Fetching content for CNN from https://cnn.com
+2025-05-29 23:06:07,768 - INFO - Current working directory: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/WebScraper
+2025-05-29 23:06:08,101 - WARNING - Selector '.layout__main layout-homepage__main' not found for CNN. Fetching all text.
+2025-05-29 23:06:08,102 - INFO - Content fetched for CNN. Length: 17521 characters
+2025-05-29 23:06:08,102 - INFO - Attempting to save to: website_archives/CNN_20250529_230608.txt
+2025-05-29 23:06:08,103 - INFO - Successfully saved content for CNN to website_archives/CNN_20250529_230608.txt
+2025-05-29 23:06:08,103 - INFO - File created successfully. Size: 17789 bytes
+2025-05-29 23:06:08,103 - INFO - No previous content found for CNN. Current content saved as baseline.
+2025-05-29 23:06:08,103 - INFO - Finished check for website: CNN
+2025-05-29 23:06:08,103 - INFO - Starting check for website: Baidu
+2025-05-29 23:06:08,103 - INFO - Fetching content for Baidu from https://www.baidu.com/
+2025-05-29 23:06:08,103 - INFO - Current working directory: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/WebScraper
+2025-05-29 23:06:10,498 - INFO - Content fetched for Baidu. Length: 243905 characters
+2025-05-29 23:06:10,499 - INFO - Attempting to save to: website_archives/Baidu_20250529_230610.txt
+2025-05-29 23:06:10,500 - INFO - Successfully saved content for Baidu to website_archives/Baidu_20250529_230610.txt
+2025-05-29 23:06:10,500 - INFO - File created successfully. Size: 246194 bytes
+2025-05-29 23:06:10,500 - INFO - No previous content found for Baidu. Current content saved as baseline.
+2025-05-29 23:06:10,500 - INFO - Finished check for website: Baidu
+2025-05-29 23:06:10,500 - INFO - Starting check for website: Onet
+2025-05-29 23:06:10,500 - INFO - Fetching content for Onet from https://onet.pl
+2025-05-29 23:06:10,500 - INFO - Current working directory: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/WebScraper
+2025-05-29 23:06:11,090 - INFO - Content fetched for Onet. Length: 3881 characters
+2025-05-29 23:06:11,090 - INFO - Attempting to save to: website_archives/Onet_20250529_230611.txt
+2025-05-29 23:06:11,091 - INFO - Successfully saved content for Onet to website_archives/Onet_20250529_230611.txt
+2025-05-29 23:06:11,091 - INFO - File created successfully. Size: 4010 bytes
+2025-05-29 23:06:11,091 - INFO - No previous content found for Onet. Current content saved as baseline.
+2025-05-29 23:06:11,091 - INFO - Finished check for website: Onet
+2025-05-29 23:06:11,091 - INFO - All website checks completed for this run.
+2025-05-29 23:06:39,626 - INFO - Configuration loaded from config.json
+2025-05-29 23:06:40,102 - INFO - Sentiment analysis pipeline initialized.
+2025-05-29 23:06:40,542 - INFO - Text-to-speech engine initialized.
+2025-05-29 23:06:40,542 - INFO - Translator initialized (auto-detect to English).
+2025-05-29 23:06:40,542 - INFO - Starting a single run of all website checks...
+2025-05-29 23:06:40,542 - INFO - Starting check for website: CNN
+2025-05-29 23:06:40,543 - INFO - Loaded last content for CNN from website_archives/CNN_20250529_230608.txt
+2025-05-29 23:06:40,543 - INFO - Fetching content for CNN from https://cnn.com
+2025-05-29 23:06:40,543 - INFO - Current working directory: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/WebScraper
+2025-05-29 23:06:40,905 - WARNING - Selector '.layout__main layout-homepage__main' not found for CNN. Fetching all text.
+2025-05-29 23:06:40,906 - INFO - Content fetched for CNN. Length: 17521 characters
+2025-05-29 23:06:40,906 - INFO - Attempting to save to: website_archives/CNN_20250529_230640.txt
+2025-05-29 23:06:40,906 - INFO - Successfully saved content for CNN to website_archives/CNN_20250529_230640.txt
+2025-05-29 23:06:40,906 - INFO - File created successfully. Size: 17789 bytes
+2025-05-29 23:06:40,907 - INFO - No changes detected for CNN (hash match).
+2025-05-29 23:06:40,907 - INFO - Finished check for website: CNN
+2025-05-29 23:06:40,907 - INFO - Starting check for website: Baidu
+2025-05-29 23:06:40,908 - INFO - Loaded last content for Baidu from website_archives/Baidu_20250529_230610.txt
+2025-05-29 23:06:40,908 - INFO - Fetching content for Baidu from https://www.baidu.com/
+2025-05-29 23:06:40,908 - INFO - Current working directory: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/WebScraper
+2025-05-29 23:06:42,179 - INFO - Content fetched for Baidu. Length: 243927 characters
+2025-05-29 23:06:42,180 - INFO - Attempting to save to: website_archives/Baidu_20250529_230642.txt
+2025-05-29 23:06:42,180 - INFO - Successfully saved content for Baidu to website_archives/Baidu_20250529_230642.txt
+2025-05-29 23:06:42,180 - INFO - File created successfully. Size: 246220 bytes
+2025-05-29 23:06:42,182 - INFO - Content has changed for Baidu. Calculating differences.
+2025-05-29 23:06:48,504 - INFO - Change detected for Baidu: 4.94%
+2025-05-29 23:06:48,504 - INFO - Translating changes for Baidu...
+2025-05-29 23:06:48,504 - WARNING - Text too long for translation (272836 chars), truncating to 4500.
+2025-05-29 23:06:48,684 - INFO - Changes for Baidu logged to TodaysChanges.txt
+2025-05-29 23:06:48,775 - ERROR - Sentiment analysis failed: The size of tensor a (9576) must match the size of tensor b (512) at non-singleton dimension 1
+2025-05-29 23:06:48,776 - INFO - No alert conditions met for Baidu.
+2025-05-29 23:06:48,776 - INFO - Finished check for website: Baidu
+2025-05-29 23:06:48,776 - INFO - Starting check for website: Onet
+2025-05-29 23:06:48,777 - INFO - Loaded last content for Onet from website_archives/Onet_20250529_230611.txt
+2025-05-29 23:06:48,777 - INFO - Fetching content for Onet from https://onet.pl
+2025-05-29 23:06:48,777 - INFO - Current working directory: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/WebScraper
+2025-05-29 23:06:49,277 - INFO - Content fetched for Onet. Length: 3881 characters
+2025-05-29 23:06:49,277 - INFO - Attempting to save to: website_archives/Onet_20250529_230649.txt
+2025-05-29 23:06:49,277 - INFO - Successfully saved content for Onet to website_archives/Onet_20250529_230649.txt
+2025-05-29 23:06:49,277 - INFO - File created successfully. Size: 4010 bytes
+2025-05-29 23:06:49,277 - INFO - No changes detected for Onet (hash match).
+2025-05-29 23:06:49,277 - INFO - Finished check for website: Onet
+2025-05-29 23:06:49,277 - INFO - All website checks completed for this run.
+2025-05-30 23:02:40,738 - INFO - Configuration loaded from config.json
+2025-05-30 23:02:41,587 - INFO - Sentiment analysis pipeline initialized.
+2025-05-30 23:02:42,199 - INFO - Text-to-speech engine initialized.
+2025-05-30 23:02:42,199 - INFO - Translator initialized (auto-detect to English).
+2025-05-30 23:02:56,037 - INFO - Configuration loaded from config.json
+2025-05-30 23:02:56,544 - INFO - Sentiment analysis pipeline initialized.
+2025-05-30 23:02:56,979 - INFO - Text-to-speech engine initialized.
+2025-05-30 23:02:56,979 - INFO - Translator initialized (auto-detect to English).
+2025-05-30 23:02:56,979 - INFO - Starting a single run of all website checks...
+2025-05-30 23:02:56,979 - INFO - Starting check for website: CNN
+2025-05-30 23:02:56,980 - INFO - Loaded last content for CNN from website_archives/CNN_20250529_230640.txt
+2025-05-30 23:02:56,980 - INFO - Fetching content for CNN from https://cnn.com
+2025-05-30 23:02:56,980 - INFO - Current working directory: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/WebScraper
+2025-05-30 23:02:57,363 - WARNING - Selector '.layout__main layout-homepage__main' not found for CNN. Fetching all text.
+2025-05-30 23:02:57,364 - INFO - Content fetched for CNN. Length: 17862 characters
+2025-05-30 23:02:57,364 - INFO - Attempting to save to: website_archives/CNN_20250530_230257.txt
+2025-05-30 23:02:57,364 - INFO - Successfully saved content for CNN to website_archives/CNN_20250530_230257.txt
+2025-05-30 23:02:57,364 - INFO - File created successfully. Size: 18156 bytes
+2025-05-30 23:02:57,364 - INFO - Content has changed for CNN. Calculating differences.
+2025-05-30 23:02:57,441 - INFO - Change detected for CNN: 60.64%
+2025-05-30 23:02:57,441 - INFO - Translating changes for CNN...
+2025-05-30 23:02:57,442 - WARNING - Text too long for translation (29415 chars), truncating to 4500.
+2025-05-30 23:02:57,623 - INFO - Changes for CNN logged to TodaysChanges.txt
+2025-05-30 23:02:57,833 - ERROR - Sentiment analysis failed: The size of tensor a (631) must match the size of tensor b (512) at non-singleton dimension 1
+2025-05-30 23:02:57,833 - INFO - Alert condition met for CNN: Change percentage (60.64%) met/exceeded threshold (10%).
+2025-05-30 23:02:57,833 - WARNING - --- ALERT --- 
+ALERT for CNN: Change percentage (60.64%) met/exceeded threshold (10%).
+Change: 60.64%
+Sentiment: ERROR (Score: 0.00)
+Categories: general
+
+------------
+2025-05-30 23:03:03,615 - INFO - Finished check for website: CNN
+2025-05-30 23:03:03,615 - INFO - Starting check for website: Baidu
+2025-05-30 23:03:03,618 - INFO - Loaded last content for Baidu from website_archives/Baidu_20250529_230642.txt
+2025-05-30 23:03:03,618 - INFO - Fetching content for Baidu from https://www.baidu.com/
+2025-05-30 23:03:03,618 - INFO - Current working directory: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/WebScraper
+2025-05-30 23:03:04,589 - INFO - Content fetched for Baidu. Length: 243427 characters
+2025-05-30 23:03:04,590 - INFO - Attempting to save to: website_archives/Baidu_20250530_230304.txt
+2025-05-30 23:03:04,590 - INFO - Successfully saved content for Baidu to website_archives/Baidu_20250530_230304.txt
+2025-05-30 23:03:04,590 - INFO - File created successfully. Size: 245634 bytes
+2025-05-30 23:03:04,592 - INFO - Content has changed for Baidu. Calculating differences.
+2025-05-30 23:03:12,779 - INFO - Change detected for Baidu: 9.96%
+2025-05-30 23:03:12,779 - INFO - Translating changes for Baidu...
+2025-05-30 23:03:12,779 - INFO - Chinese text detected, filtering out non-Chinese characters
+2025-05-30 23:03:12,787 - INFO - Filtered Chinese text length: 51746 characters
+2025-05-30 23:03:12,787 - WARNING - Text too long for translation (51746 chars), truncating to 4500.
+2025-05-30 23:03:14,135 - INFO - Changes for Baidu logged to TodaysChanges.txt
+2025-05-30 23:03:14,189 - ERROR - Sentiment analysis failed: The size of tensor a (9576) must match the size of tensor b (512) at non-singleton dimension 1
+2025-05-30 23:03:14,189 - INFO - No alert conditions met for Baidu.
+2025-05-30 23:03:14,189 - INFO - Finished check for website: Baidu
+2025-05-30 23:03:14,189 - INFO - Starting check for website: Onet
+2025-05-30 23:03:14,191 - INFO - Loaded last content for Onet from website_archives/Onet_20250529_230611.txt
+2025-05-30 23:03:14,191 - INFO - Fetching content for Onet from https://onet.pl
+2025-05-30 23:03:14,191 - INFO - Current working directory: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/WebScraper
+2025-05-30 23:03:14,758 - INFO - Content fetched for Onet. Length: 3881 characters
+2025-05-30 23:03:14,758 - INFO - Attempting to save to: website_archives/Onet_20250530_230314.txt
+2025-05-30 23:03:14,759 - INFO - Successfully saved content for Onet to website_archives/Onet_20250530_230314.txt
+2025-05-30 23:03:14,759 - INFO - File created successfully. Size: 4011 bytes
+2025-05-30 23:03:14,759 - INFO - Content has changed for Onet. Calculating differences.
+2025-05-30 23:03:14,763 - INFO - Change detected for Onet: 3.68%
+2025-05-30 23:03:14,763 - INFO - Translating changes for Onet...
+2025-05-30 23:03:15,478 - INFO - Changes for Onet logged to TodaysChanges.txt
+2025-05-30 23:03:15,512 - ERROR - Sentiment analysis failed: The size of tensor a (1394) must match the size of tensor b (512) at non-singleton dimension 1
+2025-05-30 23:03:15,512 - INFO - No alert conditions met for Onet.
+2025-05-30 23:03:15,512 - INFO - Finished check for website: Onet
+2025-05-30 23:03:15,512 - INFO - All website checks completed for this run.
+2025-05-30 23:10:16,382 - INFO - Configuration loaded from config.json
+2025-05-30 23:10:17,079 - INFO - Sentiment analysis pipeline initialized.
+2025-05-30 23:10:17,530 - INFO - Text-to-speech engine initialized.
+2025-05-30 23:10:17,530 - INFO - Translator initialized (auto-detect to English).
+2025-05-30 23:10:17,530 - INFO - Starting a single run of all website checks...
+2025-05-30 23:10:17,530 - INFO - Starting check for website: CNN
+2025-05-30 23:10:17,530 - INFO - Fetching content for CNN from https://cnn.com
+2025-05-30 23:10:17,530 - INFO - Current working directory: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/WebScraper
+2025-05-30 23:10:17,908 - WARNING - Selector '.layout__main layout-homepage__main' not found for CNN. Fetching all text.
+2025-05-30 23:10:17,909 - INFO - Content fetched for CNN. Length: 17862 characters
+2025-05-30 23:10:17,909 - INFO - Attempting to save to: website_archives/CNN_20250530_231017.txt
+2025-05-30 23:10:17,909 - INFO - Successfully saved content for CNN to website_archives/CNN_20250530_231017.txt
+2025-05-30 23:10:17,909 - INFO - File created successfully. Size: 18156 bytes
+2025-05-30 23:10:17,909 - INFO - No previous content found for CNN. Current content saved as baseline.
+2025-05-30 23:10:17,909 - INFO - Finished check for website: CNN
+2025-05-30 23:10:17,909 - INFO - Starting check for website: Baidu
+2025-05-30 23:10:17,910 - INFO - Fetching content for Baidu from https://www.baidu.com/
+2025-05-30 23:10:17,910 - INFO - Current working directory: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/WebScraper
+2025-05-30 23:10:19,242 - INFO - Content fetched for Baidu. Length: 243666 characters
+2025-05-30 23:10:19,242 - INFO - Attempting to save to: website_archives/Baidu_20250530_231019.txt
+2025-05-30 23:10:19,242 - INFO - Successfully saved content for Baidu to website_archives/Baidu_20250530_231019.txt
+2025-05-30 23:10:19,243 - INFO - File created successfully. Size: 245893 bytes
+2025-05-30 23:10:19,243 - INFO - No previous content found for Baidu. Current content saved as baseline.
+2025-05-30 23:10:19,243 - INFO - Finished check for website: Baidu
+2025-05-30 23:10:19,243 - INFO - Starting check for website: Onet
+2025-05-30 23:10:19,243 - INFO - Fetching content for Onet from https://onet.pl
+2025-05-30 23:10:19,243 - INFO - Current working directory: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/WebScraper
+2025-05-30 23:10:19,804 - INFO - Content fetched for Onet. Length: 3881 characters
+2025-05-30 23:10:19,804 - INFO - Attempting to save to: website_archives/Onet_20250530_231019.txt
+2025-05-30 23:10:19,804 - INFO - Successfully saved content for Onet to website_archives/Onet_20250530_231019.txt
+2025-05-30 23:10:19,804 - INFO - File created successfully. Size: 4011 bytes
+2025-05-30 23:10:19,805 - INFO - No previous content found for Onet. Current content saved as baseline.
+2025-05-30 23:10:19,805 - INFO - Finished check for website: Onet
+2025-05-30 23:10:19,805 - INFO - All website checks completed for this run.

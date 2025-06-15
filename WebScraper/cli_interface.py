@@ -68,99 +68,98 @@ def parse_args():
 def main():
     """Main function for CLI."""
     args = parse_args()
-    scraper = WebScraper()
+    scraper = WebScraper() # Initializes WebScraper, loads config
     
     if args.command == "start":
         print("Starting web scraper service. Press Ctrl+C to stop.")
-        scraper.start()
+        # Call the new service method
+        scraper.start_service() 
         
     elif args.command == "check":
         if args.all:
-            print("Checking all websites...")
-            scraper.run_scheduled_checks()
+            print("Checking all websites now (single run)...")
+            # Call run_checks for a one-time check of all sites
+            scraper.run_checks() 
         elif args.name:
-            website = next((w for w in scraper.config["websites"] if w["name"] == args.name), None)
-            if website:
-                print(f"Checking website: {args.name}")
-                scraper.check_website(website)
+            # Find the specific website config
+            website_to_check = None
+            for site_config in scraper.config.get("websites", []):
+                if site_config["name"] == args.name:
+                    website_to_check = site_config
+                    break
+            
+            if website_to_check:
+                print(f"Checking website: {args.name} (single run)...")
+                scraper.check_website(website_to_check) # check_website expects a config dict
             else:
                 print(f"Website not found: {args.name}")
+                logger.warning(f"CLI: Website '{args.name}' not found in configuration for 'check' command.")
         else:
-            print("Please specify --all or --name")
+            # This case should ideally be handled by argparse if --all or --name is mandatory for check
+            print("For 'check' command, please specify --all or --name <website_name>.")
             
     elif args.command == "add":
         print(f"Adding website: {args.name} ({args.url})")
         scraper.add_website(
-            args.name, args.url, args.selector, 
-            args.interval, args.importance
+            name=args.name, 
+            url=args.url, 
+            selector=args.selector, 
+            interval=args.interval, 
+            importance=args.importance
+            # translate_changes_to_en is not an arg here, will use default or you can add it
         )
         
     elif args.command == "remove":
         print(f"Removing website: {args.name}")
-        scraper.remove_website(args.name)
+        scraper.remove_website(name=args.name)
         
     elif args.command == "settings":
         speech_enabled = None
-        if args.speech == "on":
-            speech_enabled = True
-        elif args.speech == "off":
-            speech_enabled = False
+        if args.speech is not None: # Check if the argument was provided
+            speech_enabled = args.speech.lower() == "on"
             
         scraper.update_alert_settings(
             speech_enabled=speech_enabled,
-            min_change_percent=args.min_change,
-            negative_threshold=args.negative_threshold,
-            positive_threshold=args.positive_threshold
+            min_change_percent=args.min_change if args.min_change is not None else None,
+            negative_threshold=args.negative_threshold if args.negative_threshold is not None else None,
+            positive_threshold=args.positive_threshold if args.positive_threshold is not None else None
         )
-        print("Settings updated")
+        # Message is printed by update_alert_settings
         
     elif args.command == "list":
-        websites = scraper.config["websites"]
+        websites = scraper.config.get("websites", []) # Ensure 'websites' key exists
         if not websites:
-            print("No websites configured for monitoring")
+            print("No websites configured for monitoring.")
         else:
-            print(f"{'Name':<20} {'URL':<40} {'Interval':<10} {'Importance':<10}")
-            print("-" * 80)
+            print(f"{'Name':<20} {'URL':<40} {'Interval (min)':<15} {'Importance':<10} {'Translate':<10}")
+            print("-" * 105)
             for site in websites:
-                print(f"{site['name']:<20} {site['url']:<40} {site['check_interval_minutes']:<10} {site['importance']:<10}")
+                print(f"{site.get('name', 'N/A'):<20} {site.get('url', 'N/A'):<40} {site.get('check_interval_minutes', 'N/A'):<15} {site.get('importance', 'N/A'):<10} {str(site.get('translate_changes_to_en', 'N/A')):<10}")
                 
     elif args.command == "recent":
-        changes = scraper.get_recent_changes(args.limit)
-        if not changes:
-            print("No changes recorded yet")
-        else:
-            print(f"{'Website':<20} {'Time':<20} {'Change %':<10} {'Sentiment':<20} {'Categories':<20}")
-            print("-" * 90)
-            for change in changes:
-                categories = json.loads(change["categorization"])
-                categories_str = ", ".join(categories)
-                if len(categories_str) > 20:
-                    categories_str = categories_str[:17] + "..."
-                    
-                sentiment = f"{change['sentiment_label']} ({change['sentiment_score']:.2f})"
-                time_short = change["detection_time"].split("T")[0]
-                
-                print(f"{change['website_name']:<20} {time_short:<20} {change['change_percentage']:<10.1f} {sentiment:<20} {categories_str:<20}")
+        # This command will likely fail or do nothing useful as get_recent_changes
+        # was database-dependent and is not implemented for file-based storage.
+        print("Command 'recent' is not fully functional with the current file-based storage.")
+        logger.warning("CLI: 'recent' command called, but get_recent_changes is not implemented for file-based system.")
+        # changes = scraper.get_recent_changes(args.limit) # This line would error
+        # ... (rest of the original 'recent' block would need rework) ...
                 
     elif args.command == "stats":
-        stats = scraper.get_sentiment_stats(args.days)
-        if not stats:
-            print(f"No statistics available for the last {args.days} days")
-        else:
-            print(f"Sentiment statistics for the past {args.days} days:")
-            print(f"{'Website':<20} {'Avg Score':<10} {'Changes':<10} {'Positive':<10} {'Negative':<10} {'Neutral':<10}")
-            print("-" * 80)
-            for stat in stats:
-                print(f"{stat['website_name']:<20} {stat['avg_score']:<10.2f} {stat['change_count']:<10} "
-                      f"{stat['positive_count']:<10} {stat['negative_count']:<10} {stat['neutral_count']:<10}")
+        # Similar to 'recent', this was database-dependent.
+        print("Command 'stats' is not fully functional with the current file-based storage.")
+        logger.warning("CLI: 'stats' command called, but get_sentiment_stats is not implemented for file-based system.")
+        # stats = scraper.get_sentiment_stats(args.days) # This line would error
+        # ... (rest of the original 'stats' block would need rework) ...
     else:
+        # This should be caught by argparse if 'command' is required.
+        # If subparsers are optional, then this message is fine.
         print("Please specify a command. Use --help for options.")
 
 if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("\nExiting web scraper CLI")
+        print("\nExiting web scraper CLI.")
     except Exception as e:
-        logger.error(f"Error: {str(e)}")
-        print(f"An error occurred: {str(e)}")
+        logger.error(f"CLI Error: {str(e)}", exc_info=True) # Log with traceback
+        print(f"An unexpected error occurred in CLI: {str(e)}")

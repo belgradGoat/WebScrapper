@@ -1,20 +1,26 @@
-import requests
-from bs4 import BeautifulSoup
-import hashlib
-import json
-import time
-import os
-import re
-import glob
-from datetime import datetime
-import sqlite3
-import schedule
-from transformers import pipeline
-import pyttsx3
-import logging
-import difflib
+import requests # For making HTTP requests to fetch website content
+from bs4 import BeautifulSoup # For parsing HTML and extracting data
+import os # For interacting with the operating system (e.g., file paths, creating directories)
+import json # For working with JSON data (configuration file)
+import hashlib # For generating hash values (to detect content changes)
+import difflib # For comparing text and finding differences
+from datetime import datetime # For working with dates and times (timestamps)
+import time # For adding delays or scheduling tasks (not heavily used in current run_checks)
+import logging # For logging events, errors, and information
+import re # For regular expressions (e.g., creating safe filenames)
+import glob # For finding files matching a pattern (e.g., finding the latest archive)
+import pyttsx3 # For text-to-speech alerts (optional)
+from transformers import pipeline # For NLP tasks like sentiment analysis (optional)
+from deep_translator import GoogleTranslator # For translating text (optional)
+import schedule # For scheduling periodic checks
 
-# Set up logging
+# --- Logging Configuration ---
+# Set up basic logging to output messages to both a file and the console.
+# - level: The minimum severity level of messages to log (INFO and above).
+# - format: The format of log messages (timestamp, level, message).
+# - handlers:
+#   - FileHandler: Writes logs to "webscraper.log".
+#   - StreamHandler: Writes logs to the console (standard output).
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -23,600 +29,694 @@ logging.basicConfig(
         logging.StreamHandler()
     ]
 )
-logger = logging.getLogger()
+logger = logging.getLogger() # Get the root logger instance.
 
 class WebScraper:
-    def __init__(self, config_file="config.json", database_file="website_data.db"):
-        """Initialize the web scraper with configurations."""
+    """
+    A class to scrape websites, detect changes, translate content, 
+    analyze sentiment, and log differences.
+    """
+    def __init__(self, config_file="config.json"):
+        """
+        Initialize the WebScraper.
+        - Loads configuration.
+        - Initializes optional components like sentiment analyzer, TTS engine, and translator.
+
+        Args:
+            config_file (str): Path to the JSON configuration file.
+        """
         self.config_file = config_file
-        self.database_file = database_file
-        self.load_config()
-        self.setup_database()
+        self.load_config() # Load settings from the config file
         
-        # Initialize sentiment analysis pipeline
-        self.sentiment_analyzer = pipeline("sentiment-analysis")
+        # --- Initialize Optional NLP and TTS Components ---
+        # These are initialized in try-except blocks to allow the scraper
+        # to function even if these components fail to load (e.g., missing models).
+
+        # Initialize sentiment analysis pipeline (Hugging Face Transformers)
+        try:
+            # Uses a pre-trained model for sentiment analysis.
+            self.sentiment_analyzer = pipeline("sentiment-analysis")
+            logger.info("Sentiment analysis pipeline initialized.")
+        except Exception as e:
+            logger.error(f"Failed to initialize sentiment analysis pipeline: {e}")
+            self.sentiment_analyzer = None # Set to None if initialization fails
         
-        # Initialize text-to-speech engine
-        self.tts_engine = pyttsx3.init()
-        
+        # Initialize text-to-speech engine (pyttsx3)
+        try:
+            self.tts_engine = pyttsx3.init()
+            logger.info("Text-to-speech engine initialized.")
+        except Exception as e:
+            logger.error(f"Failed to initialize text-to-speech engine: {e}")
+            self.tts_engine = None # Set to None if initialization fails
+
+        # Initialize translator (GoogleTranslator from deep_translator)
+        try:
+            # Configured to auto-detect source language and translate to English ('en').
+            self.translator = GoogleTranslator(source='auto', target='en')
+            logger.info("Translator initialized (auto-detect to English).")
+        except Exception as e:
+            logger.error(f"Failed to initialize translator: {e}")
+            self.translator = None # Set to None if initialization fails
+            
     def load_config(self):
-        """Load configuration from JSON file or create default if not exists."""
+        """
+        Load configuration from the JSON file specified in `self.config_file`.
+        If the file doesn't exist, a default configuration is created and saved.
+        """
         if os.path.exists(self.config_file):
-            with open(self.config_file, "r") as f:
+            with open(self.config_file, "r", encoding="utf-8") as f:
                 self.config = json.load(f)
                 logger.info(f"Configuration loaded from {self.config_file}")
         else:
-            # Default configuration
+            # Define a default configuration structure if the file is not found.
             self.config = {
                 "websites": [
                     {
-                        "name": "Example News",
-                        "url": "https://example.com/news",
-                        "selector": "div.content",
-                        "check_interval_minutes": 60,
-                        "importance": "high"
+                        "name": "Example News", # Descriptive name for the website
+                        "url": "https://example.com/news", # URL to scrape
+                        "selector": "div.content", # CSS selector for the main content area
+                        "check_interval_minutes": 60, # How often to check (for future scheduling)
+                        "importance": "high", # User-defined importance level
+                        "translate_changes_to_en": True # Flag to enable/disable translation of changes
                     }
                 ],
-                "alert_thresholds": {
-                    "negative": 0.7,  # Alert if sentiment is more negative than this
-                    "positive": 0.8   # Alert if sentiment is more positive than this
+                "alert_thresholds": { # Thresholds for triggering alerts based on sentiment
+                    "negative": 0.7, # Min score for negative sentiment to be notable
+                    "positive": 0.8  # Min score for positive sentiment to be notable
                 },
-                "alert_settings": {
-                    "speech_enabled": True,
-                    "min_change_percent": 10  # Minimum percentage change to trigger alert
-                }
+                "alert_settings": { # General alert settings
+                    "speech_enabled": True, # Enable/disable text-to-speech alerts
+                    "min_change_percent": 5 # Minimum percentage change to trigger an alert
+                },
+                "todays_changes_file": "website_archives/TodaysChanges.txt" # File to log all detected changes for the day
             }
-            self.save_config()
+            self.save_config() # Save the newly created default configuration
             logger.info(f"Default configuration created and saved to {self.config_file}")
             
     def save_config(self):
-        """Save current configuration to JSON file."""
-        with open(self.config_file, "w") as f:
-            json.dump(self.config, f, indent=4)
+        """Save the current configuration (self.config) to the JSON file."""
+        with open(self.config_file, "w", encoding="utf-8") as f:
+            json.dump(self.config, f, indent=4) # Save with pretty printing (indent=4)
         logger.info(f"Configuration saved to {self.config_file}")
+
+    def _get_site_filename(self, website_name):
+        """
+        Generate a unique, timestamped filename for storing fetched website content.
+        This helps in archiving versions of the website content.
+
+        Args:
+            website_name (str): The name of the website (used to create a safe filename).
+
+        Returns:
+            str: The full path to the new archive file.
+        """
+        archive_dir = "website_archives" # Directory to store content archives
+        os.makedirs(archive_dir, exist_ok=True) # Create the directory if it doesn't exist
+        
+        # Sanitize the website name to make it suitable for a filename
+        # Replaces characters that are not alphanumeric, underscore, or hyphen with an underscore.
+        safe_name = re.sub(r'[^\w\-_]', '_', website_name)
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S") # Current timestamp for uniqueness
+        return os.path.join(archive_dir, f"{safe_name}_{timestamp}.txt")
+
+    def _get_latest_saved_file(self, website_name):
+        """
+        Find the most recently saved content archive file for a given website.
+
+        Args:
+            website_name (str): The name of the website.
+
+        Returns:
+            str or None: The path to the latest file, or None if no files are found.
+        """
+        archive_dir = "website_archives"
+        safe_name = re.sub(r'[^\w\-_]', '_', website_name)
+        
+        # Use glob to find all files matching the pattern for this website's archives.
+        # The pattern includes the sanitized name and a wildcard for the timestamp.
+        files = glob.glob(os.path.join(archive_dir, f"{safe_name}_*.txt"))
+        
+        if not files:
+            return None # No archive files found
             
-    def setup_database(self):
-        """Set up SQLite database to store website content and changes."""
-        conn = sqlite3.connect(self.database_file)
-        cursor = conn.cursor()
-        
-        # Create table for website content history
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS website_content (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            website_name TEXT,
-            url TEXT,
-            content_hash TEXT,
-            content_text TEXT,
-            capture_time TIMESTAMP,
-            sentiment_score REAL,
-            sentiment_label TEXT,
-            categorization TEXT
-        )
-        ''')
-        
-        # Create table for detected changes
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS content_changes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            website_name TEXT,
-            url TEXT,
-            previous_hash TEXT,
-            new_hash TEXT,
-            change_description TEXT,
-            change_percentage REAL,
-            sentiment_score REAL,
-            sentiment_label TEXT,
-            categorization TEXT,
-            detection_time TIMESTAMP,
-            alerted INTEGER DEFAULT 0
-        )
-        ''')
-        
-        conn.commit()
-        conn.close()
-        logger.info("Database setup complete")
-        
+        # Return the file with the most recent creation/modification time.
+        return max(files, key=os.path.getctime)
+
     def fetch_website_content(self, website_config):
-        """Fetch content from a website based on configuration.
-        Downloads the entire website content as text if no selector is specified."""
+        """Fetch content from a website, save it, and return the content."""
+        url = website_config["url"]
+        website_name = website_config["name"]
+        logger.info(f"Fetching content for {website_name} from {url}")
+        
+        # Add debug info
+        logger.info(f"Current working directory: {os.getcwd()}")
+        
         try:
             headers = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
             }
-            response = requests.get(website_config["url"], headers=headers, timeout=30)
+            response = requests.get(url, headers=headers, timeout=30)
             response.raise_for_status()
             
             soup = BeautifulSoup(response.text, "html.parser")
             
-            # Remove script and style elements as they don't contain visible text
             for script_or_style in soup(["script", "style"]):
                 script_or_style.decompose()
-                
-            # Store the entire website as text if no selector is provided
+            
+            content_text = ""
             if "selector" in website_config and website_config["selector"]:
-                content = soup.select(website_config["selector"])
-                if not content:
-                    logger.warning(f"Selector '{website_config['selector']}' did not match any content on {website_config['url']}. Using full page content instead.")
-                    content_text = soup.get_text(separator="\n", strip=True)
+                elements = soup.select(website_config["selector"])
+                if elements:
+                    content_text = "\n".join([el.get_text(separator='\n', strip=True) for el in elements])
                 else:
-                    content_text = "\n".join([elem.get_text(separator="\n", strip=True) for elem in content])
+                    logger.warning(f"Selector '{website_config['selector']}' not found for {website_name}. Fetching all text.")
+                    content_text = soup.get_text(separator='\n', strip=True)
             else:
-                # Get the full page content as text
-                content_text = soup.get_text(separator="\n", strip=True)
-                
-            # Save to a text file for archival purposes
-            site_filename = self._get_site_filename(website_config["name"])
-            with open(site_filename, "w", encoding="utf-8") as f:
-                f.write(content_text)
+                content_text = soup.get_text(separator='\n', strip=True)
             
-            logger.info(f"Saved website content to {site_filename} ({len(content_text)} characters)")
+            # Add debug info about content
+            logger.info(f"Content fetched for {website_name}. Length: {len(content_text)} characters")
+            
+            # Save the fetched content to a new timestamped file
+            site_filename = self._get_site_filename(website_name)
+            logger.info(f"Attempting to save to: {site_filename}")
+            
+            try:
+                with open(site_filename, "w", encoding="utf-8") as f:
+                    f.write(content_text)
+                logger.info(f"Successfully saved content for {website_name} to {site_filename}")
                 
+                # Verify file was created
+                if os.path.exists(site_filename):
+                    file_size = os.path.getsize(site_filename)
+                    logger.info(f"File created successfully. Size: {file_size} bytes")
+                else:
+                    logger.error(f"File was not created: {site_filename}")
+                    
+            except Exception as e:
+                logger.error(f"Failed to write file {site_filename}: {e}")
+                return None
+            
             return content_text
-        except Exception as e:
-            logger.error(f"Error fetching {website_config['url']}: {str(e)}")
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error fetching {url}: {e}")
             return None
-            
-    def _get_site_filename(self, website_name):
-        """Generate a filename for storing website content."""
-        # Create archives directory if it doesn't exist
-        os.makedirs("website_archives", exist_ok=True)
-        
-        # Create a safe filename from the website name
-        safe_name = re.sub(r'[^\w\-_]', '_', website_name)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        return f"website_archives/{safe_name}_{timestamp}.txt"
+        except Exception as e:
+            logger.error(f"An unexpected error occurred while fetching content for {website_name}: {e}")
+            return None
             
     def calculate_hash(self, content):
-        """Calculate SHA-256 hash of content."""
-        return hashlib.sha256(content.encode()).hexdigest()
+        """
+        Calculate the MD5 hash of the given text content.
+        Used for a quick check if content has changed.
+
+        Args:
+            content (str): The text content to hash.
+
+        Returns:
+            str or None: The hex digest of the MD5 hash, or None if content is None.
+        """
+        if content is None:
+            return None
+        return hashlib.md5(content.encode('utf-8')).hexdigest()
     
-    def analyze_sentiment(self, text):
-        """Analyze sentiment of text and return score and label."""
-        try:
-            # Truncate text if too long (transformers typically has a token limit)
-            if len(text) > 1000:
-                text = text[:1000]
-                
-            result = self.sentiment_analyzer(text)[0]
-            return {
-                "score": result["score"],
-                "label": result["label"]
-            }
-        except Exception as e:
-            logger.error(f"Error analyzing sentiment: {str(e)}")
-            return {"score": 0.5, "label": "NEUTRAL"}
-            
-    def categorize_content(self, text):
-        """Categorize content based on keywords and patterns."""
-        categories = []
-        
-        # Simple keyword-based categorization
-        keyword_categories = {
-            "technology": ["software", "hardware", "tech", "ai", "artificial intelligence", "computer"],
-            "business": ["stock", "market", "finance", "company", "investor", "profit"],
-            "politics": ["government", "election", "president", "vote", "policy", "democratic", "republican"],
-            "health": ["covid", "disease", "healthcare", "patient", "doctor", "medical", "vaccine"],
-            "environment": ["climate", "weather", "pollution", "sustainable", "renewable", "green"]
-        }
-        
-        text_lower = text.lower()
-        for category, keywords in keyword_categories.items():
-            for keyword in keywords:
-                if keyword in text_lower:
-                    categories.append(category)
-                    break
-        
-        return list(set(categories)) if categories else ["uncategorized"]
-        
     def calculate_content_change(self, old_content, new_content):
-        """Calculate the percentage of content change and describe changes between old and new content."""
-        if not old_content or not old_content.strip():
-            return 100.0, "New content added"
+        """
+        Compare old and new content to calculate the percentage of change
+        and generate a textual description of the differences (a "diff").
+
+        Args:
+            old_content (str): The previous version of the content.
+            new_content (str): The current version of the content.
+
+        Returns:
+            tuple: (float: change_percentage, str: change_description)
+        """
+        if old_content is None or new_content is None:
+            return 0.0, "One of the contents is missing for comparison."
+
+        # Split content into lines for difflib.
+        old_lines = old_content.splitlines(keepends=True)
+        new_lines = new_content.splitlines(keepends=True)
         
-        # Use difflib for sophisticated diff calculation
-        import difflib
+        d = difflib.Differ() # Initialize the Differ object.
+        # Compare the lines and generate a list of diff lines.
+        # Lines will be prefixed with:
+        #   '- ': line unique to sequence 1 (old_content)
+        #   '+ ': line unique to sequence 2 (new_content)
+        #   '  ': line common to both sequences
+        #   '? ': line not present in either input sequence (used for highlighting differences within lines)
+        diff_lines = list(d.compare(old_lines, new_lines))
         
-        # Split content into lines
-        old_lines = old_content.splitlines()
-        new_lines = new_content.splitlines()
+        # Join the diff lines into a single string for the description.
+        # Using the full diff provides more context.
+        change_description = "".join(diff_lines)
+
+        # Calculate a similarity ratio using SequenceMatcher.
+        # ratio() returns a float in [0, 1], where 1 means identical.
+        s = difflib.SequenceMatcher(None, old_content, new_content)
+        # Percentage change is (1 - similarity_ratio) * 100.
+        change_percentage = (1 - s.ratio()) * 100
         
-        # Create a unified diff
-        diff = list(difflib.unified_diff(old_lines, new_lines, lineterm=''))
+        return change_percentage, change_description
+
+    def translate_text(self, text, target_language='en'):
+        """
+        Translate the given text to the target language (default English)
+        using the initialized translator.
         
-        # Extract changes (lines starting with + or -)
-        changes = [line for line in diff if line.startswith('+') or line.startswith('-')]
-        added = [line for line in changes if line.startswith('+')]
-        removed = [line for line in changes if line.startswith('-')]
-        
-        # Calculate change percentage based on number of modified lines
-        total_lines = len(old_lines)
-        if total_lines == 0:
-            return 100.0, "New content added"
+        If the text is detected as Chinese, filters out non-Chinese characters before translation.
+
+        Args:
+            text (str): The text to translate.
+            target_language (str): The target language code (e.g., 'en').
+
+        Returns:
+            str: The translated text, or an error message/original text if translation fails.
+        """
+        if not self.translator: # Check if the translator was successfully initialized
+            logger.warning("Translator not initialized. Skipping translation.")
+            return "Translation unavailable (translator not initialized)."
+        if not text or text.strip() == "": # No need to translate empty strings
+            return "" 
+        try:
+            # Check if text contains Chinese characters
+            contains_chinese = bool(re.search(r'[\u4e00-\u9fff\u3400-\u4dbf]', text))
             
-        change_percentage = (len(changes) / (total_lines * 2)) * 100  # Multiply by 2 to normalize percentage
-        change_percentage = min(change_percentage, 100.0)  # Cap at 100%
-        
-        # Generate a detailed change description
-        description = []
-        
-        # Show number of changes
-        description.append(f"{len(added)} lines added, {len(removed)} lines removed")
-        
-        # Sample of added content (up to 3 examples)
-        if added:
-            description.append("Added content samples:")
-            for i, line in enumerate(added[:3]):  # Limit to 3 examples
-                if len(line) > 2:  # Skip the '+' prefix
-                    sample = line[2:].strip()
-                    if len(sample) > 50:
-                        sample = sample[:47] + "..."
-                    description.append(f"+ {sample}")
-                if i >= 2 and len(added) > 3:  # Show indication of more changes
-                    description.append(f"+ ...and {len(added) - 3} more additions")
-                    break
-                    
-        # Sample of removed content (up to 3 examples)
-        if removed:
-            description.append("Removed content samples:")
-            for i, line in enumerate(removed[:3]):  # Limit to 3 examples
-                if len(line) > 2:  # Skip the '-' prefix
-                    sample = line[2:].strip()
-                    if len(sample) > 50:
-                        sample = sample[:47] + "..."
-                    description.append(f"- {sample}")
-                if i >= 2 and len(removed) > 3:  # Show indication of more changes
-                    description.append(f"- ...and {len(removed) - 3} more removals")
-                    break
-                    
-        # Save the detailed diff to a file
-        self._save_diff_file(old_content, new_content, diff)
+            if contains_chinese:
+                logger.info("Chinese text detected, filtering out non-Chinese characters")
+                # Keep only Chinese characters and basic punctuation
+                chinese_only = re.sub(r'[^\u4e00-\u9fff\u3400-\u4dbf\s.,!?;:]', '', text)
+                # If significant content remains after filtering
+                if len(chinese_only.strip()) > 0:
+                    text = chinese_only
+                    logger.info(f"Filtered Chinese text length: {len(text)} characters")
+                else:
+                    logger.warning("After filtering, insufficient Chinese content remains")
             
-        return change_percentage, "\n".join(description)
+            # Google Translate API (and others) often have character limits for a single request.
+            # Truncate very long texts to avoid errors.
+            max_len = 4500 
+            if len(text) > max_len:
+                logger.warning(f"Text too long for translation ({len(text)} chars), truncating to {max_len}.")
+                text = text[:max_len] + "\n[...truncated...]" # Append a truncation notice
+
+            translated_text = self.translator.translate(text)
+            return translated_text
+        except Exception as e: # Handle errors during the translation API call
+            logger.error(f"Error during translation: {e}")
+            return f"Translation failed: {str(e)}" # Return an error message
+
+    def _log_change_to_todays_file(self, website_name, original_changes, translated_changes):
+        """
+        Append the detected changes (original and translated) for a website
+        to the daily consolidated changes file (e.g., "TodaysChanges.txt").
+        Removes HTML/CSS markup from the content before logging.
+
+        Args:
+            website_name (str): Name of the website where changes were detected.
+            original_changes (str): The diff description in its original language.
+            translated_changes (str): The translated diff description (if available).
+        """
+        filename = self.config.get("todays_changes_file", "TodaysChanges.txt")
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
-    def _save_diff_file(self, old_content, new_content, diff):
-        """Save detailed diff information to a file for later reference."""
-        os.makedirs("diffs", exist_ok=True)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        diff_filename = f"diffs/diff_{timestamp}.txt"
-        
-        with open(diff_filename, "w", encoding="utf-8") as f:
-            f.write("==== DETAILED CONTENT CHANGES ====\n\n")
-            f.write("---- DIFF OUTPUT ----\n")
-            for line in diff:
-                f.write(line + "\n")
+        # Clean the changes to remove HTML/CSS markup
+        def clean_markup(text):
+            if not text:
+                return ""
+            # Use BeautifulSoup to remove HTML tags
+            try:
+                soup = BeautifulSoup(text, "html.parser")
+                # Remove script and style elements completely
+                for script_or_style in soup(["script", "style"]):
+                    script_or_style.decompose()
+                text = soup.get_text()
                 
-        logger.info(f"Saved detailed diff to {diff_filename}")
-        return diff_filename
+                # Remove CSS selectors and other common markup patterns
+                text = re.sub(r'<[^>]*>', '', text)  # Remove any remaining HTML tags
+                text = re.sub(r'\{[^\}]*\}', '', text)  # Remove CSS blocks
+                text = re.sub(r'@\w+\s*[^;]*;', '', text)  # Remove CSS at-rules
+                
+                return text.strip()
+            except Exception as e:
+                logger.error(f"Error cleaning markup: {e}")
+                return text  # Return original if cleaning fails
+        
+        # Clean both original and translated changes
+        cleaned_original = clean_markup(original_changes)
+        cleaned_translated = clean_markup(translated_changes) if translated_changes else ""
+        
+        # Construct the log entry with clear sections for original and translated changes.
+        log_entry = f"--- Website: {website_name} ---\n"
+        log_entry += f"Timestamp: {timestamp}\n\n"
+        log_entry += "Original Changes:\n"
+        log_entry += "--------------------------------------\n"
+        log_entry += f"{cleaned_original}\n"
+        log_entry += "--------------------------------------\n\n"
+        
+        if cleaned_translated:
+            log_entry += f"Translated Changes (to {self.translator.target if self.translator else 'en'}):\n"
+            log_entry += "--------------------------------------\n"
+            log_entry += f"{cleaned_translated}\n"
+            log_entry += "--------------------------------------\n"
+        log_entry += "---\n\n"  # Separator for the next entry
+        
+        try:
+            # Append the entry to the file. 'a' mode for appending.
+            with open(filename, "a", encoding="utf-8") as f:
+                f.write(log_entry)
+            logger.info(f"Changes for {website_name} logged to {filename}")
+        except Exception as e:
+            logger.error(f"Failed to write changes to {filename}: {e}")
+
+    def analyze_sentiment(self, text):
+        """
+        Analyze the sentiment of the given text using the initialized sentiment analyzer.
+
+        Args:
+            text (str): The text to analyze.
+
+        Returns:
+            dict: A dictionary containing 'label' (e.g., 'POSITIVE', 'NEGATIVE') 
+                  and 'score' (confidence), or default/error values.
+        """
+        if not self.sentiment_analyzer: # Check if analyzer is available
+            logger.warning("Sentiment analyzer not initialized.")
+            return {"label": "NEUTRAL", "score": 0.0} # Default neutral sentiment
+        if not text or text.isspace(): # No sentiment for empty text
+            return {"label": "NEUTRAL", "score": 0.0}
+        try:
+            # Many NLP models have input length limits. Truncate if necessary.
+            # This is a simple truncation based on word count. More sophisticated methods exist.
+            max_length = 512 
+            if len(text.split()) > max_length: 
+                 text = " ".join(text.split()[:max_length])
+
+            result = self.sentiment_analyzer(text)
+            # The pipeline might return a list of results; we usually want the first one.
+            return result[0] if isinstance(result, list) and result else {"label": "UNKNOWN", "score": 0.0}
+        except Exception as e: # Handle errors from the sentiment analysis model
+            logger.error(f"Sentiment analysis failed: {e}")
+            return {"label": "ERROR", "score": 0.0} # Return an error state
+
+    def categorize_content(self, text):
+        """
+        Placeholder for content categorization.
+        In a real application, this could involve more complex NLP techniques
+        like topic modeling, keyword extraction, or classification models.
+
+        Args:
+            text (str): The text to categorize.
+
+        Returns:
+            list: A list of category labels (e.g., ["news", "sports"]).
+        """
+        logger.debug("categorize_content is a placeholder.")
+        return ["general"] # Default to a single "general" category
+
+    def check_alert_conditions(self, website_config, change_percentage, sentiment_result, categories, change_description):
+        """
+        Check if the detected changes meet any predefined alert conditions
+        (e.g., change percentage exceeds threshold).
+
+        Args:
+            website_config (dict): Configuration for the website.
+            change_percentage (float): The percentage of content that changed.
+            sentiment_result (dict): The sentiment analysis result.
+            categories (list): List of categories for the content.
+            change_description (str): The textual diff of changes.
+        """
+        website_name = website_config["name"]
+        alert_settings = self.config.get("alert_settings", {}) # Get alert settings from config
+        min_change_percent = alert_settings.get("min_change_percent", 5) # Default to 5% if not set
+
+        alert_triggered = False
+        reason = "" # Store the reason(s) for the alert
+
+        # Primary alert condition: change percentage
+        if change_percentage >= min_change_percent:
+            alert_triggered = True
+            reason = f"Change percentage ({change_percentage:.2f}%) met/exceeded threshold ({min_change_percent}%)."
+            logger.info(f"Alert condition met for {website_name}: {reason}")
+        
+        # --- Example of adding more conditions (currently commented out) ---
+        # You could extend this to check for specific sentiment scores, keywords, or categories.
+        # sentiment_thresholds = self.config.get("alert_thresholds", {})
+        # if sentiment_result["label"] == "NEGATIVE" and sentiment_result["score"] >= sentiment_thresholds.get("negative", 0.7):
+        #     if not alert_triggered: # If not already triggered by percentage
+        #         reason = f"Negative sentiment ({sentiment_result['score']:.2f}) met/exceeded threshold."
+        #     else: # Append to existing reason
+        #         reason += f" Also, negative sentiment ({sentiment_result['score']:.2f}) met/exceeded threshold."
+        #     alert_triggered = True
+        #     logger.info(f"Alert condition met for {website_name}: Negative sentiment.")
+
+        if alert_triggered:
+            # If any condition is met, trigger the alert mechanism.
+            self.trigger_alert(website_config, change_percentage, sentiment_result, categories, change_description, reason)
+        else:
+            logger.info(f"No alert conditions met for {website_name}.")
+
+    def trigger_alert(self, website_config, change_percentage, sentiment_result, categories, change_description, reason):
+        """
+        Trigger an alert. Currently, this logs a warning and can use text-to-speech.
+        This could be extended to send emails, push notifications, etc.
+
+        Args:
+            website_config (dict): Configuration for the website.
+            change_percentage (float): The percentage of content that changed.
+            sentiment_result (dict): The sentiment analysis result.
+            categories (list): List of categories for the content.
+            change_description (str): The textual diff of changes.
+            reason (str): The reason why the alert was triggered.
+        """
+        website_name = website_config["name"]
+        # Construct a detailed alert message.
+        alert_message = (
+            f"ALERT for {website_name}: {reason}\n"
+            f"Change: {change_percentage:.2f}%\n"
+            f"Sentiment: {sentiment_result['label']} (Score: {sentiment_result['score']:.2f})\n"
+            f"Categories: {', '.join(categories)}\n"
+            # Optionally include a snippet of the change description (can be very long).
+            # f"Change Details:\n{change_description[:500]}..." 
+        )
+        logger.warning(f"--- ALERT --- \n{alert_message}\n------------") # Log as a warning
+
+        # If speech alerts are enabled in config and TTS engine is available.
+        if self.config.get("alert_settings", {}).get("speech_enabled", False) and self.tts_engine:
+            try:
+                # Create a concise message for speech.
+                speech_text = f"Alert for {website_name}. {reason}"
+                self.tts_engine.say(speech_text)
+                self.tts_engine.runAndWait() # Wait for speech to complete
+            except Exception as e: # Handle errors from the TTS engine
+                logger.error(f"Text-to-speech alert failed for {website_name}: {e}")
         
     def check_website(self, website_config):
-        """Check a website for changes and process if found."""
+        """
+        Perform the full check for a single website:
+        1. Load its last known content.
+        2. Fetch its current content.
+        3. Compare for changes.
+        4. If changes are found:
+           - Calculate diff and percentage.
+           - Translate changes (if configured).
+           - Log changes to the daily file.
+           - Analyze sentiment and categorize.
+           - Check and trigger alerts.
+
+        Args:
+            website_config (dict): Configuration for the website to check.
+        """
         website_name = website_config["name"]
-        url = website_config["url"]
-        logger.info(f"Checking website: {website_name} ({url})")
-        
-        content = self.fetch_website_content(website_config)
-        if not content:
-            logger.warning(f"No content fetched from {website_name}")
-            return
-            
-        content_hash = self.calculate_hash(content)
-        
-        # Get the last recorded content for this website
-        conn = sqlite3.connect(self.database_file)
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT content_hash, content_text FROM website_content WHERE website_name = ? ORDER BY capture_time DESC LIMIT 1", 
-            (website_name,)
-        )
-        last_record = cursor.fetchone()
-        
-        # Get the path to the latest saved text file
-        latest_file = self._get_latest_saved_file(website_name)
-        
-        # Check if content has changed
-        if last_record and last_record[0] == content_hash:
-            logger.info(f"No changes detected for {website_name}")
-            conn.close()
-            return
-            
-        # Analyze sentiment 
-        sentiment_result = self.analyze_sentiment(content)
-        
-        # Categorize content
-        categories = self.categorize_content(content)
-        categories_json = json.dumps(categories)
-        
-        # Save current content to database
-        current_time = datetime.now().isoformat()
-        cursor.execute(
-            "INSERT INTO website_content (website_name, url, content_hash, content_text, capture_time, sentiment_score, sentiment_label, categorization) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            (website_name, url, content_hash, content, current_time, sentiment_result["score"], sentiment_result["label"], categories_json)
-        )
-        
-        # If this is the first scan, no need to record a change
-        if not last_record:
-            conn.commit()
-            conn.close()
-            logger.info(f"Initial content recorded for {website_name}")
-            return
-            
-        # Calculate and record the change
-        change_percentage, change_description = self.calculate_content_change(last_record[1], content)
-        
-        cursor.execute(
-            """INSERT INTO content_changes 
-               (website_name, url, previous_hash, new_hash, change_description, 
-                change_percentage, sentiment_score, sentiment_label, categorization, detection_time) 
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (website_name, url, last_record[0], content_hash, change_description, 
-             change_percentage, sentiment_result["score"], sentiment_result["label"], 
-             categories_json, current_time)
-        )
-        
-        change_id = cursor.lastrowid
-        conn.commit()
-        conn.close()
-        
-        logger.info(f"Change detected for {website_name}: {change_percentage:.2f}% changed")
-        
-        # Check if alert should be triggered
-        self.check_alert_conditions(website_config, change_id, change_percentage, sentiment_result, categories, change_description)
-        
-    def _get_latest_saved_file(self, website_name):
-        """Get the path to the latest saved text file for a website."""
-        safe_name = re.sub(r'[^\w\-_]', '_', website_name)
-        pattern = f"website_archives/{safe_name}_*.txt"
-        files = glob.glob(pattern)
-        
-        if not files:
-            return None
-            
-        # Sort by modification time (newest first)
-        files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
-        return files[0]
-        
-    def check_alert_conditions(self, website_config, change_id, change_percentage, sentiment_result, categories, change_description):
-        """Check if alert conditions are met for a detected change."""
-        # Skip if change percentage is below threshold
-        min_change_percent = self.config["alert_settings"].get("min_change_percent", 10)
-        if change_percentage < min_change_percent:
-            logger.info(f"Change below threshold ({change_percentage:.2f}% < {min_change_percent}%), no alert triggered")
-            return
-            
-        # Check sentiment thresholds
-        alert_thresholds = self.config["alert_thresholds"]
-        sentiment_score = sentiment_result["score"]
-        sentiment_label = sentiment_result["label"]
-        
-        should_alert = False
-        alert_reason = []
-        
-        if sentiment_label == "NEGATIVE" and sentiment_score > alert_thresholds["negative"]:
-            should_alert = True
-            alert_reason.append(f"High negative sentiment ({sentiment_score:.2f})")
-            
-        if sentiment_label == "POSITIVE" and sentiment_score > alert_thresholds["positive"]:
-            should_alert = True
-            alert_reason.append(f"High positive sentiment ({sentiment_score:.2f})")
-            
-        # Check importance-based alerts
-        importance = website_config.get("importance", "medium").lower()
-        if importance == "high":
-            should_alert = True
-            alert_reason.append(f"High importance website")
-            
-        if should_alert:
-            self.trigger_alert(website_config, change_id, change_percentage, sentiment_result, categories, change_description, ", ".join(alert_reason))
-            
-    def trigger_alert(self, website_config, change_id, change_percentage, sentiment_result, categories, change_description, reason):
-        """Trigger an alert for a website change."""
-        website_name = website_config["name"]
-        
-        # Mark as alerted in database
-        conn = sqlite3.connect(self.database_file)
-        cursor = conn.cursor()
-        cursor.execute("UPDATE content_changes SET alerted = 1 WHERE id = ?", (change_id,))
-        conn.commit()
-        conn.close()
-        
-        # Format alert message
-        alert_message = f"Alert for {website_name}: {change_percentage:.1f}% content changed. "
-        alert_message += f"Sentiment: {sentiment_result['label']} ({sentiment_result['score']:.2f}). "
-        alert_message += f"Categories: {', '.join(categories)}. "
-        alert_message += f"Reason: {reason}"
-        
-        # Add a summary of changes
-        change_summary = self._get_change_summary(change_description)
-        if change_summary:
-            alert_message += f"\n\nChange summary: {change_summary}"
-        
-        logger.info(f"ALERT: {alert_message}")
-        
-        # Text-to-speech alert if enabled
-        if self.config["alert_settings"].get("speech_enabled", False):
+        logger.info(f"Starting check for website: {website_name}")
+
+        # 1. Load the last known content from its archive file.
+        last_content_path = self._get_latest_saved_file(website_name)
+        last_content = None
+        if last_content_path:
             try:
-                # Create a shorter version for speech
-                speech_message = f"Alert for {website_name}. {change_percentage:.1f} percent content changed. "
-                speech_message += f"Sentiment is {sentiment_result['label']}. "
-                
-                self.tts_engine.say(speech_message)
-                self.tts_engine.runAndWait()
+                with open(last_content_path, "r", encoding="utf-8") as f:
+                    last_content = f.read()
+                logger.info(f"Loaded last content for {website_name} from {last_content_path}")
             except Exception as e:
-                logger.error(f"Text-to-speech error: {str(e)}")
-                
-    def _get_change_summary(self, change_description):
-        """Extract a concise summary from the change description."""
-        # If change description is already short, return it directly
-        if len(change_description) < 100:
-            return change_description
-            
-        # Otherwise extract just the first few lines
-        lines = change_description.split('\n')
-        summary_lines = []
+                logger.error(f"Error reading last content file {last_content_path} for {website_name}: {e}")
         
-        # Get the first line, which has the count of additions/removals
-        if lines:
-            summary_lines.append(lines[0])
-            
-        # Get the first sample of added content
-        added_index = -1
-        for i, line in enumerate(lines):
-            if line == "Added content samples:":
-                added_index = i
-                break
-                
-        if added_index >= 0 and added_index + 1 < len(lines):
-            summary_lines.append("Sample addition: " + lines[added_index + 1][2:])
-            
-        # Get the first sample of removed content
-        removed_index = -1
-        for i, line in enumerate(lines):
-            if line == "Removed content samples:":
-                removed_index = i
-                break
-                
-        if removed_index >= 0 and removed_index + 1 < len(lines):
-            summary_lines.append("Sample removal: " + lines[removed_index + 1][2:])
-            
-        return " | ".join(summary_lines)
-                
-    def run_scheduled_checks(self):
-        """Run all scheduled website checks."""
+        # 2. Fetch the current content. This also saves it to a new archive file.
+        current_content = self.fetch_website_content(website_config)
+        if current_content is None: # If fetching failed
+            logger.error(f"Failed to fetch current content for {website_name}. Skipping further checks.")
+            return
+
+        # If this is the first time checking (no last_content), save current as baseline and exit.
+        if last_content is None:
+            logger.info(f"No previous content found for {website_name}. Current content saved as baseline.")
+            # The fetch_website_content method already saved the current_content.
+            return
+
+        # 3. Compare content using hashes for a quick check.
+        last_hash = self.calculate_hash(last_content)
+        current_hash = self.calculate_hash(current_content)
+
+        if last_hash == current_hash:
+            logger.info(f"No changes detected for {website_name} (hash match).")
+            return # Exit if hashes are the same (content likely identical)
+        
+        # 4. If hashes differ, perform a detailed comparison.
+        logger.info(f"Content has changed for {website_name}. Calculating differences.")
+        change_percentage, change_description = self.calculate_content_change(last_content, current_content)
+
+        # Heuristic: if percentage is very low and diff shows no actual additions/deletions,
+        # it might be minor whitespace or formatting changes not worth reporting.
+        if change_percentage < 0.01 and not any(line.startswith(('+', '-')) for line in change_description.splitlines()):
+            logger.info(f"Negligible or no textual changes detected for {website_name} after diff. Hashes differed but diff is minimal.")
+            return
+
+        logger.info(f"Change detected for {website_name}: {change_percentage:.2f}%")
+
+        # Translate the change description if configured and if there are changes.
+        translated_description = ""
+        if website_config.get("translate_changes_to_en", True) and change_description.strip():
+            logger.info(f"Translating changes for {website_name}...")
+            translated_description = self.translate_text(change_description)
+        
+        # Log the original and translated changes to the consolidated daily file.
+        self._log_change_to_todays_file(website_name, change_description, translated_description)
+        
+        # Perform sentiment analysis and categorization on the *new* content.
+        sentiment_result = self.analyze_sentiment(current_content)
+        categories = self.categorize_content(current_content) # Placeholder
+        
+        # Check if the changes warrant an alert.
+        self.check_alert_conditions(website_config, change_percentage, sentiment_result, categories, change_description)
+
+    def run_checks(self):
+        """
+        Run the checking process for all websites listed in the configuration once.
+        """
+        logger.info("Starting a single run of all website checks...")
+        if not self.config.get("websites"):
+            logger.warning("No websites configured in config file.")
+            return
+        
         for website_config in self.config["websites"]:
             try:
                 self.check_website(website_config)
             except Exception as e:
-                logger.error(f"Error checking {website_config['name']}: {str(e)}")
-                
-    def setup_schedules(self):
-        """Set up scheduling for all websites."""
-        for website_config in self.config["websites"]:
-            interval_minutes = website_config.get("check_interval_minutes", 60)
-            
-            # Create a closure to capture website_config
-            def create_job(site_config):
-                return lambda: self.check_website(site_config)
-                
-            job = create_job(website_config)
-            
-            # Schedule the job to run at the specified interval
-            schedule.every(interval_minutes).minutes.do(job)
-            logger.info(f"Scheduled {website_config['name']} to check every {interval_minutes} minutes")
-            
-    def add_website(self, name, url, selector=None, check_interval_minutes=60, importance="medium"):
-        """Add a new website to monitor."""
-        new_website = {
-            "name": name,
-            "url": url,
-            "selector": selector,
-            "check_interval_minutes": check_interval_minutes,
-            "importance": importance
-        }
+                logger.error(f"Unhandled error during check for website {website_config.get('name', 'Unknown')}: {e}", exc_info=True)
+            logger.info(f"Finished check for website: {website_config.get('name', 'Unknown')}")
+        logger.info("All website checks completed for this run.")
+
+    def start_service(self, default_interval_minutes=60):
+        """
+        Start the web scraper as a continuous service, checking websites periodically.
+        """
+        logger.info("Web scraper service starting...")
         
-        self.config["websites"].append(new_website)
-        self.save_config()
+        # Determine the check interval.
+        # This simple version uses a single interval for all checks.
+        # A more advanced version could respect individual site intervals.
+        try:
+            # Attempt to get a global interval from config, e.g. config["global_check_interval_minutes"]
+            # For now, we'll use a passed default or a hardcoded one.
+            interval = int(self.config.get("global_check_interval_minutes", default_interval_minutes))
+        except ValueError:
+            interval = default_interval_minutes
         
-        # Perform initial check
-        self.check_website(new_website)
+        logger.info(f"Scheduling checks to run every {interval} minutes.")
+        schedule.every(interval).minutes.do(self.run_checks)
         
-        # Update schedules
-        self.setup_schedules()
-        
-        logger.info(f"Added new website: {name} ({url})")
-        
-    def remove_website(self, name):
-        """Remove a website from monitoring."""
-        self.config["websites"] = [w for w in self.config["websites"] if w["name"] != name]
-        self.save_config()
-        
-        # Reset schedules
-        schedule.clear()
-        self.setup_schedules()
-        
-        logger.info(f"Removed website: {name}")
-        
-    def update_alert_settings(self, speech_enabled=None, min_change_percent=None, 
-                             negative_threshold=None, positive_threshold=None):
-        """Update alert settings."""
-        if speech_enabled is not None:
-            self.config["alert_settings"]["speech_enabled"] = speech_enabled
-            
-        if min_change_percent is not None:
-            self.config["alert_settings"]["min_change_percent"] = min_change_percent
-            
-        if negative_threshold is not None:
-            self.config["alert_thresholds"]["negative"] = negative_threshold
-            
-        if positive_threshold is not None:
-            self.config["alert_thresholds"]["positive"] = positive_threshold
-            
-        self.save_config()
-        logger.info("Alert settings updated")
-        
-    def get_recent_changes(self, limit=10):
-        """Get recent content changes."""
-        conn = sqlite3.connect(self.database_file)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-        
-        cursor.execute("""
-            SELECT * FROM content_changes 
-            ORDER BY detection_time DESC 
-            LIMIT ?
-        """, (limit,))
-        
-        changes = [dict(row) for row in cursor.fetchall()]
-        conn.close()
-        
-        return changes
-        
-    def get_sentiment_stats(self, days=7):
-        """Get sentiment statistics for a time period."""
-        conn = sqlite3.connect(self.database_file)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-        
-        # Calculate date threshold
-        from datetime import datetime, timedelta
-        threshold_date = (datetime.now() - timedelta(days=days)).isoformat()
-        
-        cursor.execute("""
-            SELECT website_name, 
-                   AVG(sentiment_score) as avg_score,
-                   COUNT(*) as change_count,
-                   SUM(CASE WHEN sentiment_label = 'POSITIVE' THEN 1 ELSE 0 END) as positive_count,
-                   SUM(CASE WHEN sentiment_label = 'NEGATIVE' THEN 1 ELSE 0 END) as negative_count,
-                   SUM(CASE WHEN sentiment_label = 'NEUTRAL' THEN 1 ELSE 0 END) as neutral_count
-            FROM content_changes
-            WHERE detection_time > ?
-            GROUP BY website_name
-        """, (threshold_date,))
-        
-        stats = [dict(row) for row in cursor.fetchall()]
-        conn.close()
-        
-        return stats
-        
-    def start(self):
-        """Start the web scraper service."""
-        logger.info("Starting web scraper service")
-        
-        # Setup schedules
-        self.setup_schedules()
-        
-        # Run initial check for all websites
-        self.run_scheduled_checks()
-        
-        # Main loop
+        logger.info(f"Scheduler started. Will run checks every {interval} minutes. Press Ctrl+C to exit.")
         try:
             while True:
                 schedule.run_pending()
                 time.sleep(1)
         except KeyboardInterrupt:
-            logger.info("Stopping web scraper service")
+            logger.info("Scheduler stopped by user (Ctrl+C).")
+            print("\nWeb scraper service stopped.")
 
+    def add_website(self, name, url, selector, interval, importance, translate=True):
+        """Add a new website to the configuration."""
+        if not self.config.get("websites"):
+            self.config["websites"] = []
+        
+        # Check if website with the same name already exists
+        if any(site['name'] == name for site in self.config["websites"]):
+            logger.warning(f"Website with name '{name}' already exists. Skipping add.")
+            print(f"Error: Website with name '{name}' already exists.")
+            return
 
+        new_site = {
+            "name": name,
+            "url": url,
+            "selector": selector if selector else "", # Ensure selector is a string
+            "check_interval_minutes": int(interval),
+            "importance": importance,
+            "translate_changes_to_en": translate
+        }
+        self.config["websites"].append(new_site)
+        self.save_config()
+        logger.info(f"Added website '{name}' to configuration.")
+        print(f"Website '{name}' added successfully.")
+
+    def remove_website(self, name):
+        """Remove a website from the configuration."""
+        initial_len = len(self.config.get("websites", []))
+        self.config["websites"] = [site for site in self.config.get("websites", []) if site["name"] != name]
+        if len(self.config.get("websites", [])) < initial_len:
+            self.save_config()
+            logger.info(f"Removed website '{name}' from configuration.")
+            print(f"Website '{name}' removed successfully.")
+        else:
+            logger.warning(f"Website with name '{name}' not found for removal.")
+            print(f"Error: Website '{name}' not found.")
+
+    def update_alert_settings(self, speech_enabled=None, min_change_percent=None, 
+                              negative_threshold=None, positive_threshold=None):
+        """Update alert settings in the configuration."""
+        if "alert_settings" not in self.config:
+            self.config["alert_settings"] = {}
+        if "alert_thresholds" not in self.config:
+            self.config["alert_thresholds"] = {}
+
+        if speech_enabled is not None:
+            self.config["alert_settings"]["speech_enabled"] = speech_enabled
+            logger.info(f"Speech alerts set to: {speech_enabled}")
+        if min_change_percent is not None:
+            self.config["alert_settings"]["min_change_percent"] = float(min_change_percent)
+            logger.info(f"Min change percent for alerts set to: {min_change_percent}")
+        if negative_threshold is not None:
+            self.config["alert_thresholds"]["negative"] = float(negative_threshold)
+            logger.info(f"Negative sentiment threshold set to: {negative_threshold}")
+        if positive_threshold is not None:
+            self.config["alert_thresholds"]["positive"] = float(positive_threshold)
+            logger.info(f"Positive sentiment threshold set to: {positive_threshold}")
+            
+        self.save_config()
+        print("Alert settings updated.")
+
+# --- Main Execution Block ---
 if __name__ == "__main__":
+    # Create an instance of the WebScraper.
     scraper = WebScraper()
-    scraper.start()
+    
+    # Perform a single run of checks for all configured websites.
+    scraper.run_checks()
+    
+    # --- Optional: Periodic Scheduling (currently commented out) ---
+    # To run checks periodically (e.g., every hour), you can use a library like `schedule`
+    # or an OS-level scheduler like cron (Linux/macOS) or Task Scheduler (Windows).
+    
+    # Example using the `schedule` library:
+    # import schedule # Make sure to `pip install schedule`
+    # check_interval_all_sites_minutes = 60 # Define how often to run all checks
+    # schedule.every(check_interval_all_sites_minutes).minutes.do(scraper.run_checks)
+    # logger.info(f"Scheduler started. Will run checks every {check_interval_all_sites_minutes} minutes. Press Ctrl+C to exit.")
+    # try:
+    #     while True: # Keep the script running to allow the scheduler to work.
+    #         schedule.run_pending() # Check if any scheduled tasks are due.
+    #         time.sleep(1) # Wait a second before checking again.
+    # except KeyboardInterrupt:
+    #     logger.info("Scheduler stopped by user (Ctrl+C).")
