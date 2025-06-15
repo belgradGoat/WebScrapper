@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 // ===================================================================
 // DEPENDENCIES AND SETUP
 // ===================================================================
@@ -9,6 +11,7 @@ const puppeteer = require('puppeteer'); // For scraping dynamic sites that use J
 const { spawn } = require('child_process'); // Add this import
 const fs = require('fs'); // Add this import
 const path = require('path'); // Add this import
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const app = express();
 app.use(cors()); // Allow cross-origin requests
@@ -448,6 +451,22 @@ app.get('/api/news', async (req, res) => {
             }
         } catch (googleError) {
             console.log(`  ❌ Google News RSS failed for "${keyword}":`, googleError.message);
+        }
+        
+        // ===================================================================
+        // SOURCE 4: GUARDIAN API (NEW)
+        // ===================================================================
+        console.log(`[API_CALL] Attempting Guardian API for "${keyword}"...`);
+        try {
+            const guardianArticles = await fetchFromGuardianAPI(keyword, articlesToFetchPerSource);
+            if (guardianArticles.length > 0) {
+                allArticles.push(...guardianArticles);
+                console.log(`  ✅ Guardian API: Fetched ${guardianArticles.length} articles for "${keyword}".`);
+            } else {
+                console.log(`  ℹ️ Guardian API: No articles found for "${keyword}".`);
+            }
+        } catch (guardianError) {
+            console.log(`  ❌ Guardian API failed for "${keyword}":`, guardianError.message);
         }
         
         // ===================================================================
@@ -1080,94 +1099,446 @@ async function scrapeGoogleNews(keyword, maxResults) {
 }
 
 // ===================================================================
-// UTILITY FUNCTIONS
+// GUARDIAN API INTEGRATION
 // ===================================================================
-
-// Determines which category of news sources to use based on search keyword
-function detectCategory(keyword) {
-    const lowerKeyword = keyword.toLowerCase();
-    if (['technology', 'tech', 'ai', 'software', 'computer', 'digital'].some(k => lowerKeyword.includes(k))) return 'technology';
-    if (['foreign minister', 'department of state', 'diplomacy'].some(k => lowerKeyword.includes(k))) return 'ForeignMinisters';
-    if (['politics', 'government', 'election', 'policy', 'minister', 'state'].some(k => lowerKeyword.includes(k))) return 'politics';
-    if (['business', 'finance', 'market', 'economy', 'stock'].some(k => lowerKeyword.includes(k))) return 'business';
-    
-    return 'world'; // Default category
-}
-
-// Helper function to extract description from article (not currently used but kept for future)
-function extractDescription($, linkElement) {
-    const parent = $(linkElement).closest('article, .story, .entry');
-    const description = parent.find('p, .summary, .excerpt, .description').first().text().trim();
-    return description.length > 20 ? description.substring(0, 200) + '...' : null;
-}
-
-// Extracts domain name from URL for source identification
-function getDomain(url) {
+async function fetchFromGuardianAPI(keyword, maxResults) {
     try {
-        return new URL(url).hostname.replace('www.', '');
-    } catch {
-        return 'Unknown Source';
-    }
-}
-
-// Removes duplicate articles based on title similarity and URL
-function removeDuplicates(articles) {
-    const seen = new Set(); // For tracking title similarities
-    const urlsSeen = new Set(); // For tracking exact URL matches
-    
-    return articles.filter(article => {
-        // Create a simplified version of the title for comparison
-        const titleKey = article.title.toLowerCase()
-            .replace(/[^\w\s]/g, '') // Remove punctuation
-            .replace(/\s+/g, ' ') // Normalize spaces
-            .substring(0, 60); // Use first 60 characters
+        // Your Guardian API key
+        const GUARDIAN_API_KEY = 'f66ca23b-5fd8-4869-9aff-6256719af4ce';
         
-        const urlKey = article.url ? article.url.toLowerCase() : '';
-        
-        // Skip if we've seen this title or URL before
-        if (seen.has(titleKey) || urlsSeen.has(urlKey)) {
-            return false;
+        // Remove the broken validation - your key is valid!
+        // Just check if it exists
+        if (!GUARDIAN_API_KEY) {
+            console.log('⚠️ Guardian API key not configured, skipping Guardian source');
+            return [];
         }
         
-        // Track this title and URL
-        seen.add(titleKey);
-        if (urlKey) urlsSeen.add(urlKey);
-        return true;
-    });
+        const url = `https://content.guardianapis.com/search?q=${encodeURIComponent(keyword)}&page-size=${Math.min(maxResults, 50)}&show-fields=headline,byline,thumbnail,short-url,body&show-tags=keyword&api-key=${GUARDIAN_API_KEY}`;
+        
+        console.log(`[Guardian API] Searching for: "${keyword}"`);
+        
+        const response = await fetch(url, {
+            headers: {
+                'User-Agent': 'NewsAggregator/1.0'
+            },
+            timeout: 15000
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Guardian API error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (!data.response || !data.response.results) {
+            throw new Error('Invalid response format from Guardian API');
+        }
+        
+        const articles = data.response.results.map(item => {
+            return {
+                title: item.fields?.headline || item.webTitle,
+                description: item.fields?.body ? 
+                    item.fields.body.replace(/<[^>]*>/g, '').substring(0, 200) + '...' : 
+                    `Guardian article about ${keyword}`,
+                url: item.fields?.shortUrl || item.webUrl,
+                urlToImage: item.fields?.thumbnail || null,
+                publishedAt: item.webPublicationDate,
+                source: {
+                    name: 'The Guardian',
+                    url: 'theguardian.com',
+                    type: 'Guardian API'
+                }
+            };
+        });
+        
+        console.log(`[Guardian API] Fetched ${articles.length} articles`);
+        return articles;
+        
+    } catch (error) {
+        console.log('[Guardian API] Error:', error.message);
+        return [];
+    }
 }
 
-// Generates fake news articles when no real articles are found (fallback)
-function generateRecentMockNews(keyword, maxResults) {
-    maxResults = maxResults || 10;
-    const now = new Date();
-    const articles = [];
-    
-    for (let i = 0; i < maxResults; i++) {
-        // Create articles with realistic timestamps (spread over last few hours)
-        const minutesAgo = Math.floor(Math.random() * 180) + 15 + (i * 10);
-        const publishedAt = new Date(now.getTime() - (minutesAgo * 60 * 1000));
+// ===================================================================
+// BLUESKY API INTEGRATION
+// ===================================================================
+app.post('/api/bluesky', async (req, res) => {
+    console.log('[API Call] Received request for /api/bluesky');
+    const { query, limit } = req.body;
+
+    if (!query || typeof query !== 'string' || query.trim().length === 0) {
+        return res.status(400).json({ error: 'Search query is required and must be a non-empty string.' });
+    }
+
+    try {
+        const searchLimit = Math.min(limit || 100, 100); // Limit to 100 max
+        console.log(`[Bluesky] Searching for: "${query}" (limit: ${searchLimit})`);
         
-        articles.push({
-            title: `Breaking: ${keyword} developments from multiple sources - Update ${i + 1}`,
-            description: `Comprehensive coverage of ${keyword} from various news outlets and web sources.`,
-            url: `https://example.com/news/${keyword.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}-${i}`,
-            urlToImage: null,
-            publishedAt: publishedAt.toISOString(),
-            source: {
-                name: `Multi-Source ${keyword.charAt(0).toUpperCase() + keyword.slice(1)}`,
-                url: "https://example.com",
-                type: 'Mock Data'
+        // Try python3 first, then python as fallback
+        let pythonCommand = 'python3';
+        
+        try {
+            require('child_process').execSync('python3 --version', { stdio: 'ignore' });
+        } catch (e) {
+            console.log('[Bluesky] python3 not found, trying python...');
+            pythonCommand = 'python';
+        }
+        
+        console.log(`[Bluesky] Using command: ${pythonCommand}`);
+        
+        // Spawn Python process
+        const pythonProcess = spawn(pythonCommand, ['bluesky_scraper.py', query, searchLimit.toString()], {
+            cwd: __dirname,
+            stdio: ['pipe', 'pipe', 'pipe'],
+            timeout: 30000 // 30 second timeout
+        });
+        
+        let outputData = '';
+        let errorData = '';
+        let processFinished = false;
+        
+        // Set up timeout handler
+        const timeoutHandler = setTimeout(() => {
+            if (!processFinished) {
+                console.error('❌ Bluesky Python process timed out');
+                pythonProcess.kill('SIGKILL');
+                if (!res.headersSent) {
+                    res.status(500).json({ error: 'Bluesky search timed out' });
+                }
+            }
+        }, 30000);
+        
+        pythonProcess.stdout.on('data', (data) => {
+            outputData += data.toString();
+        });
+        
+        pythonProcess.stderr.on('data', (data) => {
+            const errorText = data.toString();
+            errorData += errorText;
+            console.log(`[Bluesky stderr]: ${errorText}`);
+        });
+        
+        pythonProcess.on('close', (code) => {
+            clearTimeout(timeoutHandler);
+            processFinished = true;
+            
+            console.log(`[Bluesky] Process exited with code: ${code}`);
+            
+            if (res.headersSent) {
+                console.log('[Bluesky] Response already sent, ignoring close event');
+                return;
+            }
+            
+            if (code === 0) {
+                try {
+                    const cleanOutput = outputData.trim();
+                    
+                    if (!cleanOutput) {
+                        console.error('❌ Bluesky Python output is empty');
+                        return res.status(500).json({ error: 'Bluesky script produced no output. Check server logs.' });
+                    }
+                    
+                    const result = JSON.parse(cleanOutput);
+                    
+                    if (result.success === false) {
+                        console.error('❌ Bluesky script error:', result.error);
+                        res.status(500).json({ error: result.error || 'Unknown Bluesky API error' });
+                    } else {
+                        console.log(`[Bluesky] Successfully retrieved ${result.totalPosts} posts for "${query}"`);
+                        res.json(result);
+                    }
+                } catch (parseError) {
+                    console.error('❌ Error parsing Bluesky output:', parseError.message);
+                    console.error('Raw output (first 1000 chars):', outputData.substring(0, 1000));
+                    res.status(500).json({ error: `Failed to parse Bluesky output: ${parseError.message}` });
+                }
+            } else {
+                console.error('❌ Bluesky process failed with code:', code);
+                console.error('Error output:', errorData);
+                res.status(500).json({ error: `Bluesky search failed (exit code: ${code}). Error: ${errorData}` });
             }
         });
+        
+        pythonProcess.on('error', (error) => {
+            clearTimeout(timeoutHandler);
+            processFinished = true;
+            
+            console.error('❌ Failed to start Bluesky Python process:', error.message);
+            if (!res.headersSent) {
+                res.status(500).json({ error: `Failed to start Bluesky process: ${error.message}. Make sure Python is installed.` });
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ Error in Bluesky endpoint:', error);
+        if (!res.headersSent) {
+            res.status(500).json({ error: `Server error: ${error.message}` });
+        }
+    }
+});
+
+// ===================================================================
+// TRUTH SOCIAL API INTEGRATION (via TruthBrush)
+// ===================================================================
+app.post('/api/truthsocial', async (req, res) => {
+    console.log('[API Call] Received request for /api/truthsocial');
+    const { query, limit } = req.body;
+
+    if (!query || typeof query !== 'string' || query.trim().length === 0) {
+        return res.status(400).json({ error: 'Search query is required and must be a non-empty string.' });
+    }
+
+    try {
+        const searchLimit = Math.min(limit || 100, 100); // Limit to 100 max
+        console.log(`[Truth Social] Searching for: "${query}" (limit: ${searchLimit})`);
+        
+        // Try python3 first, then python as fallback
+        let pythonCommand = 'python3';
+        
+        try {
+            require('child_process').execSync('python3 --version', { stdio: 'ignore' });
+        } catch (e) {
+            console.log('[Truth Social] python3 not found, trying python...');
+            pythonCommand = 'python';
+        }
+        
+        console.log(`[Truth Social] Using command: ${pythonCommand}`);
+        
+        // Spawn Python process
+        const pythonProcess = spawn(pythonCommand, ['truthsocial_scraper.py', query, searchLimit.toString()], {
+            cwd: __dirname,
+            stdio: ['pipe', 'pipe', 'pipe'],
+            timeout: 30000 // 30 second timeout
+        });
+        
+        let outputData = '';
+        let errorData = '';
+        let processFinished = false;
+        
+        // Set up timeout handler
+        const timeoutHandler = setTimeout(() => {
+            if (!processFinished) {
+                console.error('❌ Truth Social Python process timed out');
+                pythonProcess.kill('SIGKILL');
+                if (!res.headersSent) {
+                    res.status(500).json({ error: 'Truth Social search timed out' });
+                }
+            }
+        }, 30000);
+        
+        pythonProcess.stdout.on('data', (data) => {
+            outputData += data.toString();
+        });
+        
+        pythonProcess.stderr.on('data', (data) => {
+            const errorText = data.toString();
+            errorData += errorText;
+            console.log(`[Truth Social stderr]: ${errorText}`);
+        });
+        
+        pythonProcess.on('close', (code) => {
+            clearTimeout(timeoutHandler);
+            processFinished = true;
+            
+            console.log(`[Truth Social] Process exited with code: ${code}`);
+            
+            if (res.headersSent) {
+                console.log('[Truth Social] Response already sent, ignoring close event');
+                return;
+            }
+            
+            if (code === 0) {
+                try {
+                    const cleanOutput = outputData.trim();
+                    
+                    if (!cleanOutput) {
+                        console.error('❌ Truth Social Python output is empty');
+                        return res.status(500).json({ error: 'Truth Social script produced no output. Check server logs.' });
+                    }
+                    
+                    const result = JSON.parse(cleanOutput);
+                    
+                    if (result.success === false) {
+                        console.error('❌ Truth Social script error:', result.error);
+                        res.status(500).json({ error: result.error || 'Unknown Truth Social API error' });
+                    } else {
+                        console.log(`[Truth Social] Successfully retrieved ${result.totalPosts} posts for "${query}"`);
+                        res.json(result);
+                    }
+                } catch (parseError) {
+                    console.error('❌ Error parsing Truth Social output:', parseError.message);
+                    console.error('Raw output (first 1000 chars):', outputData.substring(0, 1000));
+                    res.status(500).json({ error: `Failed to parse Truth Social output: ${parseError.message}` });
+                }
+            } else {
+                console.error('❌ Truth Social process failed with code:', code);
+                console.error('Error output:', errorData);
+                res.status(500).json({ error: `Truth Social search failed (exit code: ${code}). Error: ${errorData}` });
+            }
+        });
+        
+        pythonProcess.on('error', (error) => {
+            clearTimeout(timeoutHandler);
+            processFinished = true;
+            
+            console.error('❌ Failed to start Truth Social Python process:', error.message);
+            if (!res.headersSent) {
+                res.status(500).json({ error: `Failed to start Truth Social process: ${error.message}. Make sure Python is installed.` });
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ Error in Truth Social endpoint:', error);
+        if (!res.headersSent) {
+            res.status(500).json({ error: `Server error: ${error.message}` });
+        }
+    }
+});
+
+// ===================================================================
+// REDDIT API INTEGRATION
+// ===================================================================
+app.post('/api/reddit', async (req, res) => {
+    console.log('[API Call] Received request for /api/reddit');
+    const { query, limit } = req.body;
+
+    if (!query || typeof query !== 'string' || query.trim().length === 0) {
+        return res.status(400).json({ error: 'Search query is required and must be a non-empty string.' });
+    }
+
+    try {
+        const searchLimit = Math.min(limit || 100, 100); // Limit to 100 max
+        console.log(`[Reddit] Searching for: "${query}" (limit: ${searchLimit})`);
+        
+        // Try python3 first, then python as fallback
+        let pythonCommand = 'python3';
+        
+        try {
+            require('child_process').execSync('python3 --version', { stdio: 'ignore' });
+        } catch (e) {
+            console.log('[Reddit] python3 not found, trying python...');
+            pythonCommand = 'python';
+        }
+        
+        console.log(`[Reddit] Using command: ${pythonCommand}`);
+        
+        // Spawn Python process
+        const pythonProcess = spawn(pythonCommand, ['reddit_scraper.py', query, searchLimit.toString()], {
+            cwd: __dirname,
+            stdio: ['pipe', 'pipe', 'pipe'],
+            timeout: 30000 // 30 second timeout
+        });
+        
+        let outputData = '';
+        let errorData = '';
+        let processFinished = false;
+        
+        // Set up timeout handler
+        const timeoutHandler = setTimeout(() => {
+            if (!processFinished) {
+                console.error('❌ Reddit Python process timed out');
+                pythonProcess.kill('SIGKILL');
+                if (!res.headersSent) {
+                    res.status(500).json({ error: 'Reddit search timed out' });
+                }
+            }
+        }, 30000);
+        
+        pythonProcess.stdout.on('data', (data) => {
+            outputData += data.toString();
+        });
+        
+        pythonProcess.stderr.on('data', (data) => {
+            const errorText = data.toString();
+            errorData += errorText;
+            console.log(`[Reddit stderr]: ${errorText}`);
+        });
+        
+        pythonProcess.on('close', (code) => {
+            clearTimeout(timeoutHandler);
+            processFinished = true;
+            
+            console.log(`[Reddit] Process exited with code: ${code}`);
+            
+            if (res.headersSent) {
+                console.log('[Reddit] Response already sent, ignoring close event');
+                return;
+            }
+            
+            if (code === 0) {
+                try {
+                    const cleanOutput = outputData.trim();
+                    
+                    if (!cleanOutput) {
+                        console.error('❌ Reddit Python output is empty');
+                        return res.status(500).json({ error: 'Reddit script produced no output. Check server logs.' });
+                    }
+                    
+                    const result = JSON.parse(cleanOutput);
+                    
+                    if (result.success === false) {
+                        console.error('❌ Reddit script error:', result.error);
+                        res.status(500).json({ error: result.error || 'Unknown Reddit API error' });
+                    } else {
+                        console.log(`[Reddit] Successfully retrieved ${result.totalPosts} posts for "${query}"`);
+                        res.json(result);
+                    }
+                } catch (parseError) {
+                    console.error('❌ Error parsing Reddit output:', parseError.message);
+                    console.error('Raw output (first 1000 chars):', outputData.substring(0, 1000));
+                    res.status(500).json({ error: `Failed to parse Reddit output: ${parseError.message}` });
+                }
+            } else {
+                console.error('❌ Reddit process failed with code:', code);
+                console.error('Error output:', errorData);
+                res.status(500).json({ error: `Reddit search failed (exit code: ${code}). Error: ${errorData}` });
+            }
+        });
+        
+        pythonProcess.on('error', (error) => {
+            clearTimeout(timeoutHandler);
+            processFinished = true;
+            
+            console.error('❌ Failed to start Reddit Python process:', error.message);
+            if (!res.headersSent) {
+                res.status(500).json({ error: `Failed to start Reddit process: ${error.message}. Make sure Python is installed.` });
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ Error in Reddit endpoint:', error);
+        if (!res.headersSent) {
+            res.status(500).json({ error: `Server error: ${error.message}` });
+        }
+    }
+});
+
+// ===================================================================
+// NEWSLETTER SIGNUP ENDPOINT (EXAMPLE)
+// ===================================================================
+// This is an example endpoint for signing up users to a newsletter
+// It demonstrates handling POST requests and responding with JSON
+app.post('/api/newsletter/signup', (req, res) => {
+    const { email } = req.body;
+    
+    if (!email || !validateEmail(email)) {
+        return res.status(400).json({ error: 'Invalid email address.' });
     }
     
-    return {
-        totalResults: articles.length,
-        articles: articles,
-        sources: ['Mock Data'],
-        searchTerm: keyword,
-        timestamp: new Date().toISOString()
-    };
+    // TODO: Add logic to save email to database or mailing list
+    
+    console.log(`📬 New newsletter signup: ${email}`);
+    res.json({ message: 'Thank you for signing up for our newsletter!' });
+});
+
+// ===================================================================
+// EMAIL VALIDATION FUNCTION
+// ===================================================================
+// Simple email validation function
+function validateEmail(email) {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(String(email).toLowerCase());
 }
 
 // ===================================================================
@@ -1345,3 +1716,117 @@ function extractPublishedDate($container, siteName, articleUrl) {
     }
     return now.toISOString(); // Fallback
 }
+
+// ===================================================================
+// MISSING UTILITY FUNCTIONS - ADD THESE
+// ===================================================================
+
+// Remove duplicate articles based on title and URL
+function removeDuplicates(articles) {
+    const seen = new Set();
+    return articles.filter(article => {
+        const key = `${article.title?.toLowerCase()}-${article.url}`;
+        if (seen.has(key)) {
+            return false;
+        }
+        seen.add(key);
+        return true;
+    });
+}
+
+// Detect category based on keyword
+function detectCategory(keyword) {
+    const lowerKeyword = keyword.toLowerCase();
+    
+    if (lowerKeyword.includes('foreign') || lowerKeyword.includes('minister') || 
+        lowerKeyword.includes('diplomacy') || lowerKeyword.includes('embassy')) {
+        return 'ForeignMinisters';
+    }
+    if (lowerKeyword.includes('tech') || lowerKeyword.includes('ai') || 
+        lowerKeyword.includes('software') || lowerKeyword.includes('computer')) {
+        return 'technology';
+    }
+    if (lowerKeyword.includes('politic') || lowerKeyword.includes('election') || 
+        lowerKeyword.includes('government') || lowerKeyword.includes('congress')) {
+        return 'politics';
+    }
+    if (lowerKeyword.includes('business') || lowerKeyword.includes('economy') || 
+        lowerKeyword.includes('market') || lowerKeyword.includes('finance')) {
+        return 'business';
+    }
+    if (lowerKeyword.includes('world') || lowerKeyword.includes('international') || 
+        lowerKeyword.includes('global') || lowerKeyword.includes('conflict')) {
+        return 'world';
+    }
+    
+    return 'ForeignMinisters'; // Default fallback
+}
+
+// Get domain from URL
+function getDomain(url) {
+             try {
+               return new URL(url).hostname;
+    } catch (error) {
+        return 'unknown-domain';
+    }
+}
+
+// Generate mock news data as fallback
+function generateRecentMockNews(keyword, maxResults) {
+    const mockArticles = [];
+    const sources = ['Reuters', 'BBC', 'Al Jazeera', 'Associated Press', 'CNN'];
+    
+    for (let i = 0; i < Math.min(maxResults, 10); i++) {
+        const source = sources[i % sources.length];
+        const publishedAt = new Date(Date.now() - (i * 2 * 60 * 60 * 1000)); // 2 hours apart
+        
+        mockArticles.push({
+            title: `${keyword} - Latest Development ${i + 1}`,
+            description: `Recent news about ${keyword} from our ${source} correspondent. This is sample content while we resolve API issues.`,
+            url: `https://example.com/news/${keyword.toLowerCase().replace(/\s+/g, '-')}-${i + 1}`,
+            urlToImage: `https://via.placeholder.com/400x200?text=${source}+News`,
+            publishedAt: publishedAt.toISOString(),
+            source: {
+                name: source,
+                url: source.toLowerCase().replace(/\s+/g, '') + '.com',
+                type: 'Mock Data (Fallback)'
+            }
+        });
+    }
+    
+    return {
+        totalArticles: mockArticles.length,
+        articles: mockArticles,
+        sources: ['Mock Data (Fallback)'],
+        searchTerm: keyword,
+        timestamp: new Date().toISOString(),
+        note: 'This is sample data. API services are currently unavailable.'
+    };
+}
+
+// ===================================================================
+// STATIC FILE SERVING
+// ===================================================================
+
+// Serve static files (CSS, JS, images, HTML)
+app.use(express.static('.', {
+    setHeaders: (res, path) => {
+        if (path.endsWith('.html')) {
+            res.setHeader('Content-Type', 'text/html');
+        } else if (path.endsWith('.css')) {
+            res.setHeader('Content-Type', 'text/css');
+        } else if (path.endsWith('.js')) {
+            res.setHeader('Content-Type', 'application/javascript');
+        }
+    }
+}));
+
+// Redirect root to dashboard
+app.get('/', (req, res) => {
+    res.redirect('/news_dashboard.html');
+});
+
+// ===================================================================
+// SERVER STARTUP AND SHUTDOWN HANDLING
+// ===================================================================
+

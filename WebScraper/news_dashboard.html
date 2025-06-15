@@ -350,6 +350,46 @@
             color: #6c757d;
             font-style: italic;
         }
+        
+        .global-search-container input:focus {
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+        }
+        
+        .search-status {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin: 10px 0;
+            text-align: center;
+        }
+        
+        .search-progress {
+            background: linear-gradient(90deg, #4CAF50 0%, #2196F3 100%);
+            height: 3px;
+            border-radius: 2px;
+            margin: 5px 0;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+        
+        @media (max-width: 768px) {
+            .global-search-container {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .global-search-container > div {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -360,12 +400,32 @@
         </div>
 
         <div class="controls-bar">
-            <button class="btn btn-primary" onclick="addNewSection()">+ Add News Section</button>
-            <button class="btn btn-primary" onclick="refreshAll()">🔄 Refresh All</button>
+            <!-- Global Search Bar -->
+            <div class="global-search-container" style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px; padding: 20px; background: rgba(255,255,255,0.9); border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                <div style="flex: 1; display: flex; gap: 10px;">
+                    <input 
+                        type="text" 
+                        id="globalKeyword" 
+                        placeholder="Enter keyword to search all feeds..." 
+                        value="Foreign Affairs Minister" 
+                        style="flex: 1; padding: 12px; border: 2px solid #667eea; border-radius: 25px; font-size: 1em; outline: none;"
+                        onkeypress="if(event.key==='Enter') globalSearch()"
+                    >
+                    <button class="btn btn-primary" onclick="globalSearch()" style="padding: 12px 24px; border-radius: 25px; font-weight: 600;">
+                        🔍 Search All
+                    </button>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-secondary" onclick="refreshAll()">🔄 Refresh All</button>
+                    <button class="btn btn-primary" style="background: linear-gradient(45deg, #17a2b8, #28a745);" onclick="generateGlobalBrief()">✨ Provide Brief</button>
+                </div>
+            </div>
             
-            <button class="btn btn-primary" style="background: linear-gradient(45deg, #17a2b8, #28a745);" onclick="generateGlobalBrief()">✨ Provide Brief</button>
-            
-            <button class="btn btn-secondary" onclick="toggleTranslation()">🌐 Translation: <span id="translationStatus">ON</span></button>
+            <!-- Secondary Controls -->
+            <div style="display: flex; justify-content: center; gap: 15px;">
+                <button class="btn btn-primary" onclick="addNewSection()">+ Add News Section</button>
+                <button class="btn btn-secondary" onclick="toggleTranslation()">🌐 Translation: <span id="translationStatus">ON</span></button>
+            </div>
         </div>
 
         <div class="add-section-form" id="addSectionForm">
@@ -435,8 +495,8 @@
 
         // Data storage - Enhanced with pagination data
         let newsSections = [
-            { id: 1, title: 'Foreign Ministers', keyword: 'Foreign Minister', language: 'en', articles: [], displayedCount: 0 },
-            { id: 2, title: 'Department of State', keyword: 'Department of State', language: 'en', articles: [], displayedCount: 0 },
+            // { id: 1, title: 'Foreign Ministers', keyword: 'Foreign Minister', language: 'en', articles: [], displayedCount: 0 },
+            //{ id: 2, title: 'Department of State', keyword: 'Department of State', language: 'en', articles: [], displayedCount: 0 },
             { id: 3, title: 'Conflicts', keyword: 'Conflict', language: 'en', articles: [], displayedCount: 0 }
         ];
 
@@ -575,18 +635,18 @@
             return summary;
         }
 
-        // Initialize when page loads
+                // Initialize when page loads
         function initDashboard() {
             updateLastUpdate();
-            renderSections(); // Call renderSections to build the initial layout
+            renderSections();
             startAutoRefresh();
             
-            // Load real data for news sections
+            // Load initial data with default keyword
             setTimeout(() => {
-                newsSections.forEach(section => {
-                    loadNewsForSection(section);
-                });
-            }, 500); // Delay slightly to ensure DOM is ready
+                const defaultKeyword = document.getElementById('globalKeyword').value || 'Foreign Affairs Minister';
+                console.log('🔄 Loading initial data for:', defaultKeyword);
+                globalSearch(); // This will trigger all searches
+            }, 500);
         }
 
         function updateLastUpdate() {
@@ -601,7 +661,6 @@
             
             // Store reference to the brief section before clearing
             const briefSection = document.getElementById('global-brief-section');
-            const briefSectionParent = briefSection ? briefSection.parentNode : null;
             
             // Remove only the dynamically created sections, not the brief section
             const sectionsToRemove = grid.querySelectorAll('.section:not(#global-brief-section)');
@@ -613,9 +672,13 @@
                 grid.appendChild(sectionElement);
             });
 
-            // Render RSS feed section
-            const rssSection = createRSSSection();
-            grid.appendChild(rssSection);
+            // Render Bluesky feed section
+            const blueskySection = createBlueskySection();
+            grid.appendChild(blueskySection);
+
+            // Render Reddit feed section
+            const redditSection = createRedditSection();
+            grid.appendChild(redditSection);
 
             // Render social feed sections (if socialFeeds is defined and populated)
             if (typeof socialFeeds !== 'undefined' && Array.isArray(socialFeeds)) {
@@ -653,111 +716,10 @@
             return div;
         }
 
-        function createRSSSection() {
-            const div = document.createElement('div');
-            div.className = 'section';
-            div.innerHTML = `
-                <div class="section-header">
-                    <h2 class="section-title">📡 RSS Feeds</h2>
-                    <div class="section-controls">
-                        <button class="btn btn-secondary" onclick="refreshRSS()">🔄</button>
-                    </div>
-                </div>
-                <div class="section-content" id="rss-content">
-                    <div class="loading">Loading RSS feeds...</div>
-                </div>
-            `;
-            
-            loadRSSFeeds();
-            return div;
-        }
-
-        function createSocialSection(feed) {
-            const div = document.createElement('div');
-            div.className = 'section';
-            div.innerHTML = `
-                <div class="section-header">
-                    <h2 class="section-title">${feed.type === 'discord' ? '💬' : '📱'} ${feed.title}</h2>
-                    <div class="section-controls">
-                        <button class="btn btn-secondary" onclick="refreshSocial('${feed.id}')">🔄</button>
-                    </div>
-                </div>
-                <div class="section-content social-feed" id="social-${feed.id}">
-                    <div class="loading">Loading ${feed.type} feed...</div>
-                </div>
-            `;
-            
-            loadSocialFeed(feed);
-            return div;
-        }
-
-        // Enhanced GNews API integration with 100 articles
-        async function fetchGNewsArticles(keyword, language = 'en', maxResults = 100) {
-            const cacheKey = `${keyword}-${language}-${maxResults}`;
-            const cached = apiCache.get(cacheKey);
-            
-            if (cached && (Date.now() - cached.timestamp < CACHE_DURATION)) {
-                console.log('Using cached data for:', keyword);
-                return cached.data;
-            }
-
-            try {
-                const params = new URLSearchParams({
-                    q: keyword,
-                    lang: language,
-                    country: language === 'pl' ? 'pl' : 'us',
-                    max: maxResults // Now requesting 100 articles
-                });
-
-                const apiUrl = `${CONFIG.gnewsApiUrl}?${params.toString()}`;
-                console.log(`Fetching ${maxResults} articles from proxy:`, keyword);
-                
-                const response = await fetch(apiUrl);
-                
-                if (!response.ok) {
-                    throw new Error(`Proxy error: ${response.status} - ${response.statusText}`);
-                }
-
-                const data = await response.json();
-                
-                if (data.articles && Array.isArray(data.articles)) {
-                    apiCache.set(cacheKey, {
-                        data: data.articles,
-                        timestamp: Date.now()
-                    });
-                    
-                    console.log(`Fetched ${data.articles.length} articles for "${keyword}"`);
-                    return data.articles;
-                } else {
-                    throw new Error('Invalid response format from GNews API');
-                }
-
-            } catch (error) {
-                console.error('GNews API Error:', error);
-                showStatus(`API Error: Using fallback data`, 'warning');
-                return getFallbackNews(keyword, language, maxResults);
-            }
-        }
-
-        function getFallbackNews(keyword, language, maxResults = 100) {
-            // Generate more fallback articles for pagination testing
-            const fallbackArticles = [];
-            for (let i = 0; i < Math.min(maxResults, 50); i++) {
-                const minutesAgo = Math.floor(Math.random() * 180) + 15 + (i * 10);
-                const publishedAt = new Date(Date.now() - (minutesAgo * 60 * 1000));
-                
-                fallbackArticles.push({
-                    title: `[Fallback] ${keyword} developments - Article ${i + 1}`,
-                    description: `Sample news content for ${keyword}. API integration needs backend setup to avoid CORS issues. This is article number ${i + 1}.`,
-                    url: '#',
-                    publishedAt: publishedAt.toISOString(),
-                    source: { name: 'Fallback Source', type: 'Mock Data' },
-                    image: null
-                });
-            }
-            return fallbackArticles;
-        }
-
+        // ===================================================================
+        // MISSING CORE FUNCTIONS - ADD THESE
+        // ===================================================================
+        
         // Enhanced news loading with pagination support
         async function loadNewsForSection(section) {
             try {
@@ -780,26 +742,66 @@
             }
         }
 
-        async function processArticles(articles, sourceLanguage) {
-            if (!CONFIG.translationEnabled || CONFIG.supportedLanguages.includes(sourceLanguage)) {
-                return articles.map(article => ({
-                    ...article,
-                    originalLanguage: sourceLanguage,
-                    translated: false
-                }));
+        // Fetch articles from your backend API
+        async function fetchGNewsArticles(keyword, language, maxResults) {
+            console.log(`Fetching articles for keyword: "${keyword}" (language: ${language}, max: ${maxResults})`);
+            
+            // Check cache first
+            const cacheKey = `${keyword}-${language}-${maxResults}`;
+            const cached = apiCache.get(cacheKey);
+            if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+                console.log('Using cached articles for', keyword);
+                return cached.data;
             }
 
-            // For non-supported languages, simulate translation
-            return articles.map(article => ({
-                ...article,
-                title: `[Translated from ${sourceLanguage.toUpperCase()}] ${article.title}`,
-                description: `[Translated] ${article.description || ''}`,
-                originalLanguage: sourceLanguage,
-                translated: true
-            }));
+            try {
+                const params = new URLSearchParams({
+                    q: keyword,
+                    lang: language,
+                    max: maxResults
+                });
+
+                const response = await fetch(`${CONFIG.gnewsApiUrl}?${params.toString()}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.articles && Array.isArray(data.articles)) {
+                    // Cache the results
+                    apiCache.set(cacheKey, {
+                        data: data.articles,
+                        timestamp: Date.now()
+                    });
+                    
+                    return data.articles;
+                } else {
+                    throw new Error('Invalid response format from news API');
+                }
+            } catch (error) {
+                console.error('Error fetching news:', error);
+                throw error;
+            }
         }
 
-        // New function to display articles with pagination
+        // Process articles (translation, filtering, etc.)
+        async function processArticles(articles, language) {
+            return articles.map(article => {
+                // Add source type indicator for display
+                const sourceType = article.source?.type || 'Unknown';
+                
+                return {
+                    ...article,
+                    processedDate: new Date(article.publishedAt || new Date()).toLocaleDateString(),
+                    sourceType: sourceType,
+                    isTranslated: CONFIG.translationEnabled && language !== 'en'
+                };
+            });
+        }
+
+        // Display articles with pagination
         function displayNewsArticlesWithPagination(sectionId, section) {
             const contentDiv = document.getElementById(`content-${sectionId}`);
             const showMoreContainer = document.getElementById(`showmore-${sectionId}`);
@@ -807,48 +809,35 @@
             const paginationInfo = document.getElementById(`pagination-${sectionId}`);
             
             if (!section.articles || section.articles.length === 0) {
-                contentDiv.innerHTML = '<p>No articles found for this keyword.</p>';
+                contentDiv.innerHTML = '<p>No articles found for this search.</p>';
                 showMoreContainer.style.display = 'none';
                 return;
             }
 
-            // Sort articles by recency
-            const sortedArticles = section.articles.sort((a, b) => 
-                new Date(b.publishedAt) - new Date(a.publishedAt)
-            );
-
             // Calculate how many articles to show
+            const articlesPerPage = CONFIG.articlesPerPage;
             const currentlyShowing = Math.min(
-                section.displayedCount + CONFIG.articlesPerPage, 
-                sortedArticles.length
+                section.displayedCount + articlesPerPage, 
+                section.articles.length
             );
             
             // Get articles to display (from 0 to currentlyShowing)
-            const articlesToShow = sortedArticles.slice(0, currentlyShowing);
+            const articlesToShow = section.articles.slice(0, currentlyShowing);
             
             // Generate HTML for articles
             const articlesHTML = articlesToShow.map(article => {
-                const publishedDate = new Date(article.publishedAt);
-                const timeAgo = getTimeAgo(publishedDate);
-                const isRecent = (Date.now() - publishedDate.getTime()) < (2 * 60 * 60 * 1000);
-                
-                // Determine source type for styling
-                const sourceType = article.source?.type || 'Unknown';
-                let sourceClass = 'source-indicator';
-                if (sourceType.includes('API')) sourceClass += ' source-api';
-                else if (sourceType.includes('Scraping')) sourceClass += ' source-scraping';
-                else if (sourceType.includes('RSS')) sourceClass += ' source-rss';
+                const sourceIndicator = getSourceIndicatorClass(article.sourceType);
+                const translationBadge = article.isTranslated ? '<span class="translation-indicator">Translated</span>' : '';
                 
                 return `
                     <div class="news-item">
                         <div class="news-title">
-                            <a href="${article.url}" target="_blank" rel="noopener noreferrer">${article.title}</a>
-                            ${article.translated ? '<span class="translation-indicator">Translated</span>' : ''}
-                            ${isRecent ? '<span class="fresh-indicator">🔥 Fresh</span>' : ''}
-                            <span class="${sourceClass}">${sourceType}</span>
+                            <a href="${article.url}" target="_blank">${article.title}</a>
+                            <span class="source-indicator ${sourceIndicator}">${article.sourceType}</span>
+                            ${translationBadge}
                         </div>
                         <div class="news-meta">
-                            ${article.source?.name || 'Unknown Source'} • ${timeAgo}
+                            ${article.source?.name || 'Unknown Source'} • ${article.processedDate}
                         </div>
                         <div class="news-summary">${article.description || 'No description available.'}</div>
                     </div>
@@ -861,20 +850,20 @@
             section.displayedCount = currentlyShowing;
             
             // Show/hide pagination controls
-            if (sortedArticles.length > CONFIG.articlesPerPage) {
+            if (section.articles.length > articlesPerPage) {
                 showMoreContainer.style.display = 'block';
                 
                 // Update pagination info
-                paginationInfo.textContent = `Showing ${currentlyShowing} of ${sortedArticles.length} articles`;
+                paginationInfo.textContent = `Showing ${currentlyShowing} of ${section.articles.length} articles`;
                 
                 // Enable/disable Show More button
-                if (currentlyShowing >= sortedArticles.length) {
+                if (currentlyShowing >= section.articles.length) {
                     showMoreBtn.disabled = true;
                     showMoreBtn.textContent = 'All Articles Loaded';
                 } else {
                     showMoreBtn.disabled = false;
-                    const remaining = sortedArticles.length - currentlyShowing;
-                    const nextBatch = Math.min(remaining, CONFIG.articlesPerPage);
+                    const remaining = section.articles.length - currentlyShowing;
+                    const nextBatch = Math.min(remaining, articlesPerPage);
                     showMoreBtn.textContent = `Show ${nextBatch} More Articles`;
                 }
             } else {
@@ -882,7 +871,7 @@
             }
         }
 
-        // New function to handle "Show More" button clicks
+        // Show more articles for a section
         function showMoreArticles(sectionId) {
             const section = newsSections.find(s => s.id === sectionId);
             if (!section) return;
@@ -903,57 +892,578 @@
             // Simulate loading delay for better UX
             setTimeout(() => {
                 // Remove loading indicator
-                contentDiv.removeChild(loadingDiv);
+                if (contentDiv.contains(loadingDiv)) {
+                    contentDiv.removeChild(loadingDiv);
+                }
                 
                 // Update pagination and redisplay
                 displayNewsArticlesWithPagination(sectionId, section);
                 
                 // Smooth scroll to new content
-                const newArticles = contentDiv.children;
-                if (newArticles.length > section.displayedCount - CONFIG.articlesPerPage) {
-                    const targetArticle = newArticles[section.displayedCount - CONFIG.articlesPerPage];
+                const articles = contentDiv.children;
+                if (articles.length > section.displayedCount - CONFIG.articlesPerPage) {
+                    const targetArticle = articles[section.displayedCount - CONFIG.articlesPerPage];
                     if (targetArticle) {
                         targetArticle.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                     }
                 }
-            }, 800); // Short delay to show loading state
+            }, 800);
         }
 
-        function getTimeAgo(date) {
-            const now = new Date();
-            const diffMs = now - date;
-            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-            const diffDays = Math.floor(diffHours / 24);
+        // Utility function for source indicators
+        function getSourceIndicatorClass(sourceType) {
+            if (sourceType?.includes('API')) return 'source-api';
+            if (sourceType?.includes('Guardian')) return 'source-api'; // Guardian API gets blue color
+            if (sourceType?.includes('Scrape')) return 'source-scraping';
+            if (sourceType?.includes('RSS')) return 'source-rss';
+            return 'source-api'; // default
+        }
+
+        // Remove duplicates utility function
+        function removeDuplicates(articles) {
+            const seen = new Set();
+            return articles.filter(article => {
+                const key = `${article.title}-${article.url}`;
+                if (seen.has(key)) {
+                    return false;
+                }
+                seen.add(key);
+                return true;
+            });
+        }
+
+        // ===================================================================
+        // BLUESKY FEED FUNCTIONALITY (UPDATED)
+        // ===================================================================
+        let blueskyData = {
+            posts: [],
+            displayedCount: 0,
+            query: 'Foreign Affairs Minister',
+            loading: false
+        };
+
+        function createBlueskySection() {
+            const div = document.createElement('div');
+            div.className = 'section';
+            div.id = 'bluesky-section';
+            div.innerHTML = `
+                <div class="section-header">
+                    <h2 class="section-title">🦋 Bluesky Feed</h2>
+                    <div class="section-controls">
+                        <button class="btn btn-secondary" onclick="refreshBluesky()">🔄</button>
+                    </div>
+                </div>
+                <div class="bluesky-search-form" style="margin-bottom: 20px;">
+                    <div class="form-group">
+                        <label for="blueskyKeyword">Search Bluesky:</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="blueskyKeyword" placeholder="Enter keyword to search..." value="Foreign Affairs Minister" style="flex: 1;">
+                            <button class="btn btn-primary" onclick="searchBluesky()">Search</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="section-content" id="bluesky-content">
+                    <div class="loading">Loading Bluesky posts...</div>
+                </div>
+                <div class="show-more-container" id="bluesky-showmore" style="display: none;">
+                    <button class="btn-show-more" onclick="showMoreBlueskyPosts()" id="bluesky-showmore-btn">
+                        Show More Posts
+                    </button>
+                    <div class="pagination-info" id="bluesky-pagination"></div>
+                </div>
+            `;
             
-            if (diffDays > 0) {
-                return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-            } else if (diffHours > 0) {
-                return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-            } else {
-                return 'Less than an hour ago';
+            return div;
+        }
+
+        async function searchBluesky() {
+            const keywordInput = document.getElementById('blueskyKeyword');
+            const query = keywordInput.value.trim();
+            
+            if (!query) {
+                showStatus('Please enter a search keyword', 'error');
+                return;
+            }
+            
+            blueskyData.query = query;
+            blueskyData.posts = [];
+            blueskyData.displayedCount = 0;
+            blueskyData.loading = true;
+            
+            const contentDiv = document.getElementById('bluesky-content');
+            const showMoreContainer = document.getElementById('bluesky-showmore');
+            
+            contentDiv.innerHTML = `<div class="loading">Searching Bluesky for "${query}"...</div>`;
+            showMoreContainer.style.display = 'none';
+            
+            try {
+                await searchBlueskyInternal(query);
+                showStatus(`Found ${blueskyData.posts.length} Bluesky posts for "${query}"`, 'success');
+            } catch (error) {
+                showStatus('Failed to search Bluesky', 'error');
+            } finally {
+                blueskyData.loading = false;
             }
         }
 
-        // Updated section management functions
+        async function searchBlueskyInternal(query) {
+            try {
+                blueskyData.loading = true;
+                blueskyData.query = query;
+                blueskyData.posts = [];
+                blueskyData.displayedCount = 0;
+                
+                const contentDiv = document.getElementById('bluesky-content');
+                if (contentDiv) {
+                    contentDiv.innerHTML = `<div class="loading">Searching Bluesky for "${query}"...</div>`;
+                }
+                
+                const response = await fetch('http://localhost:3000/api/bluesky', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: query, limit: 100 })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success && data.posts) {
+                    blueskyData.posts = data.posts;
+                    displayBlueskyPostsWithPagination();
+                    console.log(`✅ Found ${data.posts.length} Bluesky posts for "${query}"`);
+                } else {
+                    throw new Error(data.error || 'Invalid response from Bluesky API');
+                }
+            } catch (error) {
+                console.error('❌ Bluesky search error:', error);
+                const contentDiv = document.getElementById('bluesky-content');
+                if (contentDiv) {
+                    contentDiv.innerHTML = `<div class="error">Failed to search Bluesky: ${error.message}</div>`;
+                }
+                throw error;
+            } finally {
+                blueskyData.loading = false;
+            }
+        }
+
+        // ===================================================================
+        // REDDIT FEED FUNCTIONALITY (NEW)
+        // ===================================================================
+        let redditData = {
+            posts: [],
+            displayedCount: 0,
+            query: 'Foreign Affairs Minister',
+            loading: false
+        };
+
+        function createRedditSection() {
+            const div = document.createElement('div');
+            div.className = 'section';
+            div.id = 'reddit-section';
+            div.innerHTML = `
+                <div class="section-header">
+                    <h2 class="section-title">🟠 Reddit Feed</h2>
+                    <div class="section-controls">
+                        <button class="btn btn-secondary" onclick="refreshReddit()">🔄</button>
+                    </div>
+                </div>
+                <div class="reddit-search-form" style="margin-bottom: 20px;">
+                    <div class="form-group">
+                        <label for="redditKeyword">Search Reddit:</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="redditKeyword" placeholder="Enter keyword to search..." value="Foreign Affairs Minister" style="flex: 1;">
+                            <button class="btn btn-primary" onclick="searchReddit()">Search</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="section-content" id="reddit-content">
+                    <div class="loading">Loading Reddit posts...</div>
+                </div>
+                <div class="show-more-container" id="reddit-showmore" style="display: none;">
+                    <button class="btn-show-more" onclick="showMoreRedditPosts()" id="reddit-showmore-btn">
+                        Show More Posts
+                    </button>
+                    <div class="pagination-info" id="reddit-pagination"></div>
+                </div>
+            `;
+            
+            return div;
+        }
+
+        async function searchReddit() {
+            const keywordInput = document.getElementById('redditKeyword');
+            const query = keywordInput.value.trim();
+            
+            if (!query) {
+                showStatus('Please enter a search keyword', 'error');
+                return;
+            }
+            
+            try {
+                await searchRedditInternal(query);
+                showStatus(`Found ${redditData.posts.length} Reddit posts for "${query}"`, 'success');
+            } catch (error) {
+                showStatus('Failed to search Reddit', 'error');
+            }
+        }
+
+        async function searchRedditInternal(query) {
+            try {
+                redditData.loading = true;
+                redditData.query = query;
+                redditData.posts = [];
+                redditData.displayedCount = 0;
+                
+                const contentDiv = document.getElementById('reddit-content');
+                if (contentDiv) {
+                    contentDiv.innerHTML = `<div class="loading">Searching Reddit for "${query}"...</div>`;
+                }
+                
+                const response = await fetch('http://localhost:3000/api/reddit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: query, limit: 100 })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success && data.posts) {
+                    redditData.posts = data.posts;
+                    displayRedditPostsWithPagination();
+                    console.log(`✅ Found ${data.posts.length} Reddit posts for "${query}"`);
+                } else {
+                    throw new Error(data.error || 'Invalid response from Reddit API');
+                }
+            } catch (error) {
+                console.error('❌ Reddit search error:', error);
+                const contentDiv = document.getElementById('reddit-content');
+                if (contentDiv) {
+                    contentDiv.innerHTML = `<div class="error">Failed to search Reddit: ${error.message}</div>`;
+                }
+                throw error;
+            } finally {
+                redditData.loading = false;
+            }
+        }
+
+        function displayBlueskyPostsWithPagination() {
+            const contentDiv = document.getElementById('bluesky-content');
+            const showMoreContainer = document.getElementById('bluesky-showmore');
+            const showMoreBtn = document.getElementById('bluesky-showmore-btn');
+            const paginationInfo = document.getElementById('bluesky-pagination');
+            
+            if (!blueskyData.posts || blueskyData.posts.length === 0) {
+                contentDiv.innerHTML = '<p>No posts found for this search.</p>';
+                showMoreContainer.style.display = 'none';
+                return;
+            }
+
+            const postsPerPage = 10;
+            const currentlyShowing = Math.min(
+                blueskyData.displayedCount + postsPerPage, 
+                blueskyData.posts.length
+            );
+            
+            const postsToShow = blueskyData.posts.slice(0, currentlyShowing);
+            
+            const postsHTML = postsToShow.map(post => {
+                const timeAgo = getTimeAgoFromISO(post.createdAt);
+                const isRecent = (Date.now() - new Date(post.createdAt).getTime()) < (2 * 60 * 60 * 1000);
+                
+                return `
+                    <div class="bluesky-post" style="margin-bottom: 20px; padding: 15px; background: #f0f8ff; border-radius: 10px; border-left: 4px solid #00bcd4;">
+                        <div class="post-header" style="display: flex; align-items: center; margin-bottom: 10px;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: #1f3143;">
+                                    @${post.author.handle}
+                                    ${isRecent ? '<span style="background: #00bcd4; color: white; padding: 2px 6px; border-radius: 8px; font-size: 0.7em; margin-left: 5px;">Fresh</span>' : ''}
+                                </div>
+                                <div style="font-size: 0.85em; color: #6c757d;">${timeAgo}</div>
+                            </div>
+                        </div>
+                        <div class="post-content" style="margin-bottom: 10px; line-height: 1.5; color: #495057;">
+                            ${post.text || 'Post content unavailable'}
+                        </div>
+                        <div class="post-engagement" style="display: flex; gap: 15px; font-size: 0.85em; color: #6c757d;">
+                            <span>❤️ ${post.engagement.likes}</span>
+                            <span>🔄 ${post.engagement.reposts}</span>
+                            <span>💬 ${post.engagement.replies}</span>
+                            <a href="${post.url}" target="_blank" style="color: #00bcd4; text-decoration: none;">View on Bluesky</a>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            contentDiv.innerHTML = postsHTML;
+            blueskyData.displayedCount = currentlyShowing;
+            
+            if (blueskyData.posts.length > postsPerPage) {
+                showMoreContainer.style.display = 'block';
+                paginationInfo.textContent = `Showing ${currentlyShowing} of ${blueskyData.posts.length} posts`;
+                
+                if (currentlyShowing >= blueskyData.posts.length) {
+                    showMoreBtn.disabled = true;
+                    showMoreBtn.textContent = 'All Posts Loaded';
+                } else {
+                    showMoreBtn.disabled = false;
+                    const remaining = blueskyData.posts.length - currentlyShowing;
+                    const nextBatch = Math.min(remaining, postsPerPage);
+                    showMoreBtn.textContent = `Show ${nextBatch} More Posts`;
+                }
+            } else {
+                showMoreContainer.style.display = 'none';
+            }
+        }
+
+        function displayRedditPostsWithPagination() {
+            const contentDiv = document.getElementById('reddit-content');
+            const showMoreContainer = document.getElementById('reddit-showmore');
+            const showMoreBtn = document.getElementById('reddit-showmore-btn');
+            const paginationInfo = document.getElementById('reddit-pagination');
+            
+            if (!redditData.posts || redditData.posts.length === 0) {
+                contentDiv.innerHTML = '<p>No posts found for this search.</p>';
+                showMoreContainer.style.display = 'none';
+                return;
+            }
+
+            const postsPerPage = 10;
+            const currentlyShowing = Math.min(
+                redditData.displayedCount + postsPerPage, 
+                redditData.posts.length
+            );
+            
+            const postsToShow = redditData.posts.slice(0, currentlyShowing);
+            
+            const postsHTML = postsToShow.map((post, index) => {
+                const timeAgo = getTimeAgoFromISO(post.createdAt);
+                const isRecent = (Date.now() - new Date(post.createdAt).getTime()) < (2 * 60 * 60 * 1000);
+                const scoreColor = post.engagement.score > 0 ? '#28a745' : post.engagement.score < 0 ? '#dc3545' : '#6c757d';
+                
+                const fullText = post.text || 'Link post - click to view on Reddit';
+                const isLongText = fullText.length > 200;
+                const truncatedText = isLongText ? fullText.substring(0, 200) + '...' : fullText;
+                const postId = `reddit-post-${post.id || index}`;
+                
+                return `
+                    <div class="reddit-post" style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px; border-left: 4px solid #FF4500;">
+                        <div class="post-header" style="display: flex; align-items: center; margin-bottom: 10px;">
+                            <div style="margin-right: 10px; text-align: center;">
+                                <div style="font-weight: bold; color: ${scoreColor};">${post.engagement.score}</div>
+                                <div style="font-size: 0.7em; color: #6c757d;">score</div>
+                            </div>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: #1f3143;">
+                                    r/${post.subreddit} • u/${post.author.username}
+                                    ${isRecent ? '<span style="background: #ff6b6b; color: white; padding: 2px 6px; border-radius: 8px; font-size: 0.7em; margin-left: 5px;">Fresh</span>' : ''}
+                                </div>
+                                <div style="font-size: 0.85em; color: #6c757d;">${timeAgo}</div>
+                            </div>
+                        </div>
+                        <div class="post-title" style="font-weight: 600; margin-bottom: 8px; color: #1f3143;">
+                            ${post.title}
+                        </div>
+                        <div class="post-content" style="margin-bottom: 10px; line-height: 1.5; color: #495057;">
+                            <div id="${postId}-text" class="post-text">
+                                ${isLongText ? truncatedText : fullText}
+                            </div>
+                            ${isLongText ? `
+                                <div style="margin-top: 8px;">
+                                    <button 
+                                        id="${postId}-expand-btn" 
+                                        onclick="toggleRedditPostText('${postId}', \`${fullText.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`, \`${truncatedText.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)"
+                                        style="background: none; border: none; color: #FF4500; cursor: pointer; font-size: 0.9em; padding: 0; text-decoration: underline;"
+                                    >
+                                        See more
+                                    </button>
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div class="post-engagement" style="display: flex; gap: 15px; font-size: 0.85em; color: #6c757d;">
+                            <span>💬 ${post.engagement.comments}</span>
+                            <span>👍 ${post.engagement.upvotes}%</span>
+                            ${post.flair ? `<span style="background: #e9ecef; padding: 2px 6px; border-radius: 4px;">${post.flair}</span>` : ''}
+                            <a href="${post.url}" target="_blank" style="color: #FF4500; text-decoration: none;">View on Reddit</a>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            contentDiv.innerHTML = postsHTML;
+            redditData.displayedCount = currentlyShowing;
+            
+            if (redditData.posts.length > postsPerPage) {
+                showMoreContainer.style.display = 'block';
+                paginationInfo.textContent = `Showing ${currentlyShowing} of ${redditData.posts.length} posts`;
+                
+                if (currentlyShowing >= redditData.posts.length) {
+                    showMoreBtn.disabled = true;
+                    showMoreBtn.textContent = 'All Posts Loaded';
+                } else {
+                    showMoreBtn.disabled = false;
+                    const remaining = redditData.posts.length - currentlyShowing;
+                    const nextBatch = Math.min(remaining, postsPerPage);
+                    showMoreBtn.textContent = `Show ${nextBatch} More Posts`;
+                }
+            } else {
+                showMoreContainer.style.display = 'none';
+            }
+        }
+
+        function toggleRedditPostText(postId, fullText, truncatedText) {
+            const textElement = document.getElementById(`${postId}-text`);
+            const buttonElement = document.getElementById(`${postId}-expand-btn`);
+            
+            if (!textElement || !buttonElement) return;
+            
+            const isExpanded = buttonElement.textContent === 'See less';
+            
+            if (isExpanded) {
+                textElement.innerHTML = truncatedText;
+                buttonElement.textContent = 'See more';
+            } else {
+                textElement.innerHTML = fullText;
+                buttonElement.textContent = 'See less';
+            }
+        }
+
+        function showMoreRedditPosts() {
+            const showMoreBtn = document.getElementById('reddit-showmore-btn');
+            const contentDiv = document.getElementById('reddit-content');
+            
+            showMoreBtn.disabled = true;
+            showMoreBtn.textContent = 'Loading...';
+            
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'loading-more';
+            loadingDiv.textContent = 'Loading more posts...';
+            contentDiv.appendChild(loadingDiv);
+            
+            setTimeout(() => {
+                if (contentDiv.contains(loadingDiv)) {
+                    contentDiv.removeChild(loadingDiv);
+                }
+                displayRedditPostsWithPagination();
+            }, 800);
+        }
+
+        function refreshReddit() {
+            const query = redditData.query || 'Foreign Affairs Minister';
+            document.getElementById('redditKeyword').value = query;
+            searchReddit();
+        }
+
+        // ===================================================================
+        // MISSING SEARCH FUNCTIONS - ADD THESE
+        // ===================================================================
+
+        async function globalSearch() {
+            const keyword = document.getElementById('globalKeyword').value.trim();
+            
+            if (!keyword) {
+                showStatus('Please enter a search keyword', 'error');
+                return;
+            }
+            
+            showStatus(`Searching all feeds for "${keyword}"...`, 'info');
+            
+            // Update all sections with new keyword
+            newsSections.forEach(section => {
+                section.keyword = keyword;
+                section.articles = [];
+                section.displayedCount = 0;
+            });
+            
+            // Update social media searches
+            blueskyData.query = keyword;
+            redditData.query = keyword;
+            
+            // Load all data
+            await Promise.all([
+                // Load news sections
+                ...newsSections.map(section => loadNewsForSection(section)),
+                // Load social media
+                searchBlueskyInternal(keyword),
+                searchRedditInternal(keyword)
+            ]);
+            
+            showStatus(`Search completed for "${keyword}"`, 'success');
+        }
+
+        // ===================================================================
+        // MISSING UTILITY FUNCTIONS
+        // ===================================================================
+
+        function getTimeAgoFromISO(isoString) {
+            const postDate = new Date(isoString);
+            const now = new Date();
+            const diffInSeconds = Math.floor((now - postDate) / 1000);
+            
+            if (diffInSeconds < 60) return `${diffInSeconds}s ago`;
+            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+            return `${Math.floor(diffInSeconds / 86400)}d ago`;
+        }
+
+        function showStatus(message, type = 'info') {
+            const indicator = document.getElementById('statusIndicator');
+            if (!indicator) return;
+            
+            indicator.textContent = message;
+            indicator.className = `status-indicator ${type}`;
+            indicator.style.display = 'block';
+            
+            setTimeout(() => {
+                indicator.style.display = 'none';
+            }, 5000);
+        }
+
+        function refreshAll() {
+            const keyword = document.getElementById('globalKeyword').value || 'Foreign Affairs Minister';
+            globalSearch();
+        }
+
+        function refreshSection(sectionId) {
+            const section = newsSections.find(s => s.id === sectionId);
+            if (section) {
+                section.articles = [];
+                section.displayedCount = 0;
+                loadNewsForSection(section);
+            }
+        }
+
+        function removeSection(sectionId) {
+            newsSections = newsSections.filter(s => s.id !== sectionId);
+            renderSections();
+        }
+
         function addNewSection() {
-            document.getElementById('addSectionForm').classList.add('active');
+            const form = document.getElementById('addSectionForm');
+            if (form) form.classList.add('active');
         }
 
         function cancelAddSection() {
-            document.getElementById('addSectionForm').classList.remove('active');
-            clearForm();
+            const form = document.getElementById('addSectionForm');
+            if (form) form.classList.remove('active');
         }
 
         function createSection() {
             const keyword = document.getElementById('sectionKeyword').value.trim();
             const title = document.getElementById('sectionTitle').value.trim();
             const language = document.getElementById('sectionLanguage').value;
-
+            
             if (!keyword || !title) {
-                showStatus('Please fill all fields', 'error');
+                showStatus('Please fill in all fields', 'error');
                 return;
             }
-
+            
             const newSection = {
                 id: Date.now(),
                 title: title,
@@ -962,176 +1472,129 @@
                 articles: [],
                 displayedCount: 0
             };
-
+            
             newsSections.push(newSection);
             renderSections();
-            
-            // Load news for the new section
-            setTimeout(() => {
-                loadNewsForSection(newSection);
-            }, 100);
-            
             cancelAddSection();
-            showStatus('Section added successfully');
-        }
-
-        function removeSection(sectionId) {
-            if (confirm('Are you sure you want to remove this section?')) {
-                newsSections = newsSections.filter(section => section.id !== sectionId);
-                renderSections();
-                showStatus('Section removed');
-            }
-        }
-
-        function refreshSection(sectionId) {
-            const section = newsSections.find(s => s.id === sectionId);
-            if (section) {
-                const contentDiv = document.getElementById(`content-${sectionId}`);
-                const showMoreContainer = document.getElementById(`showmore-${sectionId}`);
-                
-                contentDiv.innerHTML = '<div class="loading">Refreshing from GNews API...</div>';
-                showMoreContainer.style.display = 'none';
-                
-                // Reset pagination
-                section.articles = [];
-                section.displayedCount = 0;
-                
-                // Clear cache for this section
-                const cacheKey = `${section.keyword}-${section.language}-${CONFIG.maxArticlesPerSection}`;
-                apiCache.delete(cacheKey);
-                
-                loadNewsForSection(section);
-            }
-        }
-
-        function refreshAll() {
-            showStatus('Refreshing all sections...');
             
-            // Clear all cache
-            apiCache.clear();
+            document.getElementById('sectionKeyword').value = '';
+            document.getElementById('sectionTitle').value = '';
             
-            // Reset all sections
-            newsSections.forEach(section => {
-                section.articles = [];
-                section.displayedCount = 0;
-            });
-            
-            renderSections();
-            updateLastUpdate();
-            
-            // Load news for all sections
-            setTimeout(() => {
-                newsSections.forEach(section => {
-                    loadNewsForSection(section);
-                });
-            }, 100);
-        }
-
-        // Keep existing RSS and Social functions unchanged
-        async function loadRSSFeeds() {
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            
-            const rssContent = document.getElementById('rss-content');
-            rssContent.innerHTML = `
-                <div class="news-item">
-                    <div class="news-title"><a href="#" target="_blank">RSS Feed Article 1</a></div>
-                    <div class="news-meta">RSS Source • Today</div>
-                    <div class="news-summary">Sample RSS content from external feeds...</div>
-                </div>
-                <div class="news-item">
-                    <div class="news-title"><a href="#" target="_blank">RSS Feed Article 2</a></div>
-                    <div class="news-meta">RSS Source • Yesterday</div>
-                    <div class="news-summary">More RSS content for your dashboard...</div>
-                </div>
-            `;
-        }
-
-        async function loadSocialFeed(feed) {
-            await new Promise(resolve => setTimeout(resolve, 1200));
-            
-            const socialContent = document.getElementById(`social-${feed.id}`);
-            const feedType = feed.type === 'discord' ? 'Discord' : 'Telegram';
-            
-            socialContent.innerHTML = `
-                <div class="social-item">
-                    <strong>User1:</strong> Latest update from ${feedType} channel
-                    <div style="font-size: 0.8em; color: #666; margin-top: 5px;">2 hours ago</div>
-                </div>
-                <div class="social-item">
-                    <strong>User2:</strong> Important announcement about the project
-                    <div style="font-size: 0.8em; color: #666; margin-top: 5px;">4 hours ago</div>
-                </div>
-                <div class="social-item">
-                    <strong>Bot:</strong> Daily summary is ready
-                    <div style="font-size: 0.8em; color: #666; margin-top: 5px;">6 hours ago</div>
-                </div>
-            `;
-        }
-
-        function refreshRSS() {
-            const rssContent = document.getElementById('rss-content');
-            rssContent.innerHTML = '<div class="loading">Refreshing RSS...</div>';
-            loadRSSFeeds();
-        }
-
-        function refreshSocial(feedId) {
-            const socialContent = document.getElementById(`social-${feedId}`);
-            socialContent.innerHTML = '<div class="loading">Refreshing...</div>';
-            const feed = socialFeeds.find(f => f.id === feedId);
-            if (feed) loadSocialFeed(feed);
+            showStatus(`Added new section: ${title}`, 'success');
         }
 
         function toggleTranslation() {
             CONFIG.translationEnabled = !CONFIG.translationEnabled;
             const status = document.getElementById('translationStatus');
-            status.textContent = CONFIG.translationEnabled ? 'ON' : 'OFF';
-            showStatus(`Translation ${CONFIG.translationEnabled ? 'enabled' : 'disabled'}`);
+            if (status) status.textContent = CONFIG.translationEnabled ? 'ON' : 'OFF';
+            showStatus(`Translation ${CONFIG.translationEnabled ? 'enabled' : 'disabled'}`, 'info');
         }
 
-        // Utility functions
         function displayError(sectionId, message) {
             const contentDiv = document.getElementById(`content-${sectionId}`);
-            contentDiv.innerHTML = `<div class="error">${message}</div>`;
-            const showMoreContainer = document.getElementById(`showmore-${sectionId}`);
-            if (showMoreContainer) showMoreContainer.style.display = 'none';
-        }
-
-        function clearForm() {
-            document.getElementById('sectionKeyword').value = '';
-            document.getElementById('sectionTitle').value = '';
-            document.getElementById('sectionLanguage').value = 'en';
-        }
-
-        function showStatus(message, type = 'success') {
-            const indicator = document.getElementById('statusIndicator');
-            indicator.textContent = message;
-            indicator.className = `status-indicator ${type}`;
-            indicator.style.display = 'block';
-            
-            console.log(`Status (${type}): ${message}`);
-            
-            setTimeout(() => {
-                indicator.style.display = 'none';
-            }, 4000);
+            if (contentDiv) {
+                contentDiv.innerHTML = `<div class="error">${message}</div>`;
+            }
         }
 
         function startAutoRefresh() {
             setInterval(() => {
-                console.log('Auto-refreshing feeds...');
-                newsSections.forEach(section => {
-                    loadNewsForSection(section);
-                });
+                console.log('Auto-refreshing all sections...');
+                refreshAll();
             }, CONFIG.refreshInterval);
         }
-
-        // Initialize when page loads
-        document.addEventListener('DOMContentLoaded', initDashboard);
-
-        // Add error handling for unhandled promise rejections
-        window.addEventListener('unhandledrejection', event => {
-            console.error('Unhandled promise rejection:', event.reason);
-            showStatus('An unexpected error occurred', 'error');
+        
+        // ===================================================================
+        // INITIALIZE DASHBOARD
+        // ===================================================================
+        
+        // Start the dashboard when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 Initializing Eagle Watchtower Dashboard...');
+            initDashboard();
         });
+        
+        // Also initialize if already loaded
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            console.log('🚀 Document already loaded, initializing dashboard...');
+            initDashboard();
+        }
+
+        // Implement virtual scrolling for large datasets
+function createVirtualScrolling(containerId, items, renderItem, itemHeight = 100) {
+    const container = document.getElementById(containerId);
+    const viewport = container.parentElement;
+    const visibleCount = Math.ceil(viewport.clientHeight / itemHeight) + 2;
+    
+    let startIndex = 0;
+    
+    function renderVisible() {
+        const endIndex = Math.min(startIndex + visibleCount, items.length);
+        const visibleItems = items.slice(startIndex, endIndex);
+        
+        container.innerHTML = visibleItems.map(renderItem).join('');
+        container.style.transform = `translateY(${startIndex * itemHeight}px)`;
+    }
+    
+    viewport.addEventListener('scroll', () => {
+        const newStartIndex = Math.floor(viewport.scrollTop / itemHeight);
+        if (newStartIndex !== startIndex) {
+            startIndex = newStartIndex;
+            renderVisible();
+        }
+    });
+    
+    renderVisible();
+}
+
+// Implement debounced search
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Update search functions
+const debouncedSearch = debounce(globalSearch, 500);
+
+// Add to news_dashboard.html
+class DashboardState {
+    constructor() {
+        this.state = {
+            sections: [],
+            socialFeeds: {
+                bluesky: { posts: [], loading: false },
+                reddit: { posts: [], loading: false }
+            },
+            ui: { activeSearch: null, loading: false }
+        };
+        this.listeners = [];
+    }
+    
+    setState(newState) {
+        this.state = { ...this.state, ...newState };
+        this.notifyListeners();
+    }
+    
+    subscribe(listener) {
+        this.listeners.push(listener);
+        return () => {
+            this.listeners = this.listeners.filter(l => l !== listener);
+        };
+    }
+    
+    notifyListeners() {
+        this.listeners.forEach(listener => listener(this.state));
+    }
+}
+
+const dashboardState = new DashboardState();
     </script>
 </body>
 </html>
