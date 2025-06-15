@@ -302,78 +302,90 @@
         }
 
         /* Weather section styles */
-        .weather-section {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-        }
+        .weather-compact {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 15px 20px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
 
-        .weather-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
+.weather-location {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 1.1em;
+    margin-bottom: 5px;
+}
 
-        .weather-header h2 {
-            margin: 0;
-            color: #2c3e50;
-            font-size: 1.3em;
-        }
+.weather-info {
+    display: flex;
+    gap: 30px;
+    align-items: center;
+    flex-wrap: wrap;
+}
 
-        .weather-current {
-            background: linear-gradient(135deg, #4a90e2, #357abd);
-            color: white;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-        }
+.weather-current-temp {
+    font-size: 2em;
+    font-weight: 300;
+    color: #4a90e2;
+}
 
-        .weather-current h3 {
-            margin: 0 0 5px 0;
-            font-size: 1.1em;
-        }
+.weather-high-low {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
 
-        .weather-current .temperature {
-            font-size: 2.5em;
-            font-weight: 300;
-            margin: 8px 0;
-        }
+.weather-high-low .label {
+    font-size: 0.8em;
+    color: #6c757d;
+    margin-bottom: 3px;
+}
 
-        .weather-forecast {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 10px;
-        }
+.weather-high-low .temp {
+    font-size: 1.2em;
+    font-weight: 600;
+}
 
-        .weather-forecast h4 {
-            margin: 0 0 15px 0;
-            color: #2c3e50;
-        }
+.weather-rain {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
 
-        .weather-forecast .forecast-period {
-            background: white;
-            padding: 12px;
-            border-radius: 8px;
-            text-align: center;
-            border: 1px solid #e9ecef;
-        }
+.weather-rain .label {
+    font-size: 0.8em;
+    color: #6c757d;
+    margin-bottom: 3px;
+}
 
-        .weather-forecast .forecast-period.today {
-            border-color: #4a90e2;
-            background: #f0f8ff;
-        }
+.weather-rain .chance {
+    font-size: 1.2em;
+    font-weight: 600;
+    color: #28a745;
+}
 
-        .weather-updated {
-            text-align: center;
-            margin-top: 15px;
-            font-size: 0.8em;
-            color: #6c757d;
-        }
+.weather-controls {
+    display: flex;
+    gap: 10px;
+}
+
+@media (max-width: 768px) {
+    .weather-compact {
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+    }
+    
+    .weather-info {
+        justify-content: center;
+        gap: 20px;
+    }
+}
 
         @media (max-width: 768px) {
             .dashboard-grid {
@@ -655,17 +667,25 @@ function showStatus(message, type = 'info') {
 // ===================================================================
 function createWeatherSection() {
     const div = document.createElement('div');
-    div.className = 'weather-section';
+    div.className = 'weather-compact';
     div.innerHTML = `
-        <div class="weather-header">
-            <h2>🌦️ Weather Forecast (US National Weather Service)</h2>
-            <div class="section-controls">
-                <button class="btn btn-secondary" onclick="refreshWeather()">🔄 Refresh</button>
-                <button class="btn btn-secondary" onclick="getCurrentLocationWeather()">📍 My Location</button>
+        <div>
+            <div class="weather-location" id="weather-location">📍 Loading location...</div>
+            <div class="weather-info">
+                <div class="weather-current-temp" id="weather-current">--°F</div>
+                <div class="weather-high-low">
+                    <div class="label">High/Low</div>
+                    <div class="temp" id="weather-high-low">--° / --°</div>
+                </div>
+                <div class="weather-rain">
+                    <div class="label">Rain Chance</div>
+                    <div class="chance" id="weather-rain">--%</div>
+                </div>
             </div>
         </div>
-        <div class="weather-content" id="weather-content">
-            <div class="loading">Loading official US weather data...</div>
+        <div class="weather-controls">
+            <button class="btn btn-secondary" onclick="refreshWeather()" style="padding: 8px 12px; font-size: 0.8em;">🔄</button>
+            <button class="btn btn-secondary" onclick="getCurrentLocationWeather()" style="padding: 8px 12px; font-size: 0.8em;">📍</button>
         </div>
     `;
     return div;
@@ -725,25 +745,77 @@ async function loadWeatherData(lat = null, lon = null) {
 }
 
 function displayWeatherData() {
-    const contentDiv = document.getElementById('weather-content');
-    if (!contentDiv || !weatherData.forecast) return;
+    const locationDiv = document.getElementById('weather-location');
+    const currentDiv = document.getElementById('weather-current');
+    const highLowDiv = document.getElementById('weather-high-low');
+    const rainDiv = document.getElementById('weather-rain');
+    
+    if (!weatherData.forecast || !locationDiv || !currentDiv || !highLowDiv || !rainDiv) return;
     
     const current = weatherData.current;
     const location = weatherData.location;
     const forecast = weatherData.forecast;
     
-    let currentHTML = '';
+    // Update location
+    locationDiv.textContent = `📍 ${location.city}, ${location.state}`;
+    
+    // Update current temperature
     if (current && current.temperature_f) {
-        currentHTML = `
-            <div class="weather-current">
-                <h3>📍 ${location.city}, ${location.state}</h3>
-                <div class="temperature">${current.temperature_f}°F</div>
-                <div class="description">${current.description || 'Current conditions'}</div>
-                <div class="station">Station: ${current.station_name || current.station}</div>
-            </div>
-        `;
+        currentDiv.textContent = `${current.temperature_f}°F`;
+    } else {
+        currentDiv.textContent = '--°F';
     }
     
+    // Find today's forecast for high/low and rain chance
+    const today = forecast.find(period => 
+        period.name.toLowerCase().includes('today') || 
+        period.name.toLowerCase().includes('this afternoon') ||
+        period.is_daytime
+    );
+    
+    const tonight = forecast.find(period => 
+        period.name.toLowerCase().includes('tonight') || 
+        period.name.toLowerCase().includes('night') ||
+        !period.is_daytime
+    );
+    
+    // Update high/low
+    if (today && tonight) {
+        const high = today.temperature;
+        const low = tonight.temperature;
+        highLowDiv.textContent = `${high}° / ${low}°`;
+    } else if (today) {
+        highLowDiv.textContent = `${today.temperature}° / --°`;
+    } else {
+        highLowDiv.textContent = '--° / --°';
+    }
+    
+    // Extract rain chance from forecast text
+    let rainChance = '--';
+    if (today && today.detailed_forecast) {
+        const rainMatch = today.detailed_forecast.match(/(\d+)\s*percent.*rain|rain.*(\d+)\s*percent/i);
+        if (rainMatch) {
+            rainChance = rainMatch[1] || rainMatch[2];
+        } else if (today.detailed_forecast.toLowerCase().includes('rain')) {
+            rainChance = 'Yes';
+        } else {
+            rainChance = '0';
+        }
+    }
+    
+    rainDiv.textContent = rainChance === 'Yes' ? 'Yes' : `${rainChance}%`;
+    
+    // Color code rain chance
+    if (rainChance !== '--' && rainChance !== 'Yes') {
+        const chance = parseInt(rainChance);
+        if (chance > 70) {
+            rainDiv.style.color = '#dc3545'; // Red
+        } else if (chance > 30) {
+            rainDiv.style.color = '#ffc107'; // Yellow
+        } else {
+            rainDiv.style.color = '#28a745'; // Green
+        }
+    }
     const forecastHTML = `
         <div class="weather-forecast">
             <h4>📅 Extended Forecast</h4>
