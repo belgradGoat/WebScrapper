@@ -1,0 +1,30 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug STEPViewer (Windows)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Debug/STEPViewer.exe",
+            "args": ["${workspaceFolder}/assets/sample.step"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "console": "externalTerminal",
+            "preLaunchTask": "Build Debug"
+        },
+        {
+            "name": "Debug STEPViewer (Mac)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/STEPViewer",
+            "args": ["${workspaceFolder}/assets/sample.step"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "lldb",
+            "preLaunchTask": "Build Debug"
+        }
+    ]
+}

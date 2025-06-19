@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STEP File Viewer</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .upload-section {
+            border: 3px dashed #667eea;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .upload-section:hover {
+            border-color: #764ba2;
+            background: rgba(118, 75, 162, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .upload-section.dragover {
+            border-color: #52c41a;
+            background: rgba(82, 196, 26, 0.1);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .upload-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .control-btn {
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .control-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .control-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .viewer-container {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        #canvas {
+            width: 100%;
+            height: 500px;
+            background: #f8f9fa;
+            display: block;
+        }
+
+        .info-panel {
+            background: rgba(102, 126, 234, 0.05);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .info-item {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            background: white;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .success {
+            color: #52c41a;
+            font-weight: 600;
+        }
+
+        .error {
+            color: #ff4d4f;
+            font-weight: 600;
+        }
+
+        .download-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .download-btn {
+            background: linear-gradient(45deg, #52c41a, #73d13d);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(82, 196, 26, 0.3);
+        }
+
+        .download-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .message {
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .message.success {
+            background: rgba(82, 196, 26, 0.1);
+            border: 1px solid #52c41a;
+            color: #52c41a;
+        }
+
+        .message.error {
+            background: rgba(255, 77, 79, 0.1);
+            border: 1px solid #ff4d4f;
+            color: #ff4d4f;
+        }
+
+        .message.info {
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid #667eea;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 STEP File Viewer</h1>
+        
+        <div class="upload-section" id="uploadSection">
+            <p style="font-size: 18px; margin-bottom: 15px;">Drop your STEP file here or click to browse</p>
+            <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                📁 Choose STEP File
+            </button>
+            <input type="file" id="fileInput" accept=".step,.stp" onchange="handleFileSelect(event)">
+            <p style="font-size: 14px; color: #666; margin-top: 15px;">Supported formats: .step, .stp</p>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Processing STEP file...</p>
+        </div>
+
+        <div id="messages"></div>
+
+        <div class="controls">
+            <button class="control-btn" id="loadBtn" onclick="loadFile()" disabled>📂 Load File</button>
+            <button class="control-btn" id="createUCSBtn" onclick="createUCS()" disabled>📐 Create UCS</button>
+            <button class="control-btn" id="screenshotBtn" onclick="takeScreenshot()" disabled>📸 Take Screenshot</button>
+            <button class="control-btn" id="saveBtn" onclick="saveSTEPCopy()" disabled>💾 Save Copy</button>
+        </div>
+
+        <div class="viewer-container">
+            <canvas id="canvas" style="display: none;"></canvas>
+            <div id="svgViewer" style="width: 100%; height: 500px; background: #f8f9fa; display: flex; align-items: center; justify-content: center;">
+                <p style="color: #999;">Load a STEP file to see visualization</p>
+            </div>
+        </div>
+
+        <div class="info-panel" id="infoPanel" style="display: none;">
+            <h3>File Information</h3>
+            <div id="fileInfo"></div>
+            
+            <h3>UCS Information</h3>
+            <div id="ucsInfo"></div>
+        </div>
+
+        <div class="download-section">
+            <button class="download-btn" id="downloadImageBtn" onclick="downloadImage()" disabled>
+                🖼️ Download Screenshot
+            </button>
+            <button class="download-btn" id="downloadSTEPBtn" onclick="downloadSTEP()" disabled>
+                📄 Download STEP Copy
+            </button>
+        </div>
+    </div>
+
+    <!-- Load the compiled WASM module -->
+    <script src="step_viewer.js"></script>
+    <script>
+        
+    // Global variables
+    let Module = null;
+    let currentFile = null;
+    let screenshotData = null;
+    let stepCopyData = null;
+    let isModuleReady = false;
+
+    // Initialize when page loads
+    window.addEventListener('load', initializeApp);
+
+    // Initialize Emscripten module
+    async function initializeApp() {
+        try {
+            showMessage('Initializing STEP Viewer...', 'info');
+            console.log('Starting initialization...');
+            
+            // Check if the WASM module loader exists
+            if (typeof createModule !== 'undefined') {
+                console.log('createModule found, initializing...');
+                
+                Module = await createModule({
+                    canvas: document.getElementById('canvas'),
+                    onRuntimeInitialized: function() {
+                        console.log('Runtime initialized');
+                        isModuleReady = true;
+                        
+                        try {
+                            // Use 'this' instead of 'Module' - 'this' refers to the module instance
+                            this.ccall('initApp', null, [], []);
+                            showMessage('STEP Viewer initialized successfully!', 'success');
+                            console.log('Module initialized successfully');
+                        } catch (error) {
+                            console.error('Error calling initApp:', error);
+                            showMessage('Error initializing module: ' + error.message, 'error');
+                        }
+                    },
+                    onAbort: function(what) {
+                        console.error('Module aborted:', what);
+                        showMessage('Module initialization aborted: ' + what, 'error');
+                    }
+                });
+                
+                console.log('Module assignment completed:', Module);
+            } else {
+                console.log('createModule not found, running in demo mode');
+                isModuleReady = true;
+                showMessage('Running in demo mode - WASM module not loaded', 'info');
+            }
+        } catch (error) {
+            console.error('Failed to initialize app:', error);
+            showMessage('Failed to initialize application: ' + error.message, 'error');
+        }
+    }
+
+
+
+        // Utility functions
+        function showMessage(message, type = 'info') {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.textContent = message;
+            messagesDiv.appendChild(messageDiv);
+            
+            // Remove message after 5 seconds
+            setTimeout(() => {
+                if (messageDiv.parentNode) {
+                    messageDiv.parentNode.removeChild(messageDiv);
+                }
+            }, 5000);
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+
+        function showFileInfo() {
+            const infoPanel = document.getElementById('infoPanel');
+            const fileInfo = document.getElementById('fileInfo');
+            
+            fileInfo.innerHTML = `
+                <div class="info-item">
+                    <strong>Filename:</strong> ${currentFile.name}
+                </div>
+                <div class="info-item">
+                    <strong>File Size:</strong> ${(currentFile.size / 1024).toFixed(2)} KB
+                </div>
+                <div class="info-item">
+                    <strong>Last Modified:</strong> ${new Date(currentFile.lastModified).toLocaleString()}
+                </div>
+            `;
+            
+            infoPanel.style.display = 'block';
+        }
+
+        function showUCSInfo() {
+            const ucsInfo = document.getElementById('ucsInfo');
+            
+            if (Module && isModuleReady) {
+                try {
+                    const ucsInfoStr = Module.ccall('getUCSInfo', 'string', [], []);
+                    const bboxInfoStr = Module.ccall('getBoundingBoxInfo', 'string', [], []);
+                    
+                    ucsInfo.innerHTML = `
+                        <div class="info-item">
+                            <strong>UCS:</strong> ${ucsInfoStr}
+                        </div>
+                        <div class="info-item">
+                            <strong>Bounding Box:</strong> ${bboxInfoStr}
+                        </div>
+                    `;
+                } catch (error) {
+                    console.error('Error getting UCS info:', error);
+                    ucsInfo.innerHTML = `
+                        <div class="info-item">
+                            <strong>UCS:</strong> Created successfully
+                        </div>
+                    `;
+                }
+            } else {
+                ucsInfo.innerHTML = `
+                    <div class="info-item">
+                        <strong>Origin:</strong> (0.00, 0.00, 0.00)
+                    </div>
+                    <div class="info-item">
+                        <strong>X Direction:</strong> (1.00, 0.00, 0.00)
+                    </div>
+                    <div class="info-item">
+                        <strong>Y Direction:</strong> (0.00, 1.00, 0.00)
+                    </div>
+                    <div class="info-item">
+                        <strong>Z Direction:</strong> (0.00, 0.00, 1.00)
+                    </div>
+                `;
+            }
+        }
+
+        // File handling
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file && isValidSTEPFile(file)) {
+                currentFile = file;
+                document.getElementById('loadBtn').disabled = false;
+                showMessage(`File selected: ${file.name}`, 'success');
+                resetUI();
+            }
+        }
+
+        function isValidSTEPFile(file) {
+            const validExtensions = ['.step', '.stp'];
+            const fileName = file.name.toLowerCase();
+            const isValid = validExtensions.some(ext => fileName.endsWith(ext));
+            
+            if (!isValid) {
+                showMessage('Please select a valid STEP file (.step or .stp)', 'error');
+            }
+            
+            return isValid;
+        }
+
+        function resetUI() {
+            // Reset buttons
+            document.getElementById('createUCSBtn').disabled = true;
+            document.getElementById('screenshotBtn').disabled = true;
+            document.getElementById('saveBtn').disabled = true;
+            document.getElementById('downloadImageBtn').disabled = true;
+            document.getElementById('downloadSTEPBtn').disabled = true;
+            
+            // Clear data
+            screenshotData = null;
+            stepCopyData = null;
+            
+            // Hide info panel
+            document.getElementById('infoPanel').style.display = 'none';
+            
+            // Reset viewer
+            document.getElementById('svgViewer').innerHTML = '<p style="color: #999;">Load a STEP file to see visualization</p>';
+        }
+
+        // Drag and drop functionality
+        const uploadSection = document.getElementById('uploadSection');
+        
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                if (isValidSTEPFile(file)) {
+                    currentFile = file;
+                    document.getElementById('loadBtn').disabled = false;
+                    showMessage(`File selected: ${file.name}`, 'success');
+                    resetUI();
+                }
+            }
+        });
+
+        // Main functions
+        async function loadFile() {
+            if (!currentFile) {
+                showMessage('No file selected', 'error');
+                return;
+            }
+
+            if (!isModuleReady) {
+                showMessage('Module not ready yet. Please wait...', 'error');
+                return;
+            }
+
+            showLoading(true);
+            
+            try {
+                // Read file as ArrayBuffer
+                const arrayBuffer = await readFileAsArrayBuffer(currentFile);
+                
+                if (Module && Module.FS && Module.ccall) {
+                    // Write file to Emscripten file system
+                    const filename = '/tmp/' + currentFile.name;
+                    const uint8Array = new Uint8Array(arrayBuffer);
+                    Module.FS.writeFile(filename, uint8Array);
+                    
+                    // Call C++ function to load the file
+                    const result = Module.ccall('loadSTEPFile', 'number', ['string'], [filename]);
+                    
+                    if (result === 1) {
+                        document.getElementById('createUCSBtn').disabled = false;
+                        document.getElementById('screenshotBtn').disabled = false;
+                        document.getElementById('saveBtn').disabled = false;
+                        
+                        showFileInfo();
+                        showMessage('STEP file loaded successfully!', 'success');
+                    } else {
+                        showMessage('Failed to load STEP file', 'error');
+                    }
+                } else {
+                    // Demo mode
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    
+                    document.getElementById('createUCSBtn').disabled = false;
+                    document.getElementById('screenshotBtn').disabled = false;
+                    document.getElementById('saveBtn').disabled = false;
+                    
+                    showFileInfo();
+                    showMessage('STEP file loaded successfully! (Demo mode)', 'success');
+                }
+                
+            } catch (error) {
+                console.error('Error loading file:', error);
+                showMessage('Failed to load STEP file: ' + error.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function createUCS() {
+            if (!isModuleReady) {
+                showMessage('Module not ready', 'error');
+                return;
+            }
+
+            showLoading(true);
+            
+            try {
+                if (Module && Module.ccall) {
+                    Module.ccall('createUCS', null, [], []);
+                } else {
+                    // Demo mode
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+                
+                showUCSInfo();
+                showMessage('UCS created successfully!', 'success');
+                
+            } catch (error) {
+                console.error('Error creating UCS:', error);
+                showMessage('Failed to create UCS: ' + error.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function takeScreenshot() {
+            if (!isModuleReady) {
+                showMessage('Module not ready', 'error');
+                return;
+            }
+
+            showLoading(true);
+            
+            try {
+                const filename = '/tmp/screenshot.svg';
+                const width = 800;
+                const height = 600;
+                
+                if (Module && Module.ccall && Module.FS) {
+                    const result = Module.ccall('takeScreenshot', 'number', ['string', 'number', 'number'], 
+                                               [filename, width, height]);
+                    
+                    if (result === 1) {
+                        // Read the generated SVG file
+                        try {
+                            const svgData = Module.FS.readFile(filename, { encoding: 'utf8' });
+                            
+                            // Display the SVG in the viewer
+                            document.getElementById('svgViewer').innerHTML = svgData;
+                            
+                            // Save for download
+                            screenshotData = new Blob([svgData], { type: 'image/svg+xml' });
+                            document.getElementById('downloadImageBtn').disabled = false;
+                            showMessage('Screenshot captured successfully!', 'success');
+                        } catch (e) {
+                            console.error('Error reading SVG file:', e);
+                            showMessage('Screenshot saved but could not display', 'error');
+                        }
+                    } else {
+                        showMessage('Failed to take screenshot', 'error');
+                    }
+                } else {
+                    // Demo mode - create a simple SVG
+                    await new Promise(resolve => setTimeout(resolve, 800));
+                    
+                    const demoSvg = `
+                        <svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="800" height="600" fill="#f0f0f0"/>
+                            <text x="400" y="50" text-anchor="middle" font-family="Arial" font-size="24" font-weight="bold">STEP File Visualization (Demo)</text>
+                            <rect x="200" y="150" width="400" height="300" fill="none" stroke="#667eea" stroke-width="3"/>
+                            <line x1="400" y1="300" x2="480" y2="300" stroke="red" stroke-width="4"/>
+                            <text x="485" y="305" fill="red" font-family="Arial" font-size="16">X</text>
+                            <line x1="400" y1="300" x2="400" y2="220" stroke="green" stroke-width="4"/>
+                            <text x="405" y="215" fill="green" font-family="Arial" font-size="16">Y</text>
+                            <circle cx="400" cy="300" r="6" fill="blue"/>
+                            <text x="410" y="290" fill="blue" font-family="Arial" font-size="16">Z</text>
+                            <text x="50" y="550" font-family="Arial" font-size="14">Demo Mode - File: ${currentFile ? currentFile.name : 'demo.step'}</text>
+                        </svg>
+                    `;
+                    
+                    document.getElementById('svgViewer').innerHTML = demoSvg;
+                    screenshotData = new Blob([demoSvg], { type: 'image/svg+xml' });
+                    document.getElementById('downloadImageBtn').disabled = false;
+                    showMessage('Screenshot captured! (Demo mode)', 'success');
+                }
+                
+            } catch (error) {
+                console.error('Error taking screenshot:', error);
+                showMessage('Failed to take screenshot: ' + error.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function saveSTEPCopy() {
+            if (!isModuleReady) {
+                showMessage('Module not ready', 'error');
+                return;
+            }
+
+            showLoading(true);
+            
+            try {
+                const filename = '/tmp/copy.step';
+                
+                if (Module && Module.ccall && Module.FS) {
+                    const result = Module.ccall('saveSTEPCopy', 'number', ['string'], [filename]);
+                    
+                    if (result === 1) {
+                        try {
+                            const stepData = Module.FS.readFile(filename);
+                            stepCopyData = new Blob([stepData], { type: 'application/step' });
+                            document.getElementById('downloadSTEPBtn').disabled = false;
+                            showMessage('STEP copy saved successfully!', 'success');
+                        } catch (e) {
+                            console.error('Error reading STEP file:', e);
+                            showMessage('STEP copy saved but could not read file for download', 'error');
+                        }
+                    } else {
+                        showMessage('Failed to save STEP copy', 'error');
+                    }
+                } else {
+                    // Demo mode
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    const demoStep = `ISO-10303-21;
+HEADER;
+/* Demo STEP file with UCS information */
+/* Original file: ${currentFile ? currentFile.name : 'demo.step'} */
+/* UCS Origin: (0.000, 0.000, 0.000) */
+ENDSEC;
+DATA;
+/* Demo geometry data would go here */
+ENDSEC;
+END-ISO-10303-21;`;
+                    stepCopyData = new Blob([demoStep], { type: 'application/step' });
+                    document.getElementById('downloadSTEPBtn').disabled = false;
+                    showMessage('STEP copy saved! (Demo mode)', 'success');
+                }
+                
+            } catch (error) {
+                console.error('Error saving STEP copy:', error);
+                showMessage('Failed to save STEP copy: ' + error.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Download functions
+        function downloadImage() {
+            if (!screenshotData) {
+                showMessage('No screenshot available', 'error');
+                return;
+            }
+            
+            const url = URL.createObjectURL(screenshotData);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = (currentFile ? currentFile.name.replace(/\.(step|stp)$/i, '') : 'screenshot') + '.svg';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showMessage('Screenshot downloaded!', 'success');
+        }
+
+        function downloadSTEP() {
+            if (!stepCopyData) {
+                showMessage('No STEP copy available', 'error');
+                return;
+            }
+            
+            const url = URL.createObjectURL(stepCopyData);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = (currentFile ? currentFile.name.replace(/\.(step|stp)$/i, '') : 'model') + '_copy.step';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showMessage('STEP file downloaded!', 'success');
+        }
+
+        // Utility function to read file as ArrayBuffer
+        function readFileAsArrayBuffer(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => reject(reader.error);
+                reader.readAsArrayBuffer(file);
+            });
+        }
+    </script>
+</body>
+</html>

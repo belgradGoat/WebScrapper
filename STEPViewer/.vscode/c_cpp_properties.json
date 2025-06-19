@@ -1,0 +1,43 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "C:/vcpkg/installed/x64-windows/include"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE",
+                "HAVE_CONFIG_H"
+            ],
+            "windowsSdkVersion": "10.0.19041.0",
+            "compilerPath": "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.30.30705/bin/Hostx64/x64/cl.exe",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "windows-msvc-x64",
+            "configurationProvider": "ms-vscode.cmake-tools"
+        },
+        {
+            "name": "Mac",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/opt/homebrew/include"
+            ],
+            "defines": [
+                "HAVE_CONFIG_H"
+            ],
+            "macFrameworkPath": [
+                "/System/Library/Frameworks",
+                "/Library/Frameworks"
+            ],
+            "compilerPath": "/usr/bin/clang++",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "macos-clang-x64",
+            "configurationProvider": "ms-vscode.cmake-tools"
+        }
+    ],
+    "version": 4
+}
