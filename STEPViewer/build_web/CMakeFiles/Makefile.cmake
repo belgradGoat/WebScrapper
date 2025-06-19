@@ -8,7 +8,6 @@ set(CMAKE_DEPENDS_GENERATOR "Unix Makefiles")
 set(CMAKE_MAKEFILE_DEPENDS
   "CMakeCache.txt"
   "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/STEPViewer/CMakeLists.txt"
-  "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/STEPViewer/CMakeLists_emscripten.cmake"
   "CMakeFiles/4.0.3/CMakeCCompiler.cmake"
   "CMakeFiles/4.0.3/CMakeCXXCompiler.cmake"
   "CMakeFiles/4.0.3/CMakeSystem.cmake"

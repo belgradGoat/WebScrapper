@@ -246,6 +246,7 @@
             <button class="control-btn" id="createUCSBtn" onclick="createUCS()" disabled>📐 Create UCS</button>
             <button class="control-btn" id="screenshotBtn" onclick="takeScreenshot()" disabled>📸 Take Screenshot</button>
             <button class="control-btn" id="saveBtn" onclick="saveSTEPCopy()" disabled>💾 Save Copy</button>
+            <button class="control-btn" onclick="testMeshData()" style="background: #ff9800; color: white;">🧪 Test Mesh</button>
         </div>
 
         <div class="viewer-container">
@@ -727,6 +728,8 @@ END-ISO-10303-21;`;
             showMessage('STEP file downloaded!', 'success');
         }
 
+// Find around line 742 and replace this section:
+
         // Utility function to read file as ArrayBuffer
         function readFileAsArrayBuffer(file) {
             return new Promise((resolve, reject) => {
@@ -735,6 +738,81 @@ END-ISO-10303-21;`;
                 reader.onerror = () => reject(reader.error);
                 reader.readAsArrayBuffer(file);
             });
+        }
+
+// Replace the testMeshData function with this version:
+
+        function testMeshData() {
+            if (!Module || !isModuleReady) {
+                console.log('Module not ready');
+                return;
+            }
+            
+            // First, let's see what functions are actually exported
+            console.log('=== Checking all Module exports ===');
+            const exportedFunctions = Object.keys(Module).filter(key => typeof Module[key] === 'function');
+            console.log('All exported functions:', exportedFunctions);
+            
+            // Look for underscore-prefixed functions
+            const underscoreFunctions = exportedFunctions.filter(f => f.startsWith('_'));
+            console.log('Functions with underscore:', underscoreFunctions);
+            
+            // Check if our specific functions exist
+            console.log('\n=== Checking specific functions ===');
+            console.log('Module._getVertexCount exists:', typeof Module._getVertexCount);
+            console.log('Module._getIndexCount exists:', typeof Module._getIndexCount);
+            console.log('Module._getNormalCount exists:', typeof Module._getNormalCount);
+            console.log('Module._getVertices exists:', typeof Module._getVertices);
+            console.log('Module._getNormals exists:', typeof Module._getNormals);
+            console.log('Module._getIndices exists:', typeof Module._getIndices);
+            
+            // Try direct function calls
+            if (Module._getVertexCount) {
+                console.log('\n=== Direct function calls ===');
+                try {
+                    const vertexCount = Module._getVertexCount();
+                    const indexCount = Module._getIndexCount();
+                    const normalCount = Module._getNormalCount();
+                    
+                    console.log(`Mesh Data:
+                    - Vertex count: ${vertexCount}
+                    - Index count: ${indexCount}
+                    - Normal count: ${normalCount}
+                    - Triangle count: ${indexCount / 3}
+                    - Vertex coordinates: ${vertexCount / 3}`);
+                    
+                    if (vertexCount > 0) {
+                        // Get the actual mesh data
+                        const vertexPtr = Module._getVertices();
+                        const indexPtr = Module._getIndices();
+                        const normalPtr = Module._getNormals();
+                        
+                        console.log('Pointers:', { vertexPtr, indexPtr, normalPtr });
+                        
+                        if (vertexPtr && indexPtr) {
+                            // Read first few values
+                            const vertices = new Float32Array(Module.HEAPF32.buffer, vertexPtr, Math.min(9, vertexCount));
+                            const indices = new Uint32Array(Module.HEAPU32.buffer, indexPtr, Math.min(9, indexCount));
+                            const normals = new Float32Array(Module.HEAPF32.buffer, normalPtr, Math.min(9, normalCount));
+                            
+                            console.log('First few vertices:', Array.from(vertices));
+                            console.log('First few indices:', Array.from(indices));
+                            console.log('First few normals:', Array.from(normals));
+                            console.log('✓ Mesh extraction working!');
+                            showMessage('✓ Mesh extraction working! Check console for details.', 'success');
+                            return true;
+                        }
+                    } else {
+                        console.log('No mesh data found - make sure a STEP file is loaded first');
+                        showMessage('No mesh data found. Load a STEP file first.', 'error');
+                    }
+                } catch (e) {
+                    console.error('Error calling functions:', e);
+                }
+            } else {
+                console.log('Functions not found as Module properties');
+                console.log('\nAvailable Module properties:', Object.keys(Module).sort());
+            }
         }
     </script>
 </body>
