@@ -1,366 +1,11 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EVE Online 2D Universe Map</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0f0f23 100%);
-            font-family: 'Consolas', 'Monaco', monospace;
-            color: #ffffff;
-            overflow: hidden;
-            height: 100vh;
-        }
-        
-        .app-container {
-            display: grid;
-            grid-template-columns: 300px 1fr 350px;
-            grid-template-rows: 60px 1fr 40px;
-            height: 100vh;
-            gap: 2px;
-            background: #000;
-        }
-        
-        .header {
-            grid-column: 1 / -1;
-            background: linear-gradient(90deg, #1a1a2e, #16213e);
-            border-bottom: 2px solid #00d4ff;
-            display: flex;
-            align-items: center;
-            padding: 0 20px;
-            box-shadow: 0 2px 10px rgba(0, 212, 255, 0.3);
-        }
-        
-        .header h1 {
-            font-size: 24px;
-            color: #00d4ff;
-            text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
-        }
-        
-        .header-controls {
-            margin-left: auto;
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
-        
-        .search-box {
-            background: rgba(0, 0, 0, 0.7);
-            border: 1px solid #00d4ff;
-            color: #ffffff;
-            padding: 8px 12px;
-            border-radius: 4px;
-            width: 200px;
-        }
-        
-        .search-box:focus {
-            outline: none;
-            box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
-        }
-        
-        .sidebar-left {
-            background: linear-gradient(180deg, #1a1a2e, #0f1419);
-            border-right: 1px solid #333;
-            overflow-y: auto;
-        }
-        
-        .sidebar-right {
-            background: linear-gradient(180deg, #1a1a2e, #0f1419);
-            border-left: 1px solid #333;
-            overflow-y: auto;
-        }
-        
-        .map-container {
-            position: relative;
-            background: radial-gradient(circle at center, #0a0a1a 0%, #000000 100%);
-            overflow: hidden;
-        }
-        
-        .map-canvas {
-            width: 100%;
-            height: 100%;
-            cursor: grab;
-        }
-        
-        .map-canvas:active {
-            cursor: grabbing;
-        }
-        
-        .footer {
-            grid-column: 1 / -1;
-            background: #1a1a2e;
-            border-top: 1px solid #333;
-            display: flex;
-            align-items: center;
-            padding: 0 20px;
-            font-size: 12px;
-            color: #aaa;
-        }
-        
-        .panel {
-            margin: 15px;
-            background: rgba(0, 0, 0, 0.6);
-            border: 1px solid #333;
-            border-radius: 6px;
-            overflow: hidden;
-        }
-        
-        .panel-header {
-            background: linear-gradient(90deg, #00d4ff, #0099cc);
-            color: #000;
-            padding: 10px 15px;
-            font-weight: bold;
-            font-size: 14px;
-        }
-        
-        .panel-content {
-            padding: 15px;
-        }
-        
-        .stat-item {
-            display: flex;
-            justify-content: space-between;
-            margin: 8px 0;
-            padding: 5px 0;
-            border-bottom: 1px solid #333;
-        }
-        
-        .stat-label {
-            color: #aaa;
-        }
-        
-        .stat-value {
-            color: #00d4ff;
-            font-weight: bold;
-        }
-        
-        .security-legend {
-            display: flex;
-            align-items: center;
-            margin: 5px 0;
-            font-size: 12px;
-        }
-        
-        .security-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            margin-right: 10px;
-            box-shadow: 0 0 5px;
-        }
-        
-        .route-step {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px;
-            margin: 4px 0;
-            background: rgba(0, 212, 255, 0.1);
-            border-left: 3px solid #00d4ff;
-            border-radius: 3px;
-            font-size: 12px;
-            cursor: pointer;
-        }
-        
-        .route-step:hover {
-            background: rgba(0, 212, 255, 0.2);
-        }
-        
-        .system-info {
-            background: rgba(0, 0, 0, 0.9);
-            border: 1px solid #00d4ff;
-            border-radius: 6px;
-            padding: 15px;
-            margin: 10px 0;
-        }
-        
-        .system-name {
-            color: #00d4ff;
-            font-size: 16px;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        
-        .loading-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.9);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-        
-        .spinner {
-            border: 3px solid #333;
-            border-top: 3px solid #00d4ff;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .btn {
-            background: linear-gradient(135deg, #00d4ff, #0099cc);
-            color: #000;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 12px;
-            transition: all 0.3s;
-            width: 100%;
-        }
-        
-        .btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 212, 255, 0.4);
-        }
-        
-        .btn-danger {
-            background: linear-gradient(135deg, #ff4444, #cc0000);
-        }
-        
-        .filter-tabs {
-            display: flex;
-            margin-bottom: 15px;
-        }
-        
-        .filter-tab {
-            flex: 1;
-            padding: 8px;
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid #333;
-            color: #aaa;
-            cursor: pointer;
-            text-align: center;
-            font-size: 11px;
-        }
-        
-        .filter-tab.active {
-            background: #00d4ff;
-            color: #000;
-            font-weight: bold;
-        }
-        
-        .activity-bar {
-            height: 4px;
-            background: rgba(0, 212, 255, 0.3);
-            border-radius: 2px;
-            margin-top: 5px;
-            overflow: hidden;
-            width: 100px;
-        }
-        
-        .activity-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #00d4ff, #00ff88);
-            border-radius: 2px;
-            transition: width 0.3s;
-        }
-        
-        .region-list {
-            max-height: 200px;
-            overflow-y: auto;
-        }
-        
-        .region-item {
-            padding: 8px;
-            cursor: pointer;
-            border-bottom: 1px solid #333;
-            transition: background 0.2s;
-            font-size: 12px;
-        }
-        
-        .region-item:hover {
-            background: rgba(0, 212, 255, 0.1);
-        }
-        
-        .region-item.active {
-            background: rgba(0, 212, 255, 0.2);
-            border-left: 3px solid #00d4ff;
-        }
-        
-        .scrollbar::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .scrollbar::-webkit-scrollbar-track {
-            background: #1a1a2e;
-        }
-        
-        .scrollbar::-webkit-scrollbar-thumb {
-            background: #00d4ff;
-            border-radius: 3px;
-        }
-        
-        .search-result {
-            padding: 8px;
-            margin: 2px 0;
-            background: rgba(0, 212, 255, 0.1);
-            border-left: 3px solid #00d4ff;
-            border-radius: 3px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        
-        .search-result:hover {
-            background: rgba(0, 212, 255, 0.2);
-        }
-        
-        .route-inputs {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        
-        .route-inputs input {
-            background: rgba(0, 0, 0, 0.7);
-            border: 1px solid #333;
-            color: #ffffff;
-            padding: 8px;
-            border-radius: 4px;
-            width: 100%;
-        }
-        
-        .route-inputs input:focus {
-            outline: none;
-            border-color: #00d4ff;
-            box-shadow: 0 0 5px rgba(0, 212, 255, 0.3);
-        }
-        
-        .controls-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 5px;
-            margin-bottom: 10px;
-        }
-        
-        .controls-grid .btn {
-            font-size: 11px;
-            padding: 6px 10px;
-        }
-    </style>
+    <link rel="stylesheet" href="eve-map-styles.css">
+    <script src="eve-api-client.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -515,113 +160,22 @@
             Zoom: <span id="zoomLevel">100%</span> | 
             Selected: <span id="selectedSystemName">None</span></span>
             <div style="margin-left: auto;">
-                <span>Data provided by EVE ESI API</span>
+                <span>Data from FastAPI Backend</span>
             </div>
         </footer>
     </div>
 
     <script>
-        // EVE API Client Class
-        class EVEAPIClient {
-            constructor() {
-                this.baseURL = 'https://esi.evetech.net/latest';
-                this.cache = new Map();
-                this.rateLimitDelay = 150;
-                this.requestQueue = [];
-                this.processing = false;
-            }
-            
-            async makeRequest(endpoint, useCache = true) {
-                if (useCache && this.cache.has(endpoint)) {
-                    return this.cache.get(endpoint);
-                }
-                
-                return new Promise((resolve, reject) => {
-                    this.requestQueue.push({ endpoint, useCache, resolve, reject });
-                    this.processQueue();
-                });
-            }
-            
-            async processQueue() {
-                if (this.processing || this.requestQueue.length === 0) return;
-                
-                this.processing = true;
-                
-                while (this.requestQueue.length > 0) {
-                    const { endpoint, useCache, resolve, reject } = this.requestQueue.shift();
-                    
-                    try {
-                        const response = await fetch(`${this.baseURL}${endpoint}`);
-                        if (!response.ok) {
-                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                        }
-                        
-                        const data = await response.json();
-                        if (useCache) {
-                            this.cache.set(endpoint, data);
-                        }
-                        
-                        resolve(data);
-                        
-                        if (this.requestQueue.length > 0) {
-                            await new Promise(resolve => setTimeout(resolve, this.rateLimitDelay));
-                        }
-                        
-                    } catch (error) {
-                        console.warn(`API request failed for ${endpoint}:`, error);
-                        reject(error);
-                    }
-                }
-                
-                this.processing = false;
-            }
-            
-            async getRegions() {
-                return this.makeRequest('/universe/regions/');
-            }
-            
-            async getRegionInfo(regionId) {
-                return this.makeRequest(`/universe/regions/${regionId}/`);
-            }
-            
-            async getConstellationInfo(constellationId) {
-                return this.makeRequest(`/universe/constellations/${constellationId}/`);
-            }
-            
-            async getSystemInfo(systemId) {
-                return this.makeRequest(`/universe/systems/${systemId}/`);
-            }
-            
-            async getStargateInfo(stargateId) {
-                return this.makeRequest(`/universe/stargates/${stargateId}/`);
-            }
-            
-            async getSystemKills() {
-                return this.makeRequest('/universe/system_kills/', false);
-            }
-            
-            async getSystemJumps() {
-                return this.makeRequest('/universe/system_jumps/', false);
-            }
-            
-            async calculateRoute(origin, destination, avoid = 'secure', connections = 'secure') {
-                const params = new URLSearchParams({
-                    avoid: avoid,
-                    connections: connections,
-                    destination: destination,
-                    flag: 'shortest',
-                    origin: origin
-                });
-                
-                return this.makeRequest(`/route/${origin}/${destination}/?${params}`, false);
-            }
-        }
-
-        // Main EVE Universe Map Class
+        // Main EVE Universe Map Class - Updated to use FastAPI backend
         class EVEUniverseMap2D {
             constructor() {
                 this.canvas = document.getElementById('mapCanvas');
                 this.ctx = this.canvas.getContext('2d');
+                
+                // Initialize API client with FastAPI backend URL
+                this.api = new EVEAPIClient({
+                    proxyURL: 'http://localhost:3001/api'  // Your FastAPI backend
+                });
                 
                 this.systems = [];
                 this.regions = [];
@@ -676,10 +230,22 @@
                 this.canvas.addEventListener('wheel', this.handleWheel.bind(this));
                 this.canvas.addEventListener('click', this.handleClick.bind(this));
                 
-                // Search
+                // Search with debounce
+                let searchTimeout;
                 const searchInput = document.getElementById('searchInput');
                 searchInput.addEventListener('input', (e) => {
-                    this.searchSystem(e.target.value);
+                    clearTimeout(searchTimeout);
+                    const query = e.target.value.trim();
+                    
+                    if (query.length >= 2) {
+                        searchTimeout = setTimeout(() => {
+                            this.searchSystemFromAPI(query);
+                        }, 300);
+                    } else {
+                        this.highlightedSystems = [];
+                        this.hideSearchResults();
+                        this.draw();
+                    }
                 });
                 
                 // Reset view
@@ -697,43 +263,41 @@
             
             async loadUniverseData() {
                 try {
-                    this.api = new EVEAPIClient();
-                    this.systemKills = new Map();
-                    this.systemJumps = new Map();
-                    this.highlightedSystems = [];
+                    document.getElementById('loadingProgress').textContent = 'Connecting to FastAPI backend...';
                     
-                    document.getElementById('loadingProgress').textContent = 'Fetching regions...';
+                    // Use the optimized endpoint from FastAPI
+                    const optimizedData = await this.api.getUniverseOverview();
                     
-                    const regionIds = await this.api.getRegions();
-                    console.log(`Found ${regionIds.length} regions`);
+                    document.getElementById('loadingProgress').textContent = 
+                        `Loading ${optimizedData.regions.length} regions from cache...`;
                     
-                    const knownSpaceRegions = regionIds.filter(id => id < 11000000);
+                    // Process the optimized data
+                    this.regions = optimizedData.regions;
                     
                     let totalSystems = 0;
-                    let processedRegions = 0;
-                    const maxRegions = 10; // Reduced for faster loading
                     
-                    for (const regionId of knownSpaceRegions.slice(0, maxRegions)) {
+                    // Load detailed data for each region
+                    for (const region of optimizedData.regions) {
+                        document.getElementById('loadingProgress').textContent = 
+                            `Loading ${region.name}...`;
+                        
                         try {
-                            document.getElementById('loadingProgress').textContent = 
-                                `Loading region ${processedRegions + 1}/${maxRegions}...`;
+                            const regionInfo = await this.api.getRegionInfo(region.id);
                             
-                            const regionInfo = await this.api.getRegionInfo(regionId);
-                            this.regions.push(regionInfo);
-                            
-                            const constellationIds = regionInfo.constellations.slice(0, 3);
-                            
-                            for (const constellationId of constellationIds) {
+                            // Process limited constellations for performance
+                            for (const constellationId of region.constellations) {
                                 try {
                                     const constellationInfo = await this.api.getConstellationInfo(constellationId);
-                                    const systemIds = constellationInfo.systems.slice(0, 5);
                                     
-                                    for (const systemId of systemIds) {
+                                    // Load limited systems per constellation
+                                    const systemsToLoad = constellationInfo.systems.slice(0, 5);
+                                    
+                                    for (const systemId of systemsToLoad) {
                                         try {
                                             const systemInfo = await this.api.getSystemInfo(systemId);
                                             
-                                            systemInfo.region_id = regionId;
-                                            systemInfo.region_name = regionInfo.name;
+                                            systemInfo.region_id = region.id;
+                                            systemInfo.region_name = region.name;
                                             systemInfo.constellation_id = constellationId;
                                             systemInfo.constellation_name = constellationInfo.name;
                                             
@@ -748,10 +312,10 @@
                                             this.systems.push(systemInfo);
                                             totalSystems++;
                                             
-                                            if (totalSystems % 25 === 0) {
+                                            if (totalSystems % 10 === 0) {
                                                 document.getElementById('loadingProgress').textContent = 
-                                                    `Loaded ${totalSystems} systems...`;
-                                                await new Promise(resolve => setTimeout(resolve, 10));
+                                                    `Loaded ${totalSystems} systems (cached)...`;
+                                                await new Promise(resolve => setTimeout(resolve, 1));
                                             }
                                             
                                         } catch (error) {
@@ -764,10 +328,8 @@
                                 }
                             }
                             
-                            processedRegions++;
-                            
                         } catch (error) {
-                            console.warn(`Failed to load region ${regionId}:`, error);
+                            console.warn(`Failed to load region ${region.name}:`, error);
                         }
                     }
                     
@@ -785,7 +347,7 @@
                     
                 } catch (error) {
                     console.error('Error loading universe data:', error);
-                    document.getElementById('loadingProgress').textContent = 'Failed to load data, using sample data...';
+                    document.getElementById('loadingProgress').textContent = 'Failed to connect to backend, using sample data...';
                     
                     setTimeout(() => {
                         this.createSampleData();
@@ -796,7 +358,7 @@
             
             async loadSystemConnections() {
                 this.connections = [];
-                const maxConnections = 100;
+                const maxConnections = 50;
                 let loadedConnections = 0;
                 
                 for (const system of this.systems) {
@@ -825,7 +387,7 @@
                     }
                     
                     if (loadedConnections % 10 === 0) {
-                        await new Promise(resolve => setTimeout(resolve, 100));
+                        await new Promise(resolve => setTimeout(resolve, 10));
                     }
                 }
                 
@@ -834,33 +396,176 @@
             
             async loadRealtimeData() {
                 try {
-                    const kills = await this.api.getSystemKills();
+                    const [kills, jumps] = await Promise.all([
+                        this.api.getSystemKills(),
+                        this.api.getSystemJumps()
+                    ]);
+                    
                     this.systemKills.clear();
-                    kills.forEach(kill => {
-                        this.systemKills.set(kill.system_id, kill);
-                    });
+                    if (kills && Array.isArray(kills)) {
+                        kills.forEach(kill => {
+                            this.systemKills.set(kill.system_id, kill);
+                        });
+                    }
                     
-                    const jumps = await this.api.getSystemJumps();
                     this.systemJumps.clear();
-                    jumps.forEach(jump => {
-                        this.systemJumps.set(jump.system_id, jump);
-                    });
+                    if (jumps && Array.isArray(jumps)) {
+                        jumps.forEach(jump => {
+                            this.systemJumps.set(jump.system_id, jump);
+                        });
+                    }
                     
-                    console.log(`Loaded real-time data: ${kills.length} kill records, ${jumps.length} jump records`);
+                    console.log(`Loaded real-time data: ${this.systemKills.size} kill records, ${this.systemJumps.size} jump records`);
                     
                 } catch (error) {
                     console.warn('Failed to load real-time data:', error);
                 }
             }
             
+            async searchSystemFromAPI(query) {
+                try {
+                    // Use the FastAPI search endpoint
+                    const response = await fetch(`http://localhost:3001/api/search/systems?query=${encodeURIComponent(query)}`);
+                    const results = await response.json();
+                    
+                    if (results && results.length > 0) {
+                        this.displaySearchResultsFromAPI(results);
+                        
+                        // Highlight systems that are already loaded
+                        const loadedSystemIds = results
+                            .map(r => r.id)
+                            .filter(id => this.systems.some(s => s.system_id === id));
+                        
+                        this.highlightedSystems = this.systems.filter(s => 
+                            loadedSystemIds.includes(s.system_id)
+                        );
+                        
+                        this.draw();
+                    } else {
+                        this.hideSearchResults();
+                    }
+                } catch (error) {
+                    console.error('Search failed:', error);
+                    // Fall back to local search
+                    this.searchSystem(query);
+                }
+            }
+            
+            displaySearchResultsFromAPI(results) {
+                const searchResultsPanel = document.getElementById('searchResultsPanel');
+                const searchResults = document.getElementById('searchResults');
+                
+                searchResultsPanel.style.display = 'block';
+                
+                searchResults.innerHTML = results.map(system => {
+                    const isLoaded = this.systems.some(s => s.system_id === system.id);
+                    const loadedSystem = this.systems.find(s => s.system_id === system.id);
+                    
+                    return `
+                        <div class="search-result" ${isLoaded ? `onclick='map.focusOnSystemById(${system.id})'` : ''}>
+                            <div style="font-weight: bold; color: #00d4ff;">
+                                ${system.name}
+                                ${!isLoaded ? '<span style="color: #888; font-size: 10px;"> (not loaded)</span>' : ''}
+                            </div>
+                            <div style="font-size: 11px; color: #aaa;">
+                                Security: ${system.security.toFixed(1)}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            focusOnSystemById(systemId) {
+                const system = this.systems.find(s => s.system_id === systemId);
+                if (system) {
+                    this.focusOnSystem(system);
+                }
+            }
+            
+            async planRoute(originSystemId, destinationSystemId) {
+                if (!originSystemId || !destinationSystemId) {
+                    console.warn('Cannot plan route: missing origin or destination');
+                    return;
+                }
+                
+                try {
+                    document.getElementById('loadingProgress').textContent = 'Calculating route...';
+                    document.getElementById('loadingOverlay').style.display = 'flex';
+                    
+                    // Use the FastAPI route calculation endpoint
+                    const response = await fetch('http://localhost:3001/api/route/calculate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            origin: originSystemId,
+                            destination: destinationSystemId,
+                            avoid: 'secure'
+                        })
+                    });
+                    
+                    const routeData = await response.json();
+                    
+                    this.currentRoute = [];
+                    for (const systemId of routeData.route) {
+                        const system = this.systems.find(s => s.system_id === systemId);
+                        if (system) {
+                            this.currentRoute.push(system);
+                        }
+                    }
+                    
+                    this.routeStart = this.systems.find(s => s.system_id === originSystemId);
+                    this.routeEnd = this.systems.find(s => s.system_id === destinationSystemId);
+                    
+                    this.updateRouteDisplay();
+                    this.switchTab('route');
+                    this.draw();
+                    
+                    console.log(`Route calculated: ${routeData.jumps} jumps`);
+                    
+                } catch (error) {
+                    console.error('Route planning failed:', error);
+                    alert('Failed to calculate route. Please ensure the FastAPI backend is running.');
+                } finally {
+                    this.hideLoading();
+                }
+            }
+            
+            // Keep the existing local search as fallback
+            searchSystem(query) {
+                if (!query || query.length < 2) {
+                    this.highlightedSystems = [];
+                    this.hideSearchResults();
+                    this.draw();
+                    return;
+                }
+                
+                const matches = this.systems.filter(system => 
+                    system.name.toLowerCase().includes(query.toLowerCase()) ||
+                    (system.region_name && system.region_name.toLowerCase().includes(query.toLowerCase())) ||
+                    (system.constellation_name && system.constellation_name.toLowerCase().includes(query.toLowerCase()))
+                );
+                
+                this.highlightedSystems = matches.slice(0, 20);
+                
+                if (matches.length === 1) {
+                    this.focusOnSystem(matches[0]);
+                }
+                
+                this.draw();
+                this.displaySearchResults(matches.slice(0, 10));
+            }
+            
             createSampleData() {
-                // Create sample data for testing
+                // Create sample data for testing when backend is unavailable
                 const sampleRegions = ['The Forge', 'Domain', 'Delve', 'Pure Blind', 'Tribute'];
                 
                 sampleRegions.forEach((regionName, regionIndex) => {
                     this.regions.push({
                         name: regionName,
-                        region_id: regionIndex + 10000000
+                        id: regionIndex + 10000000,
+                        constellations: []
                     });
                     
                     for (let i = 0; i < 20; i++) {
@@ -922,7 +627,7 @@
                 });
                 
                 // Focus on region systems
-                const regionSystems = this.systems.filter(s => s.region_id === region.region_id);
+                const regionSystems = this.systems.filter(s => s.region_id === region.id);
                 if (regionSystems.length > 0) {
                     this.focusOnSystems(regionSystems);
                 }
@@ -1326,43 +1031,6 @@
                 });
             }
             
-            async planRoute(originSystemId, destinationSystemId) {
-                if (!originSystemId || !destinationSystemId) {
-                    console.warn('Cannot plan route: missing origin or destination');
-                    return;
-                }
-                
-                try {
-                    document.getElementById('loadingProgress').textContent = 'Calculating route...';
-                    document.getElementById('loadingOverlay').style.display = 'flex';
-                    
-                    const route = await this.api.calculateRoute(originSystemId, destinationSystemId);
-                    
-                    this.currentRoute = [];
-                    for (const systemId of route) {
-                        const system = this.systems.find(s => s.system_id === systemId);
-                        if (system) {
-                            this.currentRoute.push(system);
-                        }
-                    }
-                    
-                    this.routeStart = this.systems.find(s => s.system_id === originSystemId);
-                    this.routeEnd = this.systems.find(s => s.system_id === destinationSystemId);
-                    
-                    this.updateRouteDisplay();
-                    this.switchTab('route');
-                    this.draw();
-                    
-                    console.log(`Route calculated: ${this.currentRoute.length} jumps`);
-                    
-                } catch (error) {
-                    console.error('Route planning failed:', error);
-                    alert('Failed to calculate route. This might be due to API limitations or invalid systems.');
-                } finally {
-                    this.hideLoading();
-                }
-            }
-            
             planRouteFromInputs() {
                 const fromInput = document.getElementById('routeFrom').value.trim();
                 const toInput = document.getElementById('routeTo').value.trim();
@@ -1420,30 +1088,6 @@
                     step.addEventListener('click', () => this.focusOnSystem(system));
                     routeSteps.appendChild(step);
                 });
-            }
-            
-            searchSystem(query) {
-                if (!query || query.length < 2) {
-                    this.highlightedSystems = [];
-                    this.hideSearchResults();
-                    this.draw();
-                    return;
-                }
-                
-                const matches = this.systems.filter(system => 
-                    system.name.toLowerCase().includes(query.toLowerCase()) ||
-                    (system.region_name && system.region_name.toLowerCase().includes(query.toLowerCase())) ||
-                    (system.constellation_name && system.constellation_name.toLowerCase().includes(query.toLowerCase()))
-                );
-                
-                this.highlightedSystems = matches.slice(0, 20);
-                
-                if (matches.length === 1) {
-                    this.focusOnSystem(matches[0]);
-                }
-                
-                this.draw();
-                this.displaySearchResults(matches.slice(0, 10));
             }
             
             displaySearchResults(results) {
@@ -1575,7 +1219,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             map = new EVEUniverseMap2D();
             window.map = map;
-            console.log('EVE Universe Map initialized');
+            console.log('EVE Universe Map initialized with FastAPI backend');
         });
     </script>
 </body>
