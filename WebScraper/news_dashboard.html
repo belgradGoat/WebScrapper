@@ -401,6 +401,65 @@
                 font-size: 2em;
             }
         }
+.summary-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 25px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+}
+
+.summary-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    justify-content: center;
+}
+
+.summary-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 8px;
+    font-size: 0.9em;
+}
+
+.source-breakdown {
+    display: flex;
+    gap: 20px;
+    margin: 15px 0;
+}
+
+.source-stat {
+    background: rgba(255,255,255,0.2);
+    padding: 10px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.summary-history {
+    max-height: 300px;
+    overflow-y: auto;
+    background: rgba(255,255,255,0.1);
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+.history-item {
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    padding: 10px 0;
+    cursor: pointer;
+}
+
+.history-item:hover {
+    background: rgba(255,255,255,0.1);
+    border-radius: 5px;
+}
+
     </style>
 </head>
 <body>
@@ -494,11 +553,17 @@ const CONFIG = {
     articlesPerPage: 10,
     refreshInterval: 300000,
     supportedLanguages: ['en', 'pl']
+    
 };
-
+CONFIG.gemmaApiUrl = 'http://localhost:3000/api/summarize-gemma';
+CONFIG.summariesApiUrl = 'http://localhost:3000/api/summaries';
 // Cache system
 const CACHE_DURATION = 5 * 60 * 1000;
 const apiCache = new Map();
+
+// Summary management
+let currentSummary = null;
+let summaryHistory = [];
 
 // Data storage
 let newsSections = [
@@ -1141,7 +1206,7 @@ function refreshBluesky() {
 }
 
 // ===================================================================
-// REDDIT SECTION (FIXED)
+// REDDIT SECTION
 // ===================================================================
 function createRedditSection() {
     const div = document.createElement('div');
@@ -1318,6 +1383,341 @@ function refreshReddit() {
     searchRedditInternal(keyword);
 }
 
+// ===================================================================
+// Gemma Functionality
+// ===================================================================
+async function generateGlobalBrief() {
+    const briefSection = document.getElementById('global-brief-section');
+    const briefContent = document.getElementById('global-brief-content');
+
+    if (briefSection) briefSection.style.display = 'block';
+    if (briefContent) {
+        briefContent.innerHTML = `
+            <div class="summary-section">
+                <div class="summary-controls">
+                    <button class="btn btn-primary" onclick="generateGemmaSummary()">🤖 Generate AI Brief</button>
+                    <button class="btn btn-secondary" onclick="loadSummaryHistory()">📚 View History</button>
+                    <button class="btn btn-secondary" onclick="document.getElementById('global-brief-section').style.display='none'">❌ Close</button>
+                </div>
+                <div id="summary-content">
+                    <p>Click "Generate AI Brief" to create an intelligent summary using Gemma AI.</p>
+                    <p><strong>Summary Features:</strong></p>
+                    <ul>
+                        <li>70% focus on reliable news sources (Reuters, BBC, AP, Guardian)</li>
+                        <li>30% social media context (Reddit, Bluesky)</li>
+                        <li>Stored in MongoDB for historical tracking</li>
+                        <li>Source reliability weighting applied</li>
+                    </ul>
+                </div>
+            </div>
+        `;
+    }
+}
+
+async function generateGemmaSummary() {
+    console.log('🤖 Starting Gemma summary generation...');
+    
+    const summaryContent = document.getElementById('summary-content');
+    if (!summaryContent) {
+        console.error('❌ Summary content div not found');
+        return;
+    }
+    
+    summaryContent.innerHTML = '<div class="loading">Generating intelligent summary with Gemma AI...</div>';
+    
+    try {
+        // Collect all articles from current sections
+        const allArticles = [];
+        
+        console.log('📊 Collecting articles from sections...');
+        console.log('News sections:', newsSections.length);
+        
+        // Add news articles
+        newsSections.forEach((section, index) => {
+            console.log(`Section ${index}: ${section.title} - ${section.articles?.length || 0} articles`);
+            if (section.articles) {
+                section.articles.forEach(article => {
+                    allArticles.push({
+                        ...article,
+                        source: {
+                            ...article.source,
+                            type: article.source?.type || 'News'
+                        }
+                    });
+                });
+            }
+        });
+        
+        // Add social media posts
+        console.log('Bluesky posts:', blueskyData.posts?.length || 0);
+        if (blueskyData.posts) {
+            blueskyData.posts.forEach(post => {
+                allArticles.push({
+                    title: post.text,
+                    description: post.text,
+                    source: { name: 'Bluesky', type: 'bluesky' },
+                    publishedAt: new Date().toISOString()
+                });
+            });
+        }
+        
+        console.log('Reddit posts:', redditData.posts?.length || 0);
+        if (redditData.posts) {
+            redditData.posts.forEach(post => {
+                allArticles.push({
+                    title: post.title,
+                    description: post.text || post.title,
+                    source: { name: 'Reddit', type: 'reddit' },
+                    publishedAt: new Date().toISOString()
+                });
+            });
+        }
+        
+        console.log(`📝 Total articles collected: ${allArticles.length}`);
+        
+        if (allArticles.length === 0) {
+            summaryContent.innerHTML = `
+                <div class="error">
+                    <h3>❌ No Articles Available</h3>
+                    <p>No articles found for summarization. Please:</p>
+                    <ol>
+                        <li>Make sure you've searched for a topic using "Search All"</li>
+                        <li>Wait for articles to load in the sections below</li>
+                        <li>Check that news sections have content</li>
+                    </ol>
+                    <button class="btn btn-primary" onclick="globalSearch()">🔍 Search for Articles First</button>
+                </div>
+            `;
+            return;
+        }
+        
+        const keyword = document.getElementById('globalKeyword')?.value || 'Global Update';
+        console.log(`🎯 Using keyword: "${keyword}"`);
+        console.log(`🔗 Calling API: ${CONFIG.gemmaApiUrl}`);
+        
+        const requestBody = {
+            articles: allArticles,
+            prompt: `Create a comprehensive analysis of "${keyword}" based on the following sources. Focus primarily on news sources and use social media as supporting context.`
+        };
+        
+        console.log('📤 Sending request with:', {
+            articleCount: allArticles.length,
+            prompt: requestBody.prompt.substring(0, 100) + '...'
+        });
+        
+        const response = await fetch(CONFIG.gemmaApiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
+        
+        console.log(`📨 Response status: ${response.status}`);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ API Error Response:', errorText);
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        console.log('✅ API Response received:', {
+            success: result.success,
+            summaryLength: result.summary?.length || 0,
+            summaryId: result.summary_id,
+            storageType: result.storage_type
+        });
+        
+        if (result.error) {
+            console.error('❌ API returned error:', result.error);
+            throw new Error(result.error);
+        }
+        
+        if (!result.success || !result.summary) {
+            console.error('❌ Invalid API response format:', result);
+            throw new Error('Invalid response format from summary API');
+        }
+        
+        currentSummary = result;
+        displayGemmaSummary(result);
+        console.log('✅ Summary displayed successfully');
+        
+    } catch (error) {
+        console.error('❌ Gemma summary error:', error);
+        summaryContent.innerHTML = `
+            <div class="error">
+                <h3>❌ Summary Generation Failed</h3>
+                <p><strong>Error:</strong> ${error.message}</p>
+                <p><strong>Troubleshooting:</strong></p>
+                <ul>
+                    <li>Check that the server is running on port 3000</li>
+                    <li>Verify articles are loaded in the sections below</li>
+                    <li>Check browser console for detailed errors</li>
+                </ul>
+                <button class="btn btn-secondary" onclick="location.reload()">🔄 Reload Page</button>
+            </div>
+        `;
+    }
+}
+
+function displayGemmaSummary(summaryData) {
+    const summaryContent = document.getElementById('summary-content');
+    if (!summaryContent) return;
+    
+    const timestamp = new Date(summaryData.timestamp).toLocaleString();
+    
+    summaryContent.innerHTML = `
+        <div class="summary-meta">
+            <div>
+                <strong>Generated:</strong> ${timestamp}<br>
+                <strong>Model:</strong> Gemma 2
+                <strong>ID:</strong> ${summaryData.summary_id || 'N/A'}
+            </div>
+            <div>
+                <strong>Saved to MongoDB</strong> ✅
+            </div>
+        </div>
+        
+        <div class="source-breakdown">
+            <div class="source-stat">
+                <strong>${summaryData.source_breakdown.news_sources}</strong><br>
+                News Sources (70%)
+            </div>
+            <div class="source-stat">
+                <strong>${summaryData.source_breakdown.social_sources}</strong><br>
+                Social Media (30%)
+            </div>
+            <div class="source-stat">
+                <strong>${summaryData.source_breakdown.total_articles}</strong><br>
+                Total Articles
+            </div>
+        </div>
+        
+        <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 8px; line-height: 1.6;">
+            ${summaryData.summary.replace(/\n/g, '<br>')}
+        </div>
+        
+        <div style="margin-top: 20px; text-align: center;">
+            <button class="btn btn-secondary" onclick="loadSummaryHistory()">📚 View History</button>
+            <button class="btn btn-secondary" onclick="downloadSummary()">💾 Download</button>
+        </div>
+    `;
+}
+
+async function loadSummaryHistory() {
+    const summaryContent = document.getElementById('summary-content');
+    if (!summaryContent) return;
+    
+    summaryContent.innerHTML = '<div class="loading">Loading summary history from MongoDB...</div>';
+    
+    try {
+        const response = await fetch(CONFIG.summariesApiUrl);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.error) {
+            throw new Error(result.error);
+        }
+        
+        summaryHistory = result.summaries || [];
+        displaySummaryHistory();
+        
+    } catch (error) {
+        console.error('History loading error:', error);
+        summaryContent.innerHTML = `<div class="error">Failed to load history: ${error.message}</div>`;
+    }
+}
+
+function displaySummaryHistory() {
+    const summaryContent = document.getElementById('summary-content');
+    if (!summaryContent) return;
+    
+    if (summaryHistory.length === 0) {
+        summaryContent.innerHTML = `
+            <div style="text-align: center; padding: 20px;">
+                <h3>📚 Summary History</h3>
+                <p>No summaries found in database.</p>
+                <button class="btn btn-primary" onclick="generateGemmaSummary()">Generate First Summary</button>
+            </div>
+        `;
+        return;
+    }
+    
+    const historyHTML = summaryHistory.map((summary, index) => {
+        const date = new Date(summary.timestamp).toLocaleString();
+        const preview = summary.summary.substring(0, 100) + '...';
+        
+        return `
+            <div class="history-item" onclick="displayHistoricalSummary(${index})">
+                <div style="font-weight: 600; margin-bottom: 5px;">${date}</div>
+                <div style="font-size: 0.9em; opacity: 0.8;">${preview}</div>
+                <div style="font-size: 0.8em; margin-top: 5px;">
+                    📰 ${summary.source_breakdown.news_sources} news • 
+                    💬 ${summary.source_breakdown.social_sources} social
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    summaryContent.innerHTML = `
+        <div style="text-align: center; margin-bottom: 20px;">
+            <h3>📚 Summary History (${summaryHistory.length} items)</h3>
+            <button class="btn btn-primary" onclick="generateGemmaSummary()">Generate New Summary</button>
+        </div>
+        
+        <div class="summary-history">
+            ${historyHTML}
+        </div>
+    `;
+}
+
+function displayHistoricalSummary(index) {
+    if (!summaryHistory[index]) return;
+    
+    const summary = summaryHistory[index];
+    currentSummary = summary;
+    
+    displayGemmaSummary({
+        ...summary,
+        summary_id: summary._id
+    });
+}
+
+function downloadSummary() {
+    if (!currentSummary) return;
+    
+    const content = `
+Eagle Watchtower - AI Summary Report
+Generated: ${new Date(currentSummary.timestamp).toLocaleString()}
+Model: Gemma 2
+Search Term: ${currentSummary.search_term}
+
+Source Breakdown:
+- News Sources: ${currentSummary.source_breakdown.news_sources} (70% weight)
+- Social Media: ${currentSummary.source_breakdown.social_sources} (30% weight)
+- Total Articles: ${currentSummary.source_breakdown.total_articles}
+
+Summary:
+${currentSummary.summary}
+
+---
+Generated by Eagle Watchtower Dashboard
+Powered by Gemma AI and MongoDB
+    `.trim();
+    
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `eagle-watchtower-summary-${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
 // ===================================================================
 // UTILITY FUNCTIONS
 // ===================================================================

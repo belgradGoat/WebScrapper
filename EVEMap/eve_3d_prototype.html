@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EVE Online 3D Universe Map</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000011;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            color: #ffffff;
+        }
+        
+        #container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border: 1px solid #00ffff;
+            border-radius: 5px;
+            z-index: 100;
+            max-width: 300px;
+        }
+        
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 18px;
+            color: #00ffff;
+            text-align: center;
+            z-index: 200;
+        }
+        
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border: 1px solid #555;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 100;
+        }
+        
+        #legend {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border: 1px solid #555;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 100;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+        
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .spinner {
+            border: 2px solid #333;
+            border-top: 2px solid #00ffff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        #searchBox {
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #00ffff;
+            color: #ffffff;
+            padding: 5px 10px;
+            margin-top: 10px;
+            width: 200px;
+        }
+        
+        #searchBox:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="loading">
+            <div class="spinner"></div>
+            <div>Loading EVE Universe Data...</div>
+            <div id="loadingProgress">Fetching systems...</div>
+        </div>
+        
+        <div id="info" style="display: none;">
+            <div style="color: #00ffff; font-weight: bold; margin-bottom: 10px;">EVE Universe Map</div>
+            <div id="systemCount">Systems: 0</div>
+            <div id="selectedSystem">Hover over a system for details</div>
+            <input type="text" id="searchBox" placeholder="Search system..." />
+        </div>
+        
+        <div id="controls" style="display: none;">
+            <div style="font-weight: bold; margin-bottom: 5px;">Controls:</div>
+            <div>Mouse: Rotate camera</div>
+            <div>Scroll: Zoom in/out</div>
+            <div>Click: Select system</div>
+        </div>
+        
+        <div id="legend" style="display: none;">
+            <div style="font-weight: bold; margin-bottom: 10px;">Security Status</div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: #00ff00;"></div>
+                High-Sec (1.0 - 0.5)
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: #ffff00;"></div>
+                Low-Sec (0.4 - 0.1)
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: #ff4444;"></div>
+                Null-Sec (0.0 - -1.0)
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: #ff00ff;"></div>
+                Wormhole Space
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        class EVEUniverseMap {
+            constructor() {
+                this.scene = null;
+                this.camera = null;
+                this.renderer = null;
+                this.controls = null;
+                this.systems = [];
+                this.systemMeshes = [];
+                this.connections = [];
+                this.raycaster = new THREE.Raycaster();
+                this.mouse = new THREE.Vector2();
+                this.selectedSystem = null;
+                
+                this.init();
+                this.loadUniverseData();
+            }
+            
+            init() {
+                // Scene setup
+                this.scene = new THREE.Scene();
+                this.scene.background = new THREE.Color(0x000011);
+                
+                // Camera setup
+                this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100000);
+                this.camera.position.set(0, 0, 1000);
+                
+                // Renderer setup
+                this.renderer = new THREE.WebGLRenderer({ antialias: true });
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setPixelRatio(window.devicePixelRatio);
+                document.getElementById('container').appendChild(this.renderer.domElement);
+                
+                // Add stars
+                this.createStarField();
+                
+                // Add lights
+                const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+                this.scene.add(ambientLight);
+                
+                const pointLight = new THREE.PointLight(0xffffff, 1, 0);
+                pointLight.position.set(0, 0, 0);
+                this.scene.add(pointLight);
+                
+                // Mouse controls (simple orbit)
+                this.setupControls();
+                
+                // Event listeners
+                window.addEventListener('resize', () => this.onWindowResize());
+                this.renderer.domElement.addEventListener('mousemove', (e) => this.onMouseMove(e));
+                this.renderer.domElement.addEventListener('click', (e) => this.onMouseClick(e));
+                
+                // Search functionality
+                document.getElementById('searchBox').addEventListener('input', (e) => this.searchSystem(e.target.value));
+                
+                // Animation loop
+                this.animate();
+            }
+            
+            setupControls() {
+                let isDragging = false;
+                let previousMousePosition = { x: 0, y: 0 };
+                
+                this.renderer.domElement.addEventListener('mousedown', (e) => {
+                    isDragging = true;
+                    previousMousePosition = { x: e.clientX, y: e.clientY };
+                });
+                
+                this.renderer.domElement.addEventListener('mousemove', (e) => {
+                    if (isDragging) {
+                        const deltaMove = {
+                            x: e.clientX - previousMousePosition.x,
+                            y: e.clientY - previousMousePosition.y
+                        };
+                        
+                        const spherical = new THREE.Spherical();
+                        spherical.setFromVector3(this.camera.position);
+                        
+                        spherical.theta -= deltaMove.x * 0.01;
+                        spherical.phi += deltaMove.y * 0.01;
+                        spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
+                        
+                        this.camera.position.setFromSpherical(spherical);
+                        this.camera.lookAt(0, 0, 0);
+                        
+                        previousMousePosition = { x: e.clientX, y: e.clientY };
+                    }
+                });
+                
+                this.renderer.domElement.addEventListener('mouseup', () => {
+                    isDragging = false;
+                });
+                
+                this.renderer.domElement.addEventListener('wheel', (e) => {
+                    const scale = e.deltaY > 0 ? 1.1 : 0.9;
+                    this.camera.position.multiplyScalar(scale);
+                    this.camera.position.clampLength(100, 10000);
+                });
+            }
+            
+            createStarField() {
+                const starGeometry = new THREE.BufferGeometry();
+                const starCount = 2000;
+                const positions = new Float32Array(starCount * 3);
+                
+                for (let i = 0; i < starCount * 3; i += 3) {
+                    positions[i] = (Math.random() - 0.5) * 20000;
+                    positions[i + 1] = (Math.random() - 0.5) * 20000;
+                    positions[i + 2] = (Math.random() - 0.5) * 20000;
+                }
+                
+                starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                
+                const starMaterial = new THREE.PointsMaterial({
+                    color: 0xffffff,
+                    size: 2,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                
+                const stars = new THREE.Points(starGeometry, starMaterial);
+                this.scene.add(stars);
+            }
+            
+            async loadUniverseData() {
+                try {
+                    document.getElementById('loadingProgress').textContent = 'Fetching system list...';
+                    
+                    // Get all system IDs
+                    const systemsResponse = await fetch('https://esi.evetech.net/latest/universe/systems/');
+                    const systemIds = await systemsResponse.json();
+                    
+                    document.getElementById('loadingProgress').textContent = `Loading ${systemIds.length} systems...`;
+                    
+                    // Load systems in batches to avoid overwhelming the API
+                    const batchSize = 50;
+                    const systems = [];
+                    
+                    for (let i = 0; i < Math.min(systemIds.length, 500); i += batchSize) {
+                        const batch = systemIds.slice(i, i + batchSize);
+                        const batchPromises = batch.map(id => this.fetchSystemData(id));
+                        const batchResults = await Promise.all(batchPromises);
+                        systems.push(...batchResults.filter(s => s !== null));
+                        
+                        document.getElementById('loadingProgress').textContent = 
+                            `Loaded ${systems.length} systems...`;
+                        
+                        // Small delay to be nice to the API
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                    
+                    this.systems = systems;
+                    this.createSystemMeshes();
+                    this.hideLoading();
+                    
+                } catch (error) {
+                    console.error('Error loading universe data:', error);
+                    document.getElementById('loadingProgress').textContent = 'Error loading data. Using sample data...';
+                    this.createSampleData();
+                    this.hideLoading();
+                }
+            }
+            
+            async fetchSystemData(systemId) {
+                try {
+                    const response = await fetch(`https://esi.evetech.net/latest/universe/systems/${systemId}/`);
+                    if (!response.ok) return null;
+                    
+                    const data = await response.json();
+                    return {
+                        id: systemId,
+                        name: data.name,
+                        position: data.position,
+                        security_status: data.security_status,
+                        constellation_id: data.constellation_id
+                    };
+                } catch (error) {
+                    return null;
+                }
+            }
+            
+            createSampleData() {
+                // Create sample data if API fails
+                this.systems = [];
+                for (let i = 0; i < 200; i++) {
+                    this.systems.push({
+                        id: i,
+                        name: `System-${i}`,
+                        position: {
+                            x: (Math.random() - 0.5) * 2000,
+                            y: (Math.random() - 0.5) * 2000,
+                            z: (Math.random() - 0.5) * 2000
+                        },
+                        security_status: Math.random() * 2 - 1,
+                        constellation_id: Math.floor(i / 10)
+                    });
+                }
+                this.createSystemMeshes();
+            }
+            
+            createSystemMeshes() {
+                // Create system meshes
+                this.systems.forEach(system => {
+                    const geometry = new THREE.SphereGeometry(3, 8, 6);
+                    const color = this.getSecurityColor(system.security_status);
+                    
+                    const material = new THREE.MeshBasicMaterial({
+                        color: color,
+                        transparent: true,
+                        opacity: 0.8
+                    });
+                    
+                    const mesh = new THREE.Mesh(geometry, material);
+                    
+                    // Scale down positions for better viewing
+                    const scale = 0.1;
+                    mesh.position.set(
+                        system.position.x * scale,
+                        system.position.y * scale,
+                        system.position.z * scale
+                    );
+                    
+                    mesh.userData = system;
+                    this.systemMeshes.push(mesh);
+                    this.scene.add(mesh);
+                    
+                    // Add glow effect
+                    const glowGeometry = new THREE.SphereGeometry(5, 8, 6);
+                    const glowMaterial = new THREE.MeshBasicMaterial({
+                        color: color,
+                        transparent: true,
+                        opacity: 0.2
+                    });
+                    const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+                    glow.position.copy(mesh.position);
+                    this.scene.add(glow);
+                });
+                
+                document.getElementById('systemCount').textContent = `Systems: ${this.systems.length}`;
+            }
+            
+            getSecurityColor(securityStatus) {
+                if (securityStatus >= 0.5) return 0x00ff00; // High-sec: green
+                if (securityStatus >= 0.1) return 0xffff00; // Low-sec: yellow
+                if (securityStatus >= 0.0) return 0xff4444; // Null-sec: red
+                return 0xff00ff; // Wormhole: purple
+            }
+            
+            getSecurityName(securityStatus) {
+                if (securityStatus >= 0.5) return 'High-Sec';
+                if (securityStatus >= 0.1) return 'Low-Sec';
+                if (securityStatus >= 0.0) return 'Null-Sec';
+                return 'Wormhole';
+            }
+            
+            onMouseMove(event) {
+                this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+                
+                this.raycaster.setFromCamera(this.mouse, this.camera);
+                const intersects = this.raycaster.intersectObjects(this.systemMeshes);
+                
+                if (intersects.length > 0) {
+                    const system = intersects[0].object.userData;
+                    const securityName = this.getSecurityName(system.security_status);
+                    const securityFormatted = system.security_status.toFixed(2);
+                    
+                    document.getElementById('selectedSystem').innerHTML = `
+                        <strong>${system.name}</strong><br>
+                        Security: ${securityFormatted} (${securityName})<br>
+                        Position: ${Math.round(system.position.x)}, ${Math.round(system.position.y)}, ${Math.round(system.position.z)}
+                    `;
+                } else {
+                    document.getElementById('selectedSystem').textContent = 'Hover over a system for details';
+                }
+            }
+            
+            onMouseClick(event) {
+                this.raycaster.setFromCamera(this.mouse, this.camera);
+                const intersects = this.raycaster.intersectObjects(this.systemMeshes);
+                
+                if (intersects.length > 0) {
+                    const system = intersects[0].object.userData;
+                    this.focusOnSystem(system);
+                }
+            }
+            
+            focusOnSystem(system) {
+                const scale = 0.1;
+                const targetPosition = new THREE.Vector3(
+                    system.position.x * scale,
+                    system.position.y * scale,
+                    system.position.z * scale + 200
+                );
+                
+                // Simple camera movement
+                this.camera.position.copy(targetPosition);
+                this.camera.lookAt(
+                    system.position.x * scale,
+                    system.position.y * scale,
+                    system.position.z * scale
+                );
+            }
+            
+            searchSystem(query) {
+                if (!query) return;
+                
+                const system = this.systems.find(s => 
+                    s.name.toLowerCase().includes(query.toLowerCase())
+                );
+                
+                if (system) {
+                    this.focusOnSystem(system);
+                }
+            }
+            
+            hideLoading() {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('info').style.display = 'block';
+                document.getElementById('controls').style.display = 'block';
+                document.getElementById('legend').style.display = 'block';
+            }
+            
+            onWindowResize() {
+                this.camera.aspect = window.innerWidth / window.innerHeight;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+            
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                
+                // Gentle rotation of the entire scene
+                if (this.systemMeshes.length > 0) {
+                    this.scene.rotation.y += 0.001;
+                }
+                
+                this.renderer.render(this.scene, this.camera);
+            }
+        }
+        
+        // Initialize the map when page loads
+        window.addEventListener('load', () => {
+            new EVEUniverseMap();
+        });
+    </script>
+</body>
+</html>

@@ -1,3 +1,1 @@
-{"articles":["Title: Test Article
-Description: This is a test
-Source: Test Source"]}
+{"articles":[{"title":"Foreign Affairs Minister announces new policy","description":"The minister outlined key changes to international relations","source":{"name":"Reuters","type":"news"}},{"title":"Reddit discussion on foreign policy","description":"Users debate the implications","source":{"name":"Reddit","type":"reddit"}}],"prompt":"Foreign Affairs Minister"}

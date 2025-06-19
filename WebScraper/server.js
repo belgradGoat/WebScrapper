@@ -12,6 +12,7 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const uri = "mongodb+srv://sszewczyk1:bvhBNFPB9eNTz5II@cluster0.lnebik8.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
 const app = express();
 app.use(cors());
@@ -111,7 +112,221 @@ app.post('/api/summarize', async (req, res) => {
         if (!res.headersSent) res.status(500).json({ error: `Server error: ${error.message}` });
     }
 });
+// ===================================================================
+// GEMMA + MONGODB SUMMARIZATION
+// ===================================================================
+app.post('/api/summarize-gemma', async (req, res) => {
+    console.log('[API Call] Received request for /api/summarize-gemma');
+    const { articles, prompt } = req.body;
+    
+    if (!articles || !Array.isArray(articles) || articles.length === 0) {
+        return res.status(400).json({ error: 'No articles provided for summarization.' });
+    }
+    
+    try {
+        const limitedArticles = articles.slice(0, 100);
+        const cleanedArticles = limitedArticles.map(article => {
+            if (typeof article === 'string') {
+                return { description: article.replace(/[\x00-\x1F\x7F-\x9F]/g, ' ').replace(/\s+/g, ' ').trim() };
+            }
+            return {
+                ...article,
+                title: article.title?.replace(/[\x00-\x1F\x7F-\x9F]/g, ' ').replace(/\s+/g, ' ').trim(),
+                description: article.description?.replace(/[\x00-\x1F\x7F-\x9F]/g, ' ').replace(/\s+/g, ' ').trim()
+            };
+        });
+        
+        const inputData = { 
+            articles: cleanedArticles, 
+            prompt: prompt || "Create a comprehensive global situation update from these news articles."
+        };
+        
+        const jsonString = JSON.stringify(inputData);
+        
+        let pythonCommand = 'python3';
+        try {
+            require('child_process').execSync('python3 --version', { stdio: 'ignore' });
+        } catch (e) {
+            console.log('[Gemma AI] python3 not found, trying python...');
+            pythonCommand = 'python';
+        }
+        
+        const tempFilePath = path.join(__dirname, `temp_gemma_input_${Date.now()}.json`);
+        
+        try {
+            fs.writeFileSync(tempFilePath, jsonString, 'utf8');
+            
+            // Use the updated simple_gemma_summarizer.py
+            const pythonProcess = spawn(pythonCommand, ['simple_gemma_summarizer.py', tempFilePath], {
+                cwd: __dirname,
+                stdio: ['pipe', 'pipe', 'pipe'],
+                timeout: 90000
+            });
+            
+            let outputData = '';
+            let errorData = '';
+            let processFinished = false;
+            
+            const timeoutHandler = setTimeout(() => {
+                if (!processFinished) {
+                    console.error('❌ Gemma process timed out');
+                    pythonProcess.kill('SIGKILL');
+                    if (!res.headersSent) {
+                        res.status(500).json({ error: 'Gemma summarizer timed out' });
+                    }
+                }
+            }, 90000);
+            
+            pythonProcess.stdout.on('data', (data) => {
+                outputData += data.toString();
+            });
+            
+            pythonProcess.stderr.on('data', (data) => {
+                errorData += data.toString();
+            });
+            
+            pythonProcess.on('close', (code) => {
+                clearTimeout(timeoutHandler);
+                processFinished = true;
+                
+                try {
+                    fs.unlinkSync(tempFilePath);
+                } catch (cleanupError) {
+                    console.error(`[Gemma AI] Cleanup warning: ${cleanupError.message}`);
+                }
+                
+                if (res.headersSent) return;
+                
+                if (code === 0) {
+                    try {
+                        const cleanOutput = outputData.trim();
+                        if (!cleanOutput) {
+                            return res.status(500).json({ error: 'Gemma script produced no output.' });
+                        }
+                        
+                        const result = JSON.parse(cleanOutput);
+                        
+                        if (result.error) {
+                            res.status(500).json({ error: result.error });
+                        } else if (result.summary) {
+                            res.json(result);
+                        } else {
+                            res.status(500).json({ error: 'Unexpected Gemma output.' });
+                        }
+                    } catch (parseError) {
+                        console.error('Parse error:', parseError.message);
+                        res.status(500).json({ error: `Failed to parse Gemma output: ${parseError.message}` });
+                    }
+                } else {
+                    console.error(`Gemma process failed (code: ${code}). Error: ${errorData}`);
+                    res.status(500).json({ error: `Gemma summarizer failed: ${errorData}` });
+                }
+            });
+            
+            pythonProcess.on('error', (error) => {
+                clearTimeout(timeoutHandler);
+                processFinished = true;
+                try { fs.unlinkSync(tempFilePath); } catch {}
+                if (!res.headersSent) {
+                    res.status(500).json({ error: `Failed to start Gemma process: ${error.message}` });
+                }
+            });
+            
+        } catch (fileError) {
+            res.status(500).json({ error: `Failed to prepare input data: ${fileError.message}` });
+        }
+        
+    } catch (error) {
+        console.error('Gemma API error:', error);
+        if (!res.headersSent) {
+            res.status(500).json({ error: `Server error: ${error.message}` });
+        }
+    }
+});
 
+// ===================================================================
+// MONGODB SUMMARY RETRIEVAL
+// ===================================================================
+app.get('/api/summaries', async (req, res) => {
+    console.log('[API Call] Received request for /api/summaries');
+    
+    try {
+        let pythonCommand = 'python3';
+        try {
+            require('child_process').execSync('python3 --version', { stdio: 'ignore' });
+        } catch (e) {
+            pythonCommand = 'python';
+        }
+        
+        const pythonProcess = spawn(pythonCommand, ['-c', `
+import json
+from pymongo import MongoClient
+import os
+
+try:
+    # Use MongoDB Atlas connection
+    mongo_uri = "mongodb+srv://sszewczyk1:bvhBNFPB9eNTz5II@cluster0.lnebik8.mongodb.net/eagle_watchtower?retryWrites=true&w=majority&appName=Cluster0"
+    client = MongoClient(mongo_uri)
+    
+    # Test connection
+    client.admin.command('ping')
+    
+    db = client['eagle_watchtower']
+    summaries = list(db['summaries'].find().sort("timestamp", -1).limit(10))
+    
+    for summary in summaries:
+        summary['_id'] = str(summary['_id'])
+        summary['timestamp'] = summary['timestamp'].isoformat()
+    
+    print(json.dumps({"success": True, "summaries": summaries, "source": "MongoDB Atlas"}))
+    
+except Exception as e:
+    # Fallback to local file
+    try:
+        import json
+        if os.path.exists('summaries_history.json'):
+            with open('summaries_history.json', 'r', encoding='utf-8') as f:
+                summaries = json.load(f)
+            print(json.dumps({"success": True, "summaries": summaries[:10], "source": "Local File"}))
+        else:
+            print(json.dumps({"success": True, "summaries": [], "source": "No Data"}))
+    except:
+        print(json.dumps({"success": False, "error": str(e)}))
+`], {
+            stdio: ['pipe', 'pipe', 'pipe'],
+            timeout: 10000
+        });
+        
+        let outputData = '';
+        let errorData = '';
+        
+        pythonProcess.stdout.on('data', (data) => {
+            outputData += data.toString();
+        });
+        
+        pythonProcess.stderr.on('data', (data) => {
+            errorData += data.toString();
+        });
+        
+        pythonProcess.on('close', (code) => {
+            if (code === 0) {
+                try {
+                    const result = JSON.parse(outputData.trim());
+                    res.json(result);
+                } catch (parseError) {
+                    res.status(500).json({ error: 'Failed to parse MongoDB response' });
+                }
+            } else {
+                res.status(500).json({ error: `MongoDB query failed: ${errorData}` });
+            }
+        });
+        
+    } catch (error) {
+        res.status(500).json({ error: `Server error: ${error.message}` });
+    }
+});
+
+// ...existing code...
 // ===================================================================
 // SITE-SPECIFIC SCRAPER CONFIGURATION & NEWS SOURCES
 // ===================================================================

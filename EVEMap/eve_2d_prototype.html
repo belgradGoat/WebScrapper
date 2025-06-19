@@ -1,0 +1,1582 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EVE Online 2D Universe Map</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0f0f23 100%);
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: #ffffff;
+            overflow: hidden;
+            height: 100vh;
+        }
+        
+        .app-container {
+            display: grid;
+            grid-template-columns: 300px 1fr 350px;
+            grid-template-rows: 60px 1fr 40px;
+            height: 100vh;
+            gap: 2px;
+            background: #000;
+        }
+        
+        .header {
+            grid-column: 1 / -1;
+            background: linear-gradient(90deg, #1a1a2e, #16213e);
+            border-bottom: 2px solid #00d4ff;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            box-shadow: 0 2px 10px rgba(0, 212, 255, 0.3);
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            color: #00d4ff;
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+        
+        .header-controls {
+            margin-left: auto;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .search-box {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #00d4ff;
+            color: #ffffff;
+            padding: 8px 12px;
+            border-radius: 4px;
+            width: 200px;
+        }
+        
+        .search-box:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+        
+        .sidebar-left {
+            background: linear-gradient(180deg, #1a1a2e, #0f1419);
+            border-right: 1px solid #333;
+            overflow-y: auto;
+        }
+        
+        .sidebar-right {
+            background: linear-gradient(180deg, #1a1a2e, #0f1419);
+            border-left: 1px solid #333;
+            overflow-y: auto;
+        }
+        
+        .map-container {
+            position: relative;
+            background: radial-gradient(circle at center, #0a0a1a 0%, #000000 100%);
+            overflow: hidden;
+        }
+        
+        .map-canvas {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+        
+        .map-canvas:active {
+            cursor: grabbing;
+        }
+        
+        .footer {
+            grid-column: 1 / -1;
+            background: #1a1a2e;
+            border-top: 1px solid #333;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            font-size: 12px;
+            color: #aaa;
+        }
+        
+        .panel {
+            margin: 15px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid #333;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        
+        .panel-header {
+            background: linear-gradient(90deg, #00d4ff, #0099cc);
+            color: #000;
+            padding: 10px 15px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .panel-content {
+            padding: 15px;
+        }
+        
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 5px 0;
+            border-bottom: 1px solid #333;
+        }
+        
+        .stat-label {
+            color: #aaa;
+        }
+        
+        .stat-value {
+            color: #00d4ff;
+            font-weight: bold;
+        }
+        
+        .security-legend {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+            font-size: 12px;
+        }
+        
+        .security-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+            box-shadow: 0 0 5px;
+        }
+        
+        .route-step {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            margin: 4px 0;
+            background: rgba(0, 212, 255, 0.1);
+            border-left: 3px solid #00d4ff;
+            border-radius: 3px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .route-step:hover {
+            background: rgba(0, 212, 255, 0.2);
+        }
+        
+        .system-info {
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #00d4ff;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        
+        .system-name {
+            color: #00d4ff;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .spinner {
+            border: 3px solid #333;
+            border-top: 3px solid #00d4ff;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            color: #000;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+            transition: all 0.3s;
+            width: 100%;
+        }
+        
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 212, 255, 0.4);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ff4444, #cc0000);
+        }
+        
+        .filter-tabs {
+            display: flex;
+            margin-bottom: 15px;
+        }
+        
+        .filter-tab {
+            flex: 1;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #333;
+            color: #aaa;
+            cursor: pointer;
+            text-align: center;
+            font-size: 11px;
+        }
+        
+        .filter-tab.active {
+            background: #00d4ff;
+            color: #000;
+            font-weight: bold;
+        }
+        
+        .activity-bar {
+            height: 4px;
+            background: rgba(0, 212, 255, 0.3);
+            border-radius: 2px;
+            margin-top: 5px;
+            overflow: hidden;
+            width: 100px;
+        }
+        
+        .activity-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00d4ff, #00ff88);
+            border-radius: 2px;
+            transition: width 0.3s;
+        }
+        
+        .region-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .region-item {
+            padding: 8px;
+            cursor: pointer;
+            border-bottom: 1px solid #333;
+            transition: background 0.2s;
+            font-size: 12px;
+        }
+        
+        .region-item:hover {
+            background: rgba(0, 212, 255, 0.1);
+        }
+        
+        .region-item.active {
+            background: rgba(0, 212, 255, 0.2);
+            border-left: 3px solid #00d4ff;
+        }
+        
+        .scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .scrollbar::-webkit-scrollbar-track {
+            background: #1a1a2e;
+        }
+        
+        .scrollbar::-webkit-scrollbar-thumb {
+            background: #00d4ff;
+            border-radius: 3px;
+        }
+        
+        .search-result {
+            padding: 8px;
+            margin: 2px 0;
+            background: rgba(0, 212, 255, 0.1);
+            border-left: 3px solid #00d4ff;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .search-result:hover {
+            background: rgba(0, 212, 255, 0.2);
+        }
+        
+        .route-inputs {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .route-inputs input {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #333;
+            color: #ffffff;
+            padding: 8px;
+            border-radius: 4px;
+            width: 100%;
+        }
+        
+        .route-inputs input:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 5px rgba(0, 212, 255, 0.3);
+        }
+        
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .controls-grid .btn {
+            font-size: 11px;
+            padding: 6px 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <h1>⚡ EVE Universe Map</h1>
+            <div class="header-controls">
+                <input type="text" class="search-box" id="searchInput" placeholder="Search system or region...">
+                <button class="btn" id="resetViewBtn">Reset View</button>
+            </div>
+        </header>
+        
+        <aside class="sidebar-left scrollbar">
+            <div class="panel">
+                <div class="panel-header">Navigation</div>
+                <div class="panel-content">
+                    <div class="filter-tabs">
+                        <div class="filter-tab active" data-filter="regions">Regions</div>
+                        <div class="filter-tab" data-filter="route">Route</div>
+                    </div>
+                    
+                    <div id="regionsPanel">
+                        <div class="region-list scrollbar" id="regionList">
+                            <!-- Regions will be populated here -->
+                        </div>
+                    </div>
+                    
+                    <div id="routePanel" style="display: none;">
+                        <div class="route-inputs">
+                            <input type="text" id="routeFrom" placeholder="Origin system..." class="search-box">
+                            <input type="text" id="routeTo" placeholder="Destination system..." class="search-box">
+                            <button class="btn" onclick="map.planRouteFromInputs()">Calculate Route</button>
+                            <button class="btn btn-danger" onclick="map.clearRoute()">Clear Route</button>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <span class="stat-label">Total Jumps:</span>
+                            <span class="stat-value" id="totalJumps">0</span>
+                        </div>
+                        
+                        <div style="max-height: 300px; overflow-y: auto;" class="scrollbar">
+                            <div id="routeSteps">
+                                <div class="route-step">
+                                    <span>Enter systems above to plan route</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <div class="panel-header">Legend</div>
+                <div class="panel-content">
+                    <div class="security-legend">
+                        <div class="security-dot" style="background: #00ff00; box-shadow: 0 0 5px #00ff00;"></div>
+                        High-Sec (1.0 - 0.5)
+                    </div>
+                    <div class="security-legend">
+                        <div class="security-dot" style="background: #ffff00; box-shadow: 0 0 5px #ffff00;"></div>
+                        Low-Sec (0.4 - 0.1)
+                    </div>
+                    <div class="security-legend">
+                        <div class="security-dot" style="background: #ff4444; box-shadow: 0 0 5px #ff4444;"></div>
+                        Null-Sec (0.0 - -1.0)
+                    </div>
+                    <div class="security-legend">
+                        <div class="security-dot" style="background: #ff00ff; box-shadow: 0 0 5px #ff00ff;"></div>
+                        Wormhole Space
+                    </div>
+                </div>
+            </div>
+        </aside>
+        
+        <main class="map-container">
+            <canvas class="map-canvas" id="mapCanvas"></canvas>
+            
+            <div class="loading-overlay" id="loadingOverlay">
+                <div class="spinner"></div>
+                <div style="color: #00d4ff; font-size: 18px; margin-bottom: 10px;">Loading Universe Data</div>
+                <div id="loadingProgress" style="color: #aaa;">Initializing...</div>
+            </div>
+        </main>
+        
+        <aside class="sidebar-right scrollbar">
+            <div class="panel">
+                <div class="panel-header">System Information</div>
+                <div class="panel-content">
+                    <div id="systemInfo">
+                        <div style="text-align: center; color: #666; padding: 20px;">
+                            Click on a system to view details
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel" id="searchResultsPanel" style="display: none;">
+                <div class="panel-header">Search Results</div>
+                <div class="panel-content">
+                    <div id="searchResults" style="max-height: 200px; overflow-y: auto;"></div>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <div class="panel-header">Activity Statistics</div>
+                <div class="panel-content">
+                    <div class="stat-item">
+                        <span class="stat-label">Ship Kills (24h):</span>
+                        <span class="stat-value" id="shipKills">--</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Pod Kills (24h):</span>
+                        <span class="stat-value" id="podKills">--</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Jumps (1h):</span>
+                        <span class="stat-value" id="systemJumps">--</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Activity Level:</span>
+                        <div>
+                            <div class="activity-bar">
+                                <div class="activity-fill" id="activityFill" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <div class="panel-header">Map Controls</div>
+                <div class="panel-content">
+                    <div class="controls-grid">
+                        <button class="btn" onclick="map.zoomIn()">Zoom In</button>
+                        <button class="btn" onclick="map.zoomOut()">Zoom Out</button>
+                        <button class="btn" onclick="map.toggleConnections()">Toggle Gates</button>
+                        <button class="btn" onclick="map.toggleLabels()">Toggle Labels</button>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Show Connections:</span>
+                        <span class="stat-value" id="showConnections">Yes</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Show Labels:</span>
+                        <span class="stat-value" id="showLabels">Auto</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        
+        <footer class="footer">
+            <span>EVE Online Universe Map | Systems Loaded: <span id="systemCount">0</span> | 
+            Zoom: <span id="zoomLevel">100%</span> | 
+            Selected: <span id="selectedSystemName">None</span></span>
+            <div style="margin-left: auto;">
+                <span>Data provided by EVE ESI API</span>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // EVE API Client Class
+        class EVEAPIClient {
+            constructor() {
+                this.baseURL = 'https://esi.evetech.net/latest';
+                this.cache = new Map();
+                this.rateLimitDelay = 150;
+                this.requestQueue = [];
+                this.processing = false;
+            }
+            
+            async makeRequest(endpoint, useCache = true) {
+                if (useCache && this.cache.has(endpoint)) {
+                    return this.cache.get(endpoint);
+                }
+                
+                return new Promise((resolve, reject) => {
+                    this.requestQueue.push({ endpoint, useCache, resolve, reject });
+                    this.processQueue();
+                });
+            }
+            
+            async processQueue() {
+                if (this.processing || this.requestQueue.length === 0) return;
+                
+                this.processing = true;
+                
+                while (this.requestQueue.length > 0) {
+                    const { endpoint, useCache, resolve, reject } = this.requestQueue.shift();
+                    
+                    try {
+                        const response = await fetch(`${this.baseURL}${endpoint}`);
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
+                        
+                        const data = await response.json();
+                        if (useCache) {
+                            this.cache.set(endpoint, data);
+                        }
+                        
+                        resolve(data);
+                        
+                        if (this.requestQueue.length > 0) {
+                            await new Promise(resolve => setTimeout(resolve, this.rateLimitDelay));
+                        }
+                        
+                    } catch (error) {
+                        console.warn(`API request failed for ${endpoint}:`, error);
+                        reject(error);
+                    }
+                }
+                
+                this.processing = false;
+            }
+            
+            async getRegions() {
+                return this.makeRequest('/universe/regions/');
+            }
+            
+            async getRegionInfo(regionId) {
+                return this.makeRequest(`/universe/regions/${regionId}/`);
+            }
+            
+            async getConstellationInfo(constellationId) {
+                return this.makeRequest(`/universe/constellations/${constellationId}/`);
+            }
+            
+            async getSystemInfo(systemId) {
+                return this.makeRequest(`/universe/systems/${systemId}/`);
+            }
+            
+            async getStargateInfo(stargateId) {
+                return this.makeRequest(`/universe/stargates/${stargateId}/`);
+            }
+            
+            async getSystemKills() {
+                return this.makeRequest('/universe/system_kills/', false);
+            }
+            
+            async getSystemJumps() {
+                return this.makeRequest('/universe/system_jumps/', false);
+            }
+            
+            async calculateRoute(origin, destination, avoid = 'secure', connections = 'secure') {
+                const params = new URLSearchParams({
+                    avoid: avoid,
+                    connections: connections,
+                    destination: destination,
+                    flag: 'shortest',
+                    origin: origin
+                });
+                
+                return this.makeRequest(`/route/${origin}/${destination}/?${params}`, false);
+            }
+        }
+
+        // Main EVE Universe Map Class
+        class EVEUniverseMap2D {
+            constructor() {
+                this.canvas = document.getElementById('mapCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                
+                this.systems = [];
+                this.regions = [];
+                this.connections = [];
+                this.systemKills = new Map();
+                this.systemJumps = new Map();
+                this.highlightedSystems = [];
+                
+                this.scale = 1;
+                this.offsetX = 0;
+                this.offsetY = 0;
+                this.isDragging = false;
+                this.lastX = 0;
+                this.lastY = 0;
+                
+                this.selectedSystem = null;
+                this.hoveredSystem = null;
+                this.currentRoute = [];
+                this.routeStart = null;
+                this.routeEnd = null;
+                
+                this.showConnections = true;
+                this.showLabels = 'auto';
+                
+                this.selectedRegion = null;
+                
+                this.init();
+            }
+            
+            init() {
+                this.setupCanvas();
+                this.setupEventListeners();
+                this.loadUniverseData();
+            }
+            
+            setupCanvas() {
+                const resize = () => {
+                    this.canvas.width = this.canvas.offsetWidth;
+                    this.canvas.height = this.canvas.offsetHeight;
+                    this.draw();
+                };
+                
+                window.addEventListener('resize', resize);
+                resize();
+            }
+            
+            setupEventListeners() {
+                // Mouse events
+                this.canvas.addEventListener('mousedown', this.handleMouseDown.bind(this));
+                this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
+                this.canvas.addEventListener('mouseup', this.handleMouseUp.bind(this));
+                this.canvas.addEventListener('wheel', this.handleWheel.bind(this));
+                this.canvas.addEventListener('click', this.handleClick.bind(this));
+                
+                // Search
+                const searchInput = document.getElementById('searchInput');
+                searchInput.addEventListener('input', (e) => {
+                    this.searchSystem(e.target.value);
+                });
+                
+                // Reset view
+                document.getElementById('resetViewBtn').addEventListener('click', () => {
+                    this.resetView();
+                });
+                
+                // Filter tabs
+                document.querySelectorAll('.filter-tab').forEach(tab => {
+                    tab.addEventListener('click', (e) => {
+                        this.switchTab(e.target.dataset.filter);
+                    });
+                });
+            }
+            
+            async loadUniverseData() {
+                try {
+                    this.api = new EVEAPIClient();
+                    this.systemKills = new Map();
+                    this.systemJumps = new Map();
+                    this.highlightedSystems = [];
+                    
+                    document.getElementById('loadingProgress').textContent = 'Fetching regions...';
+                    
+                    const regionIds = await this.api.getRegions();
+                    console.log(`Found ${regionIds.length} regions`);
+                    
+                    const knownSpaceRegions = regionIds.filter(id => id < 11000000);
+                    
+                    let totalSystems = 0;
+                    let processedRegions = 0;
+                    const maxRegions = 10; // Reduced for faster loading
+                    
+                    for (const regionId of knownSpaceRegions.slice(0, maxRegions)) {
+                        try {
+                            document.getElementById('loadingProgress').textContent = 
+                                `Loading region ${processedRegions + 1}/${maxRegions}...`;
+                            
+                            const regionInfo = await this.api.getRegionInfo(regionId);
+                            this.regions.push(regionInfo);
+                            
+                            const constellationIds = regionInfo.constellations.slice(0, 3);
+                            
+                            for (const constellationId of constellationIds) {
+                                try {
+                                    const constellationInfo = await this.api.getConstellationInfo(constellationId);
+                                    const systemIds = constellationInfo.systems.slice(0, 5);
+                                    
+                                    for (const systemId of systemIds) {
+                                        try {
+                                            const systemInfo = await this.api.getSystemInfo(systemId);
+                                            
+                                            systemInfo.region_id = regionId;
+                                            systemInfo.region_name = regionInfo.name;
+                                            systemInfo.constellation_id = constellationId;
+                                            systemInfo.constellation_name = constellationInfo.name;
+                                            
+                                            if (!systemInfo.position) {
+                                                systemInfo.position = {
+                                                    x: Math.random() * 4000000000000000,
+                                                    y: Math.random() * 4000000000000000,
+                                                    z: Math.random() * 1000000000000000
+                                                };
+                                            }
+                                            
+                                            this.systems.push(systemInfo);
+                                            totalSystems++;
+                                            
+                                            if (totalSystems % 25 === 0) {
+                                                document.getElementById('loadingProgress').textContent = 
+                                                    `Loaded ${totalSystems} systems...`;
+                                                await new Promise(resolve => setTimeout(resolve, 10));
+                                            }
+                                            
+                                        } catch (error) {
+                                            console.warn(`Failed to load system ${systemId}:`, error);
+                                        }
+                                    }
+                                    
+                                } catch (error) {
+                                    console.warn(`Failed to load constellation ${constellationId}:`, error);
+                                }
+                            }
+                            
+                            processedRegions++;
+                            
+                        } catch (error) {
+                            console.warn(`Failed to load region ${regionId}:`, error);
+                        }
+                    }
+                    
+                    document.getElementById('loadingProgress').textContent = 'Loading system connections...';
+                    await this.loadSystemConnections();
+                    
+                    document.getElementById('loadingProgress').textContent = 'Loading real-time data...';
+                    await this.loadRealtimeData();
+                    
+                    this.populateRegionList();
+                    this.hideLoading();
+                    this.resetView();
+                    
+                    console.log(`Successfully loaded ${this.systems.length} systems from ${this.regions.length} regions`);
+                    
+                } catch (error) {
+                    console.error('Error loading universe data:', error);
+                    document.getElementById('loadingProgress').textContent = 'Failed to load data, using sample data...';
+                    
+                    setTimeout(() => {
+                        this.createSampleData();
+                        this.hideLoading();
+                    }, 2000);
+                }
+            }
+            
+            async loadSystemConnections() {
+                this.connections = [];
+                const maxConnections = 100;
+                let loadedConnections = 0;
+                
+                for (const system of this.systems) {
+                    if (loadedConnections >= maxConnections) break;
+                    
+                    if (system.stargates && system.stargates.length > 0) {
+                        const stargateId = system.stargates[0];
+                        
+                        try {
+                            const stargate = await this.api.getStargateInfo(stargateId);
+                            const destinationSystemId = stargate.destination.system_id;
+                            const destinationSystem = this.systems.find(s => s.system_id === destinationSystemId);
+                            
+                            if (destinationSystem) {
+                                this.connections.push({
+                                    from: system,
+                                    to: destinationSystem,
+                                    type: 'stargate'
+                                });
+                                loadedConnections++;
+                            }
+                            
+                        } catch (error) {
+                            // Skip failed stargate lookups
+                        }
+                    }
+                    
+                    if (loadedConnections % 10 === 0) {
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                }
+                
+                console.log(`Loaded ${this.connections.length} system connections`);
+            }
+            
+            async loadRealtimeData() {
+                try {
+                    const kills = await this.api.getSystemKills();
+                    this.systemKills.clear();
+                    kills.forEach(kill => {
+                        this.systemKills.set(kill.system_id, kill);
+                    });
+                    
+                    const jumps = await this.api.getSystemJumps();
+                    this.systemJumps.clear();
+                    jumps.forEach(jump => {
+                        this.systemJumps.set(jump.system_id, jump);
+                    });
+                    
+                    console.log(`Loaded real-time data: ${kills.length} kill records, ${jumps.length} jump records`);
+                    
+                } catch (error) {
+                    console.warn('Failed to load real-time data:', error);
+                }
+            }
+            
+            createSampleData() {
+                // Create sample data for testing
+                const sampleRegions = ['The Forge', 'Domain', 'Delve', 'Pure Blind', 'Tribute'];
+                
+                sampleRegions.forEach((regionName, regionIndex) => {
+                    this.regions.push({
+                        name: regionName,
+                        region_id: regionIndex + 10000000
+                    });
+                    
+                    for (let i = 0; i < 20; i++) {
+                        const angle = (i / 20) * Math.PI * 2;
+                        const radius = 100 + Math.random() * 200;
+                        
+                        this.systems.push({
+                            name: `${regionName} System ${i + 1}`,
+                            system_id: regionIndex * 1000 + i,
+                            region_id: regionIndex + 10000000,
+                            region_name: regionName,
+                            position: {
+                                x: (regionIndex * 1000 + Math.cos(angle) * radius) * 1000000000000,
+                                y: (regionIndex * 500 + Math.sin(angle) * radius) * 1000000000000,
+                                z: 0
+                            },
+                            security_status: Math.random() * 2 - 0.5,
+                            stargates: []
+                        });
+                    }
+                });
+                
+                // Create some connections
+                for (let i = 0; i < this.systems.length - 1; i++) {
+                    if (Math.random() > 0.5) {
+                        this.connections.push({
+                            from: this.systems[i],
+                            to: this.systems[i + 1],
+                            type: 'stargate'
+                        });
+                    }
+                }
+                
+                this.populateRegionList();
+                document.getElementById('systemCount').textContent = this.systems.length;
+            }
+            
+            populateRegionList() {
+                const regionList = document.getElementById('regionList');
+                regionList.innerHTML = '';
+                
+                this.regions.forEach(region => {
+                    const regionItem = document.createElement('div');
+                    regionItem.className = 'region-item';
+                    regionItem.textContent = region.name;
+                    regionItem.onclick = () => this.selectRegion(region);
+                    regionList.appendChild(regionItem);
+                });
+                
+                document.getElementById('systemCount').textContent = this.systems.length;
+            }
+            
+            selectRegion(region) {
+                this.selectedRegion = region;
+                
+                // Update UI
+                document.querySelectorAll('.region-item').forEach(item => {
+                    item.classList.toggle('active', item.textContent === region.name);
+                });
+                
+                // Focus on region systems
+                const regionSystems = this.systems.filter(s => s.region_id === region.region_id);
+                if (regionSystems.length > 0) {
+                    this.focusOnSystems(regionSystems);
+                }
+            }
+            
+            focusOnSystems(systems) {
+                if (systems.length === 0) return;
+                
+                let minX = Infinity, maxX = -Infinity;
+                let minY = Infinity, maxY = -Infinity;
+                
+                systems.forEach(system => {
+                    const x = system.position.x * 0.000000000001;
+                    const y = system.position.y * 0.000000000001;
+                    minX = Math.min(minX, x);
+                    maxX = Math.max(maxX, x);
+                    minY = Math.min(minY, y);
+                    maxY = Math.max(maxY, y);
+                });
+                
+                const centerX = (minX + maxX) / 2;
+                const centerY = (minY + maxY) / 2;
+                const width = maxX - minX;
+                const height = maxY - minY;
+                
+                const scaleX = this.canvas.width / (width * 1.5);
+                const scaleY = this.canvas.height / (height * 1.5);
+                this.scale = Math.min(scaleX, scaleY, 5);
+                
+                this.offsetX = this.canvas.width / 2 - centerX * this.scale;
+                this.offsetY = this.canvas.height / 2 - centerY * this.scale;
+                
+                this.draw();
+            }
+            
+            focusOnSystem(system) {
+                if (!system || !system.position) return;
+                
+                const x = system.position.x * 0.000000000001;
+                const y = system.position.y * 0.000000000001;
+                
+                this.scale = 3;
+                this.offsetX = this.canvas.width / 2 - x * this.scale;
+                this.offsetY = this.canvas.height / 2 - y * this.scale;
+                
+                this.selectedSystem = system;
+                this.updateSystemInfo(system);
+                this.draw();
+            }
+            
+            worldToScreen(x, y) {
+                return {
+                    x: x * this.scale + this.offsetX,
+                    y: y * this.scale + this.offsetY
+                };
+            }
+            
+            screenToWorld(x, y) {
+                return {
+                    x: (x - this.offsetX) / this.scale,
+                    y: (y - this.offsetY) / this.scale
+                };
+            }
+            
+            handleMouseDown(e) {
+                this.isDragging = true;
+                this.lastX = e.clientX;
+                this.lastY = e.clientY;
+            }
+            
+            handleMouseMove(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                if (this.isDragging) {
+                    const dx = e.clientX - this.lastX;
+                    const dy = e.clientY - this.lastY;
+                    
+                    this.offsetX += dx;
+                    this.offsetY += dy;
+                    
+                    this.lastX = e.clientX;
+                    this.lastY = e.clientY;
+                    
+                    this.draw();
+                } else {
+                    // Check hover
+                    const worldPos = this.screenToWorld(x, y);
+                    let hoveredSystem = null;
+                    
+                    for (const system of this.systems) {
+                        if (!system.position) continue;
+                        
+                        const systemX = system.position.x * 0.000000000001;
+                        const systemY = system.position.y * 0.000000000001;
+                        const distance = Math.sqrt(
+                            Math.pow(worldPos.x - systemX, 2) + 
+                            Math.pow(worldPos.y - systemY, 2)
+                        );
+                        
+                        if (distance < 10 / this.scale) {
+                            hoveredSystem = system;
+                            break;
+                        }
+                    }
+                    
+                    if (hoveredSystem !== this.hoveredSystem) {
+                        this.hoveredSystem = hoveredSystem;
+                        this.canvas.style.cursor = hoveredSystem ? 'pointer' : 'grab';
+                        this.draw();
+                    }
+                }
+            }
+            
+            handleMouseUp() {
+                this.isDragging = false;
+            }
+            
+            handleWheel(e) {
+                e.preventDefault();
+                
+                const rect = this.canvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+                
+                const worldPos = this.screenToWorld(mouseX, mouseY);
+                
+                const delta = e.deltaY > 0 ? 0.9 : 1.1;
+                this.scale *= delta;
+                this.scale = Math.max(0.1, Math.min(10, this.scale));
+                
+                this.offsetX = mouseX - worldPos.x * this.scale;
+                this.offsetY = mouseY - worldPos.y * this.scale;
+                
+                document.getElementById('zoomLevel').textContent = Math.round(this.scale * 100) + '%';
+                this.draw();
+            }
+            
+            handleClick(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const worldPos = this.screenToWorld(x, y);
+                
+                for (const system of this.systems) {
+                    if (!system.position) continue;
+                    
+                    const systemX = system.position.x * 0.000000000001;
+                    const systemY = system.position.y * 0.000000000001;
+                    const distance = Math.sqrt(
+                        Math.pow(worldPos.x - systemX, 2) + 
+                        Math.pow(worldPos.y - systemY, 2)
+                    );
+                    
+                    if (distance < 10 / this.scale) {
+                        this.selectSystem(system);
+                        break;
+                    }
+                }
+            }
+            
+            selectSystem(system) {
+                this.selectedSystem = system;
+                this.updateSystemInfo(system);
+                document.getElementById('selectedSystemName').textContent = system.name;
+                this.draw();
+            }
+            
+            updateSystemInfo(system) {
+                const systemInfo = document.getElementById('systemInfo');
+                if (!system) {
+                    systemInfo.innerHTML = `
+                        <div style="text-align: center; color: #666; padding: 20px;">
+                            Click on a system to view details
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const security = system.security_status ? system.security_status.toFixed(1) : 'Unknown';
+                const securityColor = this.getSecurityColor(system.security_status || 0);
+                
+                systemInfo.innerHTML = `
+                    <div class="system-info">
+                        <div class="system-name">${system.name}</div>
+                        
+                        <div class="stat-item">
+                            <span class="stat-label">Security Status:</span>
+                            <span class="stat-value" style="color: ${securityColor};">${security}</span>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <span class="stat-label">Region:</span>
+                            <span class="stat-value">${system.region_name || 'Unknown'}</span>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <span class="stat-label">Constellation:</span>
+                            <span class="stat-value">${system.constellation_name || 'Unknown'}</span>
+                        </div>
+                        
+                        <div class="stat-item">
+                            <span class="stat-label">System ID:</span>
+                            <span class="stat-value">${system.system_id || 'Unknown'}</span>
+                        </div>
+                        
+                        <div style="margin-top: 15px;">
+                            <button class="btn" onclick="map.setRouteStart(${system.system_id})">Set as Origin</button>
+                            <button class="btn" onclick="map.setRouteEnd(${system.system_id})" style="margin-top: 5px;">Set as Destination</button>
+                        </div>
+                    </div>
+                `;
+                
+                this.updateSystemStats(system);
+            }
+            
+            updateSystemStats(system) {
+                if (!system) return;
+                
+                const kills = this.systemKills.get(system.system_id) || { ship_kills: 0, pod_kills: 0, npc_kills: 0 };
+                const jumps = this.systemJumps.get(system.system_id) || { ship_jumps: 0 };
+                
+                document.getElementById('shipKills').textContent = kills.ship_kills || 0;
+                document.getElementById('podKills').textContent = kills.pod_kills || 0;
+                document.getElementById('systemJumps').textContent = jumps.ship_jumps || 0;
+                
+                const killsWeight = (kills.ship_kills || 0) * 2;
+                const jumpsWeight = (jumps.ship_jumps || 0) * 0.1;
+                const activityScore = Math.min((killsWeight + jumpsWeight) / 50, 1);
+                
+                document.getElementById('activityFill').style.width = (activityScore * 100) + '%';
+            }
+            
+            getSecurityColor(security) {
+                if (security >= 0.5) return '#00ff00';
+                if (security >= 0.1) return '#ffff00';
+                if (security >= 0.0) return '#ff8800';
+                return '#ff4444';
+            }
+            
+            draw() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Draw grid
+                this.drawGrid();
+                
+                // Draw connections
+                if (this.showConnections) {
+                    this.drawConnections();
+                }
+                
+                // Draw route
+                if (this.currentRoute.length > 0) {
+                    this.drawRoute();
+                }
+                
+                // Draw systems
+                this.drawSystems();
+            }
+            
+            drawGrid() {
+                this.ctx.strokeStyle = 'rgba(0, 212, 255, 0.05)';
+                this.ctx.lineWidth = 1;
+                
+                const gridSize = 100 * this.scale;
+                const startX = Math.floor(-this.offsetX / gridSize) * gridSize + this.offsetX;
+                const startY = Math.floor(-this.offsetY / gridSize) * gridSize + this.offsetY;
+                
+                for (let x = startX; x < this.canvas.width; x += gridSize) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(x, 0);
+                    this.ctx.lineTo(x, this.canvas.height);
+                    this.ctx.stroke();
+                }
+                
+                for (let y = startY; y < this.canvas.height; y += gridSize) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(0, y);
+                    this.ctx.lineTo(this.canvas.width, y);
+                    this.ctx.stroke();
+                }
+            }
+            
+            drawConnections() {
+                this.ctx.strokeStyle = 'rgba(0, 212, 255, 0.2)';
+                this.ctx.lineWidth = 1;
+                
+                this.connections.forEach(connection => {
+                    if (!connection.from.position || !connection.to.position) return;
+                    
+                    const from = this.worldToScreen(
+                        connection.from.position.x * 0.000000000001,
+                        connection.from.position.y * 0.000000000001
+                    );
+                    const to = this.worldToScreen(
+                        connection.to.position.x * 0.000000000001,
+                        connection.to.position.y * 0.000000000001
+                    );
+                    
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(from.x, from.y);
+                    this.ctx.lineTo(to.x, to.y);
+                    this.ctx.stroke();
+                });
+            }
+            
+            drawRoute() {
+                this.ctx.strokeStyle = '#00d4ff';
+                this.ctx.lineWidth = 3;
+                this.ctx.shadowColor = '#00d4ff';
+                this.ctx.shadowBlur = 10;
+                
+                for (let i = 0; i < this.currentRoute.length - 1; i++) {
+                    const from = this.worldToScreen(
+                        this.currentRoute[i].position.x * 0.000000000001,
+                        this.currentRoute[i].position.y * 0.000000000001
+                    );
+                    const to = this.worldToScreen(
+                        this.currentRoute[i + 1].position.x * 0.000000000001,
+                        this.currentRoute[i + 1].position.y * 0.000000000001
+                    );
+                    
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(from.x, from.y);
+                    this.ctx.lineTo(to.x, to.y);
+                    this.ctx.stroke();
+                }
+                
+                this.ctx.shadowBlur = 0;
+            }
+            
+            drawSystems() {
+                const rect = this.canvas.getBoundingClientRect();
+                
+                this.systems.forEach(system => {
+                    if (!system.position) return;
+                    
+                    const screenPos = this.worldToScreen(
+                        system.position.x * 0.000000000001,
+                        system.position.y * 0.000000000001
+                    );
+                    
+                    // Viewport culling
+                    if (screenPos.x < -50 || screenPos.x > rect.width + 50 || 
+                        screenPos.y < -50 || screenPos.y > rect.height + 50) return;
+                    
+                    const isHighlighted = this.highlightedSystems.includes(system);
+                    const isInRoute = this.currentRoute.includes(system);
+                    const isSelected = system === this.selectedSystem;
+                    const isHovered = system === this.hoveredSystem;
+                    const isRouteEndpoint = system === this.routeStart || system === this.routeEnd;
+                    
+                    let color = this.getSecurityColor(system.security_status || 0);
+                    let radius = 3;
+                    
+                    if (isSelected) {
+                        radius = 8;
+                    } else if (isHovered) {
+                        radius = 6;
+                    } else if (isRouteEndpoint) {
+                        radius = 7;
+                        color = '#ff00ff';
+                    } else if (isInRoute) {
+                        radius = 5;
+                        color = '#00d4ff';
+                    } else if (isHighlighted) {
+                        radius = 4;
+                    }
+                    
+                    // Draw glow effect
+                    if (isSelected || isHovered || isInRoute || isRouteEndpoint) {
+                        this.ctx.shadowColor = color;
+                        this.ctx.shadowBlur = isSelected ? 20 : 15;
+                    }
+                    
+                    // Draw system
+                    this.ctx.fillStyle = color;
+                    this.ctx.beginPath();
+                    this.ctx.arc(screenPos.x, screenPos.y, radius, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    
+                    this.ctx.shadowBlur = 0;
+                    
+                    // Draw name if conditions are met
+                    const shouldShowLabel = 
+                        this.showLabels === 'always' ||
+                        (this.showLabels === 'auto' && this.scale > 1.5) ||
+                        isSelected || isHovered || isInRoute || isRouteEndpoint;
+                    
+                    if (shouldShowLabel) {
+                        this.ctx.fillStyle = '#ffffff';
+                        this.ctx.font = `${Math.min(12, 8 + this.scale)}px Consolas`;
+                        this.ctx.textAlign = 'center';
+                        this.ctx.strokeStyle = '#000000';
+                        this.ctx.lineWidth = 2;
+                        this.ctx.strokeText(system.name, screenPos.x, screenPos.y - radius - 5);
+                        this.ctx.fillText(system.name, screenPos.x, screenPos.y - radius - 5);
+                    }
+                });
+            }
+            
+            async planRoute(originSystemId, destinationSystemId) {
+                if (!originSystemId || !destinationSystemId) {
+                    console.warn('Cannot plan route: missing origin or destination');
+                    return;
+                }
+                
+                try {
+                    document.getElementById('loadingProgress').textContent = 'Calculating route...';
+                    document.getElementById('loadingOverlay').style.display = 'flex';
+                    
+                    const route = await this.api.calculateRoute(originSystemId, destinationSystemId);
+                    
+                    this.currentRoute = [];
+                    for (const systemId of route) {
+                        const system = this.systems.find(s => s.system_id === systemId);
+                        if (system) {
+                            this.currentRoute.push(system);
+                        }
+                    }
+                    
+                    this.routeStart = this.systems.find(s => s.system_id === originSystemId);
+                    this.routeEnd = this.systems.find(s => s.system_id === destinationSystemId);
+                    
+                    this.updateRouteDisplay();
+                    this.switchTab('route');
+                    this.draw();
+                    
+                    console.log(`Route calculated: ${this.currentRoute.length} jumps`);
+                    
+                } catch (error) {
+                    console.error('Route planning failed:', error);
+                    alert('Failed to calculate route. This might be due to API limitations or invalid systems.');
+                } finally {
+                    this.hideLoading();
+                }
+            }
+            
+            planRouteFromInputs() {
+                const fromInput = document.getElementById('routeFrom').value.trim();
+                const toInput = document.getElementById('routeTo').value.trim();
+                
+                if (!fromInput || !toInput) {
+                    alert('Please enter both origin and destination systems');
+                    return;
+                }
+                
+                const fromSystem = this.systems.find(s => 
+                    s.name.toLowerCase() === fromInput.toLowerCase()
+                );
+                const toSystem = this.systems.find(s => 
+                    s.name.toLowerCase() === toInput.toLowerCase()
+                );
+                
+                if (!fromSystem) {
+                    alert(`Origin system "${fromInput}" not found`);
+                    return;
+                }
+                
+                if (!toSystem) {
+                    alert(`Destination system "${toInput}" not found`);
+                    return;
+                }
+                
+                this.planRoute(fromSystem.system_id, toSystem.system_id);
+            }
+            
+            updateRouteDisplay() {
+                const routeSteps = document.getElementById('routeSteps');
+                const totalJumps = document.getElementById('totalJumps');
+                
+                totalJumps.textContent = Math.max(0, this.currentRoute.length - 1);
+                
+                routeSteps.innerHTML = '';
+                
+                if (this.currentRoute.length === 0) {
+                    routeSteps.innerHTML = '<div class="route-step"><span>No route calculated</span></div>';
+                    return;
+                }
+                
+                this.currentRoute.forEach((system, index) => {
+                    const step = document.createElement('div');
+                    step.className = 'route-step';
+                    
+                    const security = system.security_status ? system.security_status.toFixed(1) : '?';
+                    const securityColor = this.getSecurityColor(system.security_status || 0);
+                    
+                    step.innerHTML = `
+                        <span>${index + 1}. ${system.name}</span>
+                        <span style="color: ${securityColor}; font-weight: bold;">${security}</span>
+                    `;
+                    
+                    step.addEventListener('click', () => this.focusOnSystem(system));
+                    routeSteps.appendChild(step);
+                });
+            }
+            
+            searchSystem(query) {
+                if (!query || query.length < 2) {
+                    this.highlightedSystems = [];
+                    this.hideSearchResults();
+                    this.draw();
+                    return;
+                }
+                
+                const matches = this.systems.filter(system => 
+                    system.name.toLowerCase().includes(query.toLowerCase()) ||
+                    (system.region_name && system.region_name.toLowerCase().includes(query.toLowerCase())) ||
+                    (system.constellation_name && system.constellation_name.toLowerCase().includes(query.toLowerCase()))
+                );
+                
+                this.highlightedSystems = matches.slice(0, 20);
+                
+                if (matches.length === 1) {
+                    this.focusOnSystem(matches[0]);
+                }
+                
+                this.draw();
+                this.displaySearchResults(matches.slice(0, 10));
+            }
+            
+            displaySearchResults(results) {
+                const searchResultsPanel = document.getElementById('searchResultsPanel');
+                const searchResults = document.getElementById('searchResults');
+                
+                if (results.length === 0) {
+                    searchResultsPanel.style.display = 'none';
+                    return;
+                }
+                
+                searchResultsPanel.style.display = 'block';
+                
+                searchResults.innerHTML = results.map(system => {
+                    const systemStr = JSON.stringify({
+                        name: system.name,
+                        system_id: system.system_id,
+                        position: system.position
+                    }).replace(/"/g, '&quot;');
+                    
+                    return `
+                        <div class="search-result" onclick='map.focusOnSystem(${systemStr})'>
+                            <div style="font-weight: bold; color: #00d4ff;">${system.name}</div>
+                            <div style="font-size: 11px; color: #aaa;">
+                                ${system.region_name || 'Unknown Region'} 
+                                (${system.security_status ? system.security_status.toFixed(1) : '?'})
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            hideSearchResults() {
+                const searchResultsPanel = document.getElementById('searchResultsPanel');
+                if (searchResultsPanel) {
+                    searchResultsPanel.style.display = 'none';
+                }
+            }
+            
+            setRouteStart(systemId) {
+                const system = this.systems.find(s => s.system_id === systemId);
+                if (system) {
+                    document.getElementById('routeFrom').value = system.name;
+                    this.routeStart = system;
+                    this.switchTab('route');
+                }
+            }
+            
+            setRouteEnd(systemId) {
+                const system = this.systems.find(s => s.system_id === systemId);
+                if (system) {
+                    document.getElementById('routeTo').value = system.name;
+                    this.routeEnd = system;
+                    this.switchTab('route');
+                }
+            }
+            
+            clearRoute() {
+                this.currentRoute = [];
+                this.routeStart = null;
+                this.routeEnd = null;
+                document.getElementById('routeFrom').value = '';
+                document.getElementById('routeTo').value = '';
+                this.updateRouteDisplay();
+                this.draw();
+            }
+            
+            switchTab(tab) {
+                document.querySelectorAll('.filter-tab').forEach(t => {
+                    t.classList.toggle('active', t.dataset.filter === tab);
+                });
+                
+                document.getElementById('regionsPanel').style.display = tab === 'regions' ? 'block' : 'none';
+                document.getElementById('routePanel').style.display = tab === 'route' ? 'block' : 'none';
+            }
+            
+            resetView() {
+                this.scale = 1;
+                this.offsetX = this.canvas.width / 2;
+                this.offsetY = this.canvas.height / 2;
+                document.getElementById('zoomLevel').textContent = '100%';
+                this.draw();
+            }
+            
+            hideLoading() {
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }
+            
+            zoomIn() {
+                this.scale *= 1.2;
+                this.scale = Math.min(this.scale, 10);
+                document.getElementById('zoomLevel').textContent = Math.round(this.scale * 100) + '%';
+                this.draw();
+            }
+            
+            zoomOut() {
+                this.scale *= 0.8;
+                this.scale = Math.max(this.scale, 0.1);
+                document.getElementById('zoomLevel').textContent = Math.round(this.scale * 100) + '%';
+                this.draw();
+            }
+            
+            toggleConnections() {
+                this.showConnections = !this.showConnections;
+                document.getElementById('showConnections').textContent = this.showConnections ? 'Yes' : 'No';
+                this.draw();
+            }
+            
+            toggleLabels() {
+                const modes = ['auto', 'always', 'never'];
+                const currentIndex = modes.indexOf(this.showLabels);
+                this.showLabels = modes[(currentIndex + 1) % modes.length];
+                
+                const labels = {
+                    'auto': 'Auto',
+                    'always': 'Always',
+                    'never': 'Never'
+                };
+                
+                document.getElementById('showLabels').textContent = labels[this.showLabels];
+                this.draw();
+            }
+        }
+
+        // Initialize the map
+        let map;
+        window.map = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            map = new EVEUniverseMap2D();
+            window.map = map;
+            console.log('EVE Universe Map initialized');
+        });
+    </script>
+</body>
+</html>
