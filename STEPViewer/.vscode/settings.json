@@ -1,0 +1,7 @@
+{
+    "cmake.configureSettings": {
+        "OpenCASCADE_DIR": "/opt/homebrew/lib/cmake/opencascade",
+        "CMAKE_PREFIX_PATH": "/opt/homebrew"
+    },
+    "cmake.generator": "Unix Makefiles"
+}
