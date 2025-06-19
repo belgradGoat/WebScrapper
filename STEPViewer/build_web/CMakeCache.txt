@@ -126,7 +126,7 @@ CMAKE_PROJECT_DESCRIPTION:STATIC=
 CMAKE_PROJECT_HOMEPAGE_URL:STATIC=
 
 //Value Computed by CMake
-CMAKE_PROJECT_NAME:STATIC=STEPViewerWeb
+CMAKE_PROJECT_NAME:STATIC=STEPViewer
 
 //Path to a program.
 CMAKE_READELF:FILEPATH=CMAKE_READELF-NOTFOUND
@@ -199,15 +199,6 @@ EMSCRIPTEN_FORCE_COMPILERS:BOOL=ON
 //If set, static library targets generate LLVM bitcode files (.bc).
 // If disabled (default), UNIX ar archives (.a) are generated.
 EMSCRIPTEN_GENERATE_BITCODE_STATIC_LIBRARIES:BOOL=OFF
-
-//Value Computed by CMake
-STEPViewerWeb_BINARY_DIR:STATIC=/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/STEPViewer/build_web
-
-//Value Computed by CMake
-STEPViewerWeb_IS_TOP_LEVEL:STATIC=ON
-
-//Value Computed by CMake
-STEPViewerWeb_SOURCE_DIR:STATIC=/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/STEPViewer
 
 //Value Computed by CMake
 STEPViewer_BINARY_DIR:STATIC=/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/STEPViewer/build_web
