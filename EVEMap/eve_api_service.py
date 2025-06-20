@@ -1,199 +1,159 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-import httpx
-import asyncio
 from typing import Dict, List, Optional
-from datetime import datetime, timedelta
-import redis
+import httpx
 import json
+import redis
+import os
+import asyncio
 
-app = FastAPI()
+# Initialize FastAPI app
+app = FastAPI(title="EVE Universe API", version="1.0.0")
 
-# CORS middleware
+# Configure CORS - this is important!
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # In production, replace with specific origins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Redis cache
+# Initialize Redis
 cache = redis.Redis(host='localhost', port=6379, decode_responses=True)
 
+# EVE ESI base URL
 ESI_BASE_URL = "https://esi.evetech.net/latest"
-CACHE_TTL = 600  # 10 minutes
 
-class RateLimiter:
-    def __init__(self, rate_limit=150):
-        self.rate_limit = rate_limit
-        self.last_request = datetime.now()
-        
-    async def wait(self):
-        elapsed = (datetime.now() - self.last_request).total_seconds() * 1000
-        if elapsed < self.rate_limit:
-            await asyncio.sleep((self.rate_limit - elapsed) / 1000)
-        self.last_request = datetime.now()
+# Global universe cache
+UNIVERSE_CACHE = None
 
-rate_limiter = RateLimiter()
-
-async def cached_request(endpoint: str, cache_key: str = None, ttl: int = CACHE_TTL):
-    """Make cached API request"""
-    cache_key = cache_key or endpoint
+@app.on_event("startup")
+async def load_universe_cache():
+    """Load universe cache on startup"""
+    global UNIVERSE_CACHE
     
-    # Check cache
-    cached = cache.get(cache_key)
+    # Try to load from Redis first
+    cached = cache.get("universe:complete")
     if cached:
-        return json.loads(cached)
+        UNIVERSE_CACHE = json.loads(cached)
+        print(f"Loaded universe cache from Redis: {UNIVERSE_CACHE['metadata']['total_systems']} systems")
+        return
     
-    # Rate limit
-    await rate_limiter.wait()
+    # Try to load from file
+    if os.path.exists("universe_static_cache.json"):
+        with open("universe_static_cache.json", "r") as f:
+            UNIVERSE_CACHE = json.load(f)
+            cache.setex("universe:complete", 2592000, json.dumps(UNIVERSE_CACHE))
+            print(f"Loaded universe cache from file: {UNIVERSE_CACHE['metadata']['total_systems']} systems")
+            return
     
-    # Make request
-    async with httpx.AsyncClient() as client:
-        response = await client.get(f"{ESI_BASE_URL}{endpoint}")
-        response.raise_for_status()
-        data = response.json()
-    
-    # Cache result
-    cache.setex(cache_key, ttl, json.dumps(data))
-    return data
+    print("No universe cache found - API will be slower")
 
-# IMPORTANT: Specific routes MUST come before the generic proxy endpoint
+@app.get("/api/universe/complete")
+async def get_complete_universe():
+    """Get complete cached universe data"""
+    if UNIVERSE_CACHE:
+        return UNIVERSE_CACHE
+    else:
+        raise HTTPException(status_code=503, detail="Universe cache not loaded")
 
 @app.get("/api/universe/optimized")
-async def get_optimized_universe_data(max_regions: int = 10):
-    """Get optimized universe data with minimal API calls"""
-    
-    # Check if we have recent data
-    cached_universe = cache.get("universe:optimized")
-    if cached_universe:
-        return json.loads(cached_universe)
-    
-    universe_data = {
-        "regions": [],
-        "systems": [],
-        "connections": [],
-        "generated_at": datetime.now().isoformat()
-    }
-    
-    # Get regions
-    region_ids = await cached_request("/universe/regions/")
-    known_space_regions = [id for id in region_ids if id < 11000000][:max_regions]
-    
-    # Process regions concurrently
-    async def process_region(region_id):
-        region_data = await cached_request(f"/universe/regions/{region_id}/")
-        return {
-            "id": region_id,
-            "name": region_data["name"],
-            "constellations": region_data["constellations"][:3]  # Limit constellations
+async def get_optimized_universe_data():
+    """Get optimized universe data"""
+    try:
+        # Check cache first
+        cached = cache.get("universe:optimized")
+        if cached:
+            return json.loads(cached)
+        
+        # If we have complete cache, use it
+        if UNIVERSE_CACHE:
+            regions = []
+            for region_id, region_data in UNIVERSE_CACHE["regions"].items():
+                regions.append({
+                    "id": int(region_id),
+                    "name": region_data["name"],
+                    "constellation_count": len(region_data["constellations"]),
+                    "system_count": sum(1 for s in UNIVERSE_CACHE["systems"].values() 
+                                      if s["region_id"] == int(region_id))
+                })
+            
+            result = {
+                "regions": regions,
+                "metadata": {
+                    "total_regions": len(regions)
+                }
+            }
+            
+            # Cache for 1 hour
+            cache.setex("universe:optimized", 3600, json.dumps(result))
+            return result
+        
+        # Otherwise fetch from API
+        regions = []
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            # Get all regions
+            response = await client.get(f"{ESI_BASE_URL}/universe/regions/")
+            region_ids = response.json()
+            
+            # Filter known space only
+            region_ids = [rid for rid in region_ids if rid < 11000000]
+            
+            # Limit to first 10 regions for quick loading
+            for region_id in region_ids[:10]:
+                try:
+                    region_response = await client.get(f"{ESI_BASE_URL}/universe/regions/{region_id}/")
+                    region_data = region_response.json()
+                    
+                    regions.append({
+                        "id": region_id,
+                        "name": region_data["name"],
+                        "constellation_count": len(region_data.get("constellations", [])),
+                        "system_count": 0  # Would need to count systems
+                    })
+                except Exception as e:
+                    print(f"Error fetching region {region_id}: {e}")
+        
+        result = {
+            "regions": regions,
+            "metadata": {
+                "total_regions": len(regions)
+            }
         }
-    
-    # Fetch regions in parallel
-    tasks = [process_region(region_id) for region_id in known_space_regions]
-    universe_data["regions"] = await asyncio.gather(*tasks)
-    
-    # Cache the optimized data
-    cache.setex("universe:optimized", 3600, json.dumps(universe_data))
-    
-    return universe_data
+        
+        # Cache for 1 hour
+        cache.setex("universe:optimized", 3600, json.dumps(result))
+        
+        return result
+        
+    except Exception as e:
+        print(f"Error in optimized endpoint: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/search/systems")
-async def search_systems(query: str):
-    """Search for systems by name"""
-    search_endpoint = f"/search/?search={query}&categories=solar_system&strict=false"
-    results = await cached_request(search_endpoint, cache_key=f"search:{query}", ttl=300)
-    
-    if not results.get("solar_system"):
-        return []
-    
-    # Get details for each system
-    system_details = []
-    for system_id in results["solar_system"][:10]:
-        system = await cached_request(f"/universe/systems/{system_id}/")
-        system_details.append({
-            "id": system_id,
-            "name": system["name"],
-            "security": system["security_status"],
-            "region_id": system.get("constellation_id")
-        })
-    
-    return system_details
-
-@app.post("/api/route/calculate")
-async def calculate_route(data: Dict):
-    """Calculate route between systems"""
-    origin = data.get("origin")
-    destination = data.get("destination")
-    avoid = data.get("avoid", "secure")
-    
-    route_data = await cached_request(
-        f"/route/{origin}/{destination}/?avoid={avoid}&flag=shortest",
-        cache_key=f"route:{origin}:{destination}:{avoid}",
-        ttl=300
-    )
-    return {"route": route_data, "jumps": len(route_data) - 1}
-
-@app.post("/api/batch")
-async def batch_request(data: Dict):
-    """Batch request multiple endpoints"""
-    endpoints = data.get("endpoints", [])
-    results = {}
-    for endpoint in endpoints:
-        try:
-            results[endpoint] = await cached_request(endpoint)
-        except Exception as e:
-            results[endpoint] = {"error": str(e)}
-    return results
-
-# Specific handlers for common endpoints
-@app.get("/api/universe/regions/")
-async def get_regions():
-    """Get all region IDs"""
-    return await cached_request("/universe/regions/")
-
-@app.get("/api/universe/regions/{region_id}/")
-async def get_region_info(region_id: int):
-    """Get region information"""
-    return await cached_request(f"/universe/regions/{region_id}/")
-
-@app.get("/api/universe/constellations/{constellation_id}/")
-async def get_constellation_info(constellation_id: int):
-    """Get constellation information"""
-    return await cached_request(f"/universe/constellations/{constellation_id}/")
-
-@app.get("/api/universe/systems/{system_id}/")
-async def get_system_info(system_id: int):
-    """Get system information"""
-    return await cached_request(f"/universe/systems/{system_id}/")
-
-@app.get("/api/universe/stargates/{stargate_id}/")
-async def get_stargate_info(stargate_id: int):
-    """Get stargate information"""
-    return await cached_request(f"/universe/stargates/{stargate_id}/")
-
+# Add the other endpoints (kills, jumps, etc.)
 @app.get("/api/universe/system_kills/")
 async def get_system_kills():
-    """Get system kills"""
-    return await cached_request("/universe/system_kills/", ttl=300)
+    """Get system kills from EVE ESI"""
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(f"{ESI_BASE_URL}/universe/system_kills/")
+            return response.json()
+    except Exception as e:
+        print(f"Error fetching kills: {e}")
+        return []
 
 @app.get("/api/universe/system_jumps/")
 async def get_system_jumps():
-    """Get system jumps"""
-    return await cached_request("/universe/system_jumps/", ttl=300)
-
-# Generic proxy endpoint - MUST BE LAST!
-@app.get("/api{endpoint:path}")
-async def proxy_endpoint(endpoint: str):
-    """Generic proxy for all API endpoints"""
+    """Get system jumps from EVE ESI"""
     try:
-        data = await cached_request(endpoint)
-        return data
-    except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=str(e))
+        async with httpx.AsyncClient() as client:
+            response = await client.get(f"{ESI_BASE_URL}/universe/system_jumps/")
+            return response.json()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Error fetching jumps: {e}")
+        return []
 
 if __name__ == "__main__":
     import uvicorn

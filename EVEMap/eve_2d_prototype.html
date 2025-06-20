@@ -6,12 +6,14 @@
     <title>EVE Online 2D Universe Map</title>
     <link rel="stylesheet" href="eve-map-styles.css">
     <script src="eve-api-client.js"></script>
+    <script src="eve-region-layout.js"></script>
 </head>
 <body>
     <div class="app-container">
         <header class="header">
             <h1>⚡ EVE Universe Map</h1>
             <div class="header-controls">
+                <button class="btn" id="backToRegionsBtn" onclick="map.showRegionsView()" style="display: none;">← Back to Regions</button>
                 <input type="text" class="search-box" id="searchInput" placeholder="Search system or region...">
                 <button class="btn" id="resetViewBtn">Reset View</button>
             </div>
@@ -166,7 +168,7 @@
     </div>
 
     <script>
-        // Main EVE Universe Map Class - Updated to use FastAPI backend
+        // Main EVE Universe Map Class - Updated to use FastAPI backend and cached data
         class EVEUniverseMap2D {
             constructor() {
                 this.canvas = document.getElementById('mapCanvas');
@@ -174,7 +176,7 @@
                 
                 // Initialize API client with FastAPI backend URL
                 this.api = new EVEAPIClient({
-                    proxyURL: 'http://localhost:3001/api'  // Your FastAPI backend
+                    proxyURL: 'http://localhost:3001/api'
                 });
                 
                 this.systems = [];
@@ -193,6 +195,7 @@
                 
                 this.selectedSystem = null;
                 this.hoveredSystem = null;
+                this.hoveredRegion = null;
                 this.currentRoute = [];
                 this.routeStart = null;
                 this.routeEnd = null;
@@ -201,6 +204,8 @@
                 this.showLabels = 'auto';
                 
                 this.selectedRegion = null;
+                this.viewMode = 'regions';
+                this.universeData = null;
                 
                 this.init();
             }
@@ -261,99 +266,193 @@
                 });
             }
             
-            async loadUniverseData() {
+         // Replace this section in loadUniverseData method (around line 270-290)
+async loadUniverseData() {
+    try {
+        document.getElementById('loadingProgress').textContent = 'Loading universe data...';
+        
+        // Try to load complete universe data first
+        try {
+            const response = await fetch('http://localhost:3001/api/universe/complete');
+            if (response.ok) {
+                this.universeData = await response.json();
+                
+                // Process regions with layout
+                this.regions = [];
+                for (const [regionId, regionData] of Object.entries(this.universeData.regions)) {
+                    const layout = EVE_REGION_LAYOUT[regionData.name] || {
+                        x: Math.random() * 10 - 5,
+                        y: Math.random() * 10 - 5,
+                        color: "#666666",
+                        group: "unknown"
+                    };
+                    
+                    this.regions.push({
+                        id: parseInt(regionId),
+                        name: regionData.name,
+                        constellations: regionData.constellations,
+                        position: {
+                            x: layout.x * 300000000000000,  // ADD THIS
+                            y: layout.y * 300000000000000,  // ADD THIS
+                            z: 0
+                        },
+                        color: layout.color,
+                        group: layout.group
+                    });
+                }
+                
+                document.getElementById('loadingProgress').textContent = 
+                    `Loaded ${Object.keys(this.universeData.systems).length} systems in ${this.regions.length} regions`;
+            }
+        } catch (error) {
+            console.log('No complete cache available, using optimized endpoint');
+            
+            // Fall back to optimized endpoint
+            const overview = await this.api.getUniverseOverview();
+            this.regions = overview.regions.map(region => {
+                const layout = EVE_REGION_LAYOUT[region.name] || {
+                    x: Math.random() * 10 - 5,
+                    y: Math.random() * 10 - 5,
+                    color: "#666666",
+                    group: "unknown"
+                };
+                
+                return {
+                    ...region,
+                    position: {
+                        x: layout.x * 300000000000000,
+                        y: layout.y * 300000000000000,
+                        z: 0
+                    },
+                    color: layout.color,
+                    group: layout.group
+                };
+            });
+            
+            document.getElementById('loadingProgress').textContent = 
+                `Loaded ${this.regions.length} regions`;
+        }
+        
+        // Load real-time data
+        document.getElementById('loadingProgress').textContent = 'Loading real-time data...';
+        await this.loadRealtimeData();
+        
+        this.populateRegionList();
+        this.hideLoading();
+        
+        // Show regions view
+        this.showRegionsView();
+        
+    } catch (error) {
+        console.error('Error loading universe data:', error);
+        document.getElementById('loadingProgress').textContent = 'Failed to load data';
+        setTimeout(() => this.hideLoading(), 2000);
+    }
+}
+            showRegionsView() {
+                this.viewMode = 'regions';
+                this.systems = [];
+                this.selectedSystem = null;
+                this.selectedRegion = null;
+                document.getElementById('backToRegionsBtn').style.display = 'none';
+                document.getElementById('selectedSystemName').textContent = 'None';
+                document.getElementById('systemCount').textContent = '0';
+                this.resetView();
+                this.draw();
+            }
+            
+            async selectRegion(region) {
+                this.selectedRegion = region;
+                
+                // Update UI
+                document.querySelectorAll('.region-item').forEach(item => {
+                    item.classList.toggle('active', item.textContent === region.name);
+                });
+                
+                // Show loading
+                document.getElementById('loadingOverlay').style.display = 'flex';
+                document.getElementById('loadingProgress').textContent = 
+                    `Loading systems in ${region.name}...`;
+                
                 try {
-                    document.getElementById('loadingProgress').textContent = 'Connecting to FastAPI backend...';
-                    
-                    // Use the optimized endpoint from FastAPI
-                    const optimizedData = await this.api.getUniverseOverview();
-                    
-                    document.getElementById('loadingProgress').textContent = 
-                        `Loading ${optimizedData.regions.length} regions from cache...`;
-                    
-                    // Process the optimized data
-                    this.regions = optimizedData.regions;
-                    
-                    let totalSystems = 0;
-                    
-                    // Load detailed data for each region
-                    for (const region of optimizedData.regions) {
-                        document.getElementById('loadingProgress').textContent = 
-                            `Loading ${region.name}...`;
+                    // If we have cached universe data, use it
+                    if (this.universeData && this.universeData.systems) {
+                        this.systems = [];
                         
-                        try {
-                            const regionInfo = await this.api.getRegionInfo(region.id);
-                            
-                            // Process limited constellations for performance
-                            for (const constellationId of region.constellations) {
-                                try {
-                                    const constellationInfo = await this.api.getConstellationInfo(constellationId);
-                                    
-                                    // Load limited systems per constellation
-                                    const systemsToLoad = constellationInfo.systems.slice(0, 5);
-                                    
-                                    for (const systemId of systemsToLoad) {
-                                        try {
-                                            const systemInfo = await this.api.getSystemInfo(systemId);
-                                            
-                                            systemInfo.region_id = region.id;
-                                            systemInfo.region_name = region.name;
-                                            systemInfo.constellation_id = constellationId;
-                                            systemInfo.constellation_name = constellationInfo.name;
-                                            
-                                            if (!systemInfo.position) {
-                                                systemInfo.position = {
-                                                    x: Math.random() * 4000000000000000,
-                                                    y: Math.random() * 4000000000000000,
-                                                    z: Math.random() * 1000000000000000
-                                                };
-                                            }
-                                            
-                                            this.systems.push(systemInfo);
-                                            totalSystems++;
-                                            
-                                            if (totalSystems % 10 === 0) {
-                                                document.getElementById('loadingProgress').textContent = 
-                                                    `Loaded ${totalSystems} systems (cached)...`;
-                                                await new Promise(resolve => setTimeout(resolve, 1));
-                                            }
-                                            
-                                        } catch (error) {
-                                            console.warn(`Failed to load system ${systemId}:`, error);
-                                        }
-                                    }
-                                    
-                                } catch (error) {
-                                    console.warn(`Failed to load constellation ${constellationId}:`, error);
-                                }
+                        // Get all systems in this region from cache
+                        for (const [systemId, systemData] of Object.entries(this.universeData.systems)) {
+                            if (systemData.region_id === region.id) {
+                                this.systems.push({
+                                    system_id: parseInt(systemId),
+                                    name: systemData.name,
+                                    position: systemData.position,
+                                    security_status: systemData.security_status,
+                                    constellation_id: systemData.constellation_id,
+                                    region_id: systemData.region_id,
+                                    region_name: region.name,
+                                    constellation_name: this.universeData.constellations[systemData.constellation_id]?.name,
+                                    stargates: systemData.stargates
+                                });
                             }
-                            
-                        } catch (error) {
-                            console.warn(`Failed to load region ${region.name}:`, error);
                         }
+                        
+                        // Load connections from cache
+                        this.loadCachedConnections();
+                    } else {
+                        // Fall back to API call
+                        const response = await fetch(
+                            `http://localhost:3001/api/universe/regions/${region.id}/systems`
+                        );
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        const data = await response.json();
+                        this.systems = data.systems;
+                        
+                        // Load connections
+                        await this.loadSystemConnections();
                     }
                     
-                    document.getElementById('loadingProgress').textContent = 'Loading system connections...';
-                    await this.loadSystemConnections();
+                    this.viewMode = 'systems';
                     
-                    document.getElementById('loadingProgress').textContent = 'Loading real-time data...';
-                    await this.loadRealtimeData();
+                    // Show back button
+                    document.getElementById('backToRegionsBtn').style.display = 'block';
                     
-                    this.populateRegionList();
-                    this.hideLoading();
-                    this.resetView();
+                    // Update system count
+                    document.getElementById('systemCount').textContent = this.systems.length;
                     
-                    console.log(`Successfully loaded ${this.systems.length} systems from ${this.regions.length} regions`);
+                    // Focus on the region's systems
+                    this.focusOnSystems(this.systems);
                     
                 } catch (error) {
-                    console.error('Error loading universe data:', error);
-                    document.getElementById('loadingProgress').textContent = 'Failed to connect to backend, using sample data...';
-                    
-                    setTimeout(() => {
-                        this.createSampleData();
-                        this.hideLoading();
-                    }, 2000);
+                    console.error('Failed to load region systems:', error);
+                    alert(`Failed to load systems for ${region.name}`);
+                } finally {
+                    this.hideLoading();
                 }
+            }
+            
+            loadCachedConnections() {
+                this.connections = [];
+                const systemIds = new Set(this.systems.map(s => s.system_id));
+                
+                // Get connections for loaded systems
+                for (const connection of this.universeData.connections) {
+                    if (systemIds.has(connection.from) && systemIds.has(connection.to)) {
+                        const fromSystem = this.systems.find(s => s.system_id === connection.from);
+                        const toSystem = this.systems.find(s => s.system_id === connection.to);
+                        
+                        if (fromSystem && toSystem) {
+                            this.connections.push({
+                                from: fromSystem,
+                                to: toSystem,
+                                type: 'stargate'
+                            });
+                        }
+                    }
+                }
+                
+                console.log(`Loaded ${this.connections.length} connections from cache`);
             }
             
             async loadSystemConnections() {
@@ -422,16 +521,206 @@
                 }
             }
             
+            handleMouseMove(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                if (this.isDragging) {
+                    const dx = e.clientX - this.lastX;
+                    const dy = e.clientY - this.lastY;
+                    
+                    this.offsetX += dx;
+                    this.offsetY += dy;
+                    
+                    this.lastX = e.clientX;
+                    this.lastY = e.clientY;
+                    
+                    this.draw();
+                } else {
+                    // Check hover
+                    const worldPos = this.screenToWorld(x, y);
+                    
+                    if (this.viewMode === 'regions') {
+                        // Check region hover
+                        let hoveredRegion = null;
+                        
+                        for (const region of this.regions) {
+                            const regionX = region.position.x * 0.000000000001;
+                            const regionY = region.position.y * 0.000000000001;
+                            const distance = Math.sqrt(
+                                Math.pow(worldPos.x - regionX, 2) + 
+                                Math.pow(worldPos.y - regionY, 2)
+                            );
+                            
+                            if (distance < 50 / this.scale) {
+                                hoveredRegion = region;
+                                break;
+                            }
+                        }
+                        
+                        if (hoveredRegion !== this.hoveredRegion) {
+                            this.hoveredRegion = hoveredRegion;
+                            this.canvas.style.cursor = hoveredRegion ? 'pointer' : 'grab';
+                            this.draw();
+                        }
+                    } else {
+                        // Original system hover logic
+                        let hoveredSystem = null;
+                        
+                        for (const system of this.systems) {
+                            if (!system.position) continue;
+                            
+                            const systemX = system.position.x * 0.000000000001;
+                            const systemY = system.position.y * 0.000000000001;
+                            const distance = Math.sqrt(
+                                Math.pow(worldPos.x - systemX, 2) + 
+                                Math.pow(worldPos.y - systemY, 2)
+                            );
+                            
+                            if (distance < 10 / this.scale) {
+                                hoveredSystem = system;
+                                break;
+                            }
+                        }
+                        
+                        if (hoveredSystem !== this.hoveredSystem) {
+                            this.hoveredSystem = hoveredSystem;
+                            this.canvas.style.cursor = hoveredSystem ? 'pointer' : 'grab';
+                            this.draw();
+                        }
+                    }
+                }
+            }
+            
+            draw() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Draw grid
+                this.drawGrid();
+                
+                if (this.viewMode === 'regions') {
+                    // Draw regions
+                    this.drawRegions();
+                } else {
+                    // Draw connections
+                    if (this.showConnections) {
+                        this.drawConnections();
+                    }
+                    
+                    // Draw route
+                    if (this.currentRoute.length > 0) {
+                        this.drawRoute();
+                    }
+                    
+                    // Draw systems
+                    this.drawSystems();
+                }
+            }
+            
+            drawRegions() {
+                const GRID_SIZE = 200;
+                const rect = this.canvas.getBoundingClientRect();
+                
+                // Draw connections first
+                this.ctx.strokeStyle = 'rgba(0, 212, 255, 0.1)';
+                this.ctx.lineWidth = 2;
+                
+                if (typeof REGION_CONNECTIONS !== 'undefined') {
+                    REGION_CONNECTIONS.forEach(([fromName, toName]) => {
+                        const fromRegion = this.regions.find(r => r.name === fromName);
+                        const toRegion = this.regions.find(r => r.name === toName);
+                        
+                        if (fromRegion && toRegion) {
+                            const fromPos = this.worldToScreen(
+                                fromRegion.position.x * 0.000000000001,
+                                fromRegion.position.y * 0.000000000001
+                            );
+                            const toPos = this.worldToScreen(
+                                toRegion.position.x * 0.000000000001,
+                                toRegion.position.y * 0.000000000001
+                            );
+                            
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(fromPos.x, fromPos.y);
+                            this.ctx.lineTo(toPos.x, toPos.y);
+                            this.ctx.stroke();
+                        }
+                    });
+                }
+                
+                // Draw regions as hexagons
+                this.regions.forEach(region => {
+                    const screenPos = this.worldToScreen(
+                        region.position.x * 0.000000000001,
+                        region.position.y * 0.000000000001
+                    );
+                    
+                    // Skip if outside viewport
+                    if (screenPos.x < -100 || screenPos.x > rect.width + 100 || 
+                        screenPos.y < -100 || screenPos.y > rect.height + 100) return;
+                    
+                    const isHovered = region === this.hoveredRegion;
+                    const isSelected = region === this.selectedRegion;
+                    
+                    // Draw hexagon
+                    const size = 45;
+                    this.ctx.beginPath();
+                    for (let i = 0; i < 6; i++) {
+                        const angle = (Math.PI / 3) * i;
+                        const x = screenPos.x + size * Math.cos(angle);
+                        const y = screenPos.y + size * Math.sin(angle);
+                        if (i === 0) this.ctx.moveTo(x, y);
+                        else this.ctx.lineTo(x, y);
+                    }
+                    this.ctx.closePath();
+                    
+                    // Fill and stroke
+                    this.ctx.fillStyle = isHovered ? '#0099cc' : 
+                                        isSelected ? '#00d4ff' : 
+                                        `${region.color || '#00d4ff'}33`;
+                    this.ctx.strokeStyle = region.color || '#00d4ff';
+                    this.ctx.lineWidth = 2;
+                    
+                    if (isHovered || isSelected) {
+                        this.ctx.shadowColor = region.color || '#00d4ff';
+                        this.ctx.shadowBlur = 20;
+                    }
+                    
+                    this.ctx.fill();
+                    this.ctx.stroke();
+                    this.ctx.shadowBlur = 0;
+                    
+                    // Draw region name
+                    this.ctx.fillStyle = '#ffffff';
+                    this.ctx.font = 'bold 14px Consolas';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.fillText(region.name, screenPos.x, screenPos.y);
+                    
+                    // Draw system count
+                    let systemCount = '?';
+                    if (this.universeData && this.universeData.systems) {
+                        systemCount = Object.values(this.universeData.systems)
+                            .filter(s => s.region_id === region.id).length;
+                    } else if (region.system_count) {
+                        systemCount = region.system_count;
+                    }
+                    
+                    this.ctx.font = '11px Consolas';
+                    this.ctx.fillStyle = '#aaa';
+                    this.ctx.fillText(`${systemCount} systems`, screenPos.x, screenPos.y + 15);
+                });
+            }
+            
+            // Keep all the other methods unchanged
             async searchSystemFromAPI(query) {
                 try {
-                    // Use the FastAPI search endpoint
                     const response = await fetch(`http://localhost:3001/api/search/systems?query=${encodeURIComponent(query)}`);
                     const results = await response.json();
                     
                     if (results && results.length > 0) {
                         this.displaySearchResultsFromAPI(results);
                         
-                        // Highlight systems that are already loaded
                         const loadedSystemIds = results
                             .map(r => r.id)
                             .filter(id => this.systems.some(s => s.system_id === id));
@@ -446,7 +735,6 @@
                     }
                 } catch (error) {
                     console.error('Search failed:', error);
-                    // Fall back to local search
                     this.searchSystem(query);
                 }
             }
@@ -459,7 +747,6 @@
                 
                 searchResults.innerHTML = results.map(system => {
                     const isLoaded = this.systems.some(s => s.system_id === system.id);
-                    const loadedSystem = this.systems.find(s => s.system_id === system.id);
                     
                     return `
                         <div class="search-result" ${isLoaded ? `onclick='map.focusOnSystemById(${system.id})'` : ''}>
@@ -492,7 +779,6 @@
                     document.getElementById('loadingProgress').textContent = 'Calculating route...';
                     document.getElementById('loadingOverlay').style.display = 'flex';
                     
-                    // Use the FastAPI route calculation endpoint
                     const response = await fetch('http://localhost:3001/api/route/calculate', {
                         method: 'POST',
                         headers: {
@@ -532,7 +818,6 @@
                 }
             }
             
-            // Keep the existing local search as fallback
             searchSystem(query) {
                 if (!query || query.length < 2) {
                     this.highlightedSystems = [];
@@ -557,80 +842,28 @@
                 this.displaySearchResults(matches.slice(0, 10));
             }
             
-            createSampleData() {
-                // Create sample data for testing when backend is unavailable
-                const sampleRegions = ['The Forge', 'Domain', 'Delve', 'Pure Blind', 'Tribute'];
-                
-                sampleRegions.forEach((regionName, regionIndex) => {
-                    this.regions.push({
-                        name: regionName,
-                        id: regionIndex + 10000000,
-                        constellations: []
-                    });
-                    
-                    for (let i = 0; i < 20; i++) {
-                        const angle = (i / 20) * Math.PI * 2;
-                        const radius = 100 + Math.random() * 200;
-                        
-                        this.systems.push({
-                            name: `${regionName} System ${i + 1}`,
-                            system_id: regionIndex * 1000 + i,
-                            region_id: regionIndex + 10000000,
-                            region_name: regionName,
-                            position: {
-                                x: (regionIndex * 1000 + Math.cos(angle) * radius) * 1000000000000,
-                                y: (regionIndex * 500 + Math.sin(angle) * radius) * 1000000000000,
-                                z: 0
-                            },
-                            security_status: Math.random() * 2 - 0.5,
-                            stargates: []
-                        });
-                    }
-                });
-                
-                // Create some connections
-                for (let i = 0; i < this.systems.length - 1; i++) {
-                    if (Math.random() > 0.5) {
-                        this.connections.push({
-                            from: this.systems[i],
-                            to: this.systems[i + 1],
-                            type: 'stargate'
-                        });
-                    }
-                }
-                
-                this.populateRegionList();
-                document.getElementById('systemCount').textContent = this.systems.length;
-            }
-            
             populateRegionList() {
                 const regionList = document.getElementById('regionList');
                 regionList.innerHTML = '';
                 
-                this.regions.forEach(region => {
+                // Sort regions by group and name
+                const sortedRegions = [...this.regions].sort((a, b) => {
+                    if (a.group !== b.group) {
+                        const groupOrder = { 'highsec': 0, 'lowsec': 1, 'nullsec': 2 };
+                        return (groupOrder[a.group] || 3) - (groupOrder[b.group] || 3);
+                    }
+                    return a.name.localeCompare(b.name);
+                });
+                
+                sortedRegions.forEach(region => {
                     const regionItem = document.createElement('div');
                     regionItem.className = 'region-item';
-                    regionItem.textContent = region.name;
+                    regionItem.innerHTML = `
+                        <span style="color: ${region.color || '#00d4ff'}">●</span> ${region.name}
+                    `;
                     regionItem.onclick = () => this.selectRegion(region);
                     regionList.appendChild(regionItem);
                 });
-                
-                document.getElementById('systemCount').textContent = this.systems.length;
-            }
-            
-            selectRegion(region) {
-                this.selectedRegion = region;
-                
-                // Update UI
-                document.querySelectorAll('.region-item').forEach(item => {
-                    item.classList.toggle('active', item.textContent === region.name);
-                });
-                
-                // Focus on region systems
-                const regionSystems = this.systems.filter(s => s.region_id === region.id);
-                if (regionSystems.length > 0) {
-                    this.focusOnSystems(regionSystems);
-                }
             }
             
             focusOnSystems(systems) {
@@ -698,51 +931,6 @@
                 this.lastY = e.clientY;
             }
             
-            handleMouseMove(e) {
-                const rect = this.canvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                
-                if (this.isDragging) {
-                    const dx = e.clientX - this.lastX;
-                    const dy = e.clientY - this.lastY;
-                    
-                    this.offsetX += dx;
-                    this.offsetY += dy;
-                    
-                    this.lastX = e.clientX;
-                    this.lastY = e.clientY;
-                    
-                    this.draw();
-                } else {
-                    // Check hover
-                    const worldPos = this.screenToWorld(x, y);
-                    let hoveredSystem = null;
-                    
-                    for (const system of this.systems) {
-                        if (!system.position) continue;
-                        
-                        const systemX = system.position.x * 0.000000000001;
-                        const systemY = system.position.y * 0.000000000001;
-                        const distance = Math.sqrt(
-                            Math.pow(worldPos.x - systemX, 2) + 
-                            Math.pow(worldPos.y - systemY, 2)
-                        );
-                        
-                        if (distance < 10 / this.scale) {
-                            hoveredSystem = system;
-                            break;
-                        }
-                    }
-                    
-                    if (hoveredSystem !== this.hoveredSystem) {
-                        this.hoveredSystem = hoveredSystem;
-                        this.canvas.style.cursor = hoveredSystem ? 'pointer' : 'grab';
-                        this.draw();
-                    }
-                }
-            }
-            
             handleMouseUp() {
                 this.isDragging = false;
             }
@@ -774,19 +962,35 @@
                 
                 const worldPos = this.screenToWorld(x, y);
                 
-                for (const system of this.systems) {
-                    if (!system.position) continue;
-                    
-                    const systemX = system.position.x * 0.000000000001;
-                    const systemY = system.position.y * 0.000000000001;
-                    const distance = Math.sqrt(
-                        Math.pow(worldPos.x - systemX, 2) + 
-                        Math.pow(worldPos.y - systemY, 2)
-                    );
-                    
-                    if (distance < 10 / this.scale) {
-                        this.selectSystem(system);
-                        break;
+                if (this.viewMode === 'regions') {
+                    for (const region of this.regions) {
+                        const regionX = region.position.x * 0.000000000001;
+                        const regionY = region.position.y * 0.000000000001;
+                        const distance = Math.sqrt(
+                            Math.pow(worldPos.x - regionX, 2) + 
+                            Math.pow(worldPos.y - regionY, 2)
+                        );
+                        
+                        if (distance < 50 / this.scale) {
+                            this.selectRegion(region);
+                            break;
+                        }
+                    }
+                } else {
+                    for (const system of this.systems) {
+                        if (!system.position) continue;
+                        
+                        const systemX = system.position.x * 0.000000000001;
+                        const systemY = system.position.y * 0.000000000001;
+                        const distance = Math.sqrt(
+                            Math.pow(worldPos.x - systemX, 2) + 
+                            Math.pow(worldPos.y - systemY, 2)
+                        );
+                        
+                        if (distance < 10 / this.scale) {
+                            this.selectSystem(system);
+                            break;
+                        }
                     }
                 }
             }
@@ -868,26 +1072,6 @@
                 if (security >= 0.1) return '#ffff00';
                 if (security >= 0.0) return '#ff8800';
                 return '#ff4444';
-            }
-            
-            draw() {
-                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                
-                // Draw grid
-                this.drawGrid();
-                
-                // Draw connections
-                if (this.showConnections) {
-                    this.drawConnections();
-                }
-                
-                // Draw route
-                if (this.currentRoute.length > 0) {
-                    this.drawRoute();
-                }
-                
-                // Draw systems
-                this.drawSystems();
             }
             
             drawGrid() {
@@ -972,7 +1156,6 @@
                         system.position.y * 0.000000000001
                     );
                     
-                    // Viewport culling
                     if (screenPos.x < -50 || screenPos.x > rect.width + 50 || 
                         screenPos.y < -50 || screenPos.y > rect.height + 50) return;
                     
@@ -999,13 +1182,11 @@
                         radius = 4;
                     }
                     
-                    // Draw glow effect
                     if (isSelected || isHovered || isInRoute || isRouteEndpoint) {
                         this.ctx.shadowColor = color;
                         this.ctx.shadowBlur = isSelected ? 20 : 15;
                     }
                     
-                    // Draw system
                     this.ctx.fillStyle = color;
                     this.ctx.beginPath();
                     this.ctx.arc(screenPos.x, screenPos.y, radius, 0, Math.PI * 2);
@@ -1013,7 +1194,6 @@
                     
                     this.ctx.shadowBlur = 0;
                     
-                    // Draw name if conditions are met
                     const shouldShowLabel = 
                         this.showLabels === 'always' ||
                         (this.showLabels === 'auto' && this.scale > 1.5) ||

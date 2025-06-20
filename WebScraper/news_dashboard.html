@@ -459,8 +459,45 @@
     background: rgba(255,255,255,0.1);
     border-radius: 5px;
 }
+.clickable-post {
+    cursor: pointer;
+    position: relative;
+}
 
-    </style>
+.clickable-post::after {
+    content: '🔗';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    font-size: 0.8em;
+}
+
+.clickable-post:hover::after {
+    opacity: 0.7;
+}
+
+.clickable-post:hover {
+    background-color: #f0f0f0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Ensure buttons inside posts don't trigger the link */
+.clickable-post button {
+    position: relative;
+    z-index: 1;
+}
+.social-item.clickable-post {
+    border: 1px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.social-item.clickable-post:hover {
+    border-color: #e0e0e0;
+    transform: translateY(-1px);
+}
+ </style>
 </head>
 <body>
     <div class="container">
@@ -1188,7 +1225,7 @@ function displayBlueskyPosts() {
     }
 
     const postsHTML = blueskyData.posts.slice(0, 10).map(post => `
-        <div class="social-item">
+        <div class="social-item clickable-post" onclick="window.open('${post.url}', '_blank')">
             <div style="font-weight: 600;">@${post.author.handle}</div>
             <div style="margin: 8px 0;">${post.text}</div>
             <div style="font-size: 0.85em; color: #6c757d;">
@@ -1283,6 +1320,8 @@ async function searchRedditInternal(query) {
     }
 }
 
+
+// Update the displayRedditPosts function
 function displayRedditPosts() {
     const contentDiv = document.getElementById('reddit-content');
     if (!redditData.posts || redditData.posts.length === 0) {
@@ -1305,14 +1344,14 @@ function displayRedditPosts() {
         const truncatedText = isLongText ? fullText.substring(0, 200) + '...' : fullText;
         
         return `
-            <div class="social-item">
+            <div class="social-item clickable-post" onclick="window.open('${post.url}', '_blank')">
                 <div style="font-weight: 600;">${post.title}</div>
                 <div style="margin: 8px 0; font-size: 0.9em;">r/${post.subreddit} • u/${post.author.username}</div>
                 <div class="reddit-post-text" id="reddit-text-${index}">
                     <span id="reddit-preview-${index}" ${isLongText ? '' : 'style="display:none;"'}>${truncatedText}</span>
                     <span id="reddit-full-${index}" style="display:none;">${fullText}</span>
                     ${isLongText ? `
-                        <button class="reddit-show-more-btn" id="reddit-btn-${index}" onclick="toggleRedditPost(${index})">
+                        <button class="reddit-show-more-btn" id="reddit-btn-${index}" onclick="event.stopPropagation(); toggleRedditPost(${index})">
                             Show More
                         </button>
                     ` : ''}
