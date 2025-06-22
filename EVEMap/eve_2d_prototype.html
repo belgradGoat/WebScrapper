@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="eve-map-styles.css">
     <script src="eve-api-client.js"></script>
     <script src="eve-region-layout.js"></script>
+    <script src="eve-region-detail-layout.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -265,6 +266,223 @@
                     });
                 });
             }
+
+            showRegionDetail(region) {
+    this.viewMode = 'region-detail';
+    this.selectedRegion = region;
+    this.selectedConstellation = null;
+    
+    // Load region detail data
+    this.loadRegionDetail(region);
+    
+    // Update UI
+    document.getElementById('backToRegionsBtn').style.display = 'block';
+    this.updateRegionDetailPanel();
+}
+
+async loadRegionDetail(region) {
+    try {
+        // Show loading
+        this.showLoading('Loading region details...');
+        
+        // Get region data from cache or API
+        const regionData = await this.getRegionDetailData(region.id);
+        
+        // Create schematic layout
+        const layout = new RegionDetailLayout();
+        this.regionLayout = layout.layoutRegion(
+            regionData, 
+            this.canvas.width * 0.8, 
+            this.canvas.height * 0.8
+        );
+        
+        // Calculate connections
+        this.regionConnections = layout.calculateConnections(regionData, this.regionLayout);
+        
+        this.hideLoading();
+        this.draw();
+        
+    } catch (error) {
+        console.error('Failed to load region detail:', error);
+        this.hideLoading();
+    }
+}
+
+drawRegionDetail() {
+    if (!this.regionLayout) return;
+    
+    const centerX = this.canvas.width / 2;
+    const centerY = this.canvas.height / 2;
+    const scale = this.scale;
+    
+    // Draw constellation boundaries
+    this.regionLayout.forEach((constLayout, constId) => {
+        const x = centerX + (constLayout.x - this.canvas.width * 0.4) * scale + this.offsetX;
+        const y = centerY + (constLayout.y - this.canvas.height * 0.4) * scale + this.offsetY;
+        const width = constLayout.width * scale;
+        const height = constLayout.height * scale;
+        
+        // Draw constellation background
+        this.ctx.fillStyle = 'rgba(0, 212, 255, 0.05)';
+        this.ctx.strokeStyle = 'rgba(0, 212, 255, 0.3)';
+        this.ctx.lineWidth = 2;
+        
+        // Rounded rectangle
+        this.drawRoundedRect(x - width/2, y - height/2, width, height, 10);
+        this.ctx.fill();
+        this.ctx.stroke();
+        
+        // Draw constellation name
+        const constellation = this.getConstellationData(constId);
+        if (constellation && scale > 0.5) {
+            this.ctx.fillStyle = '#00d4ff';
+            this.ctx.font = `${Math.max(12, 14 * scale)}px Consolas`;
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(constellation.name, x, y - height/2 + 20);
+        }
+        
+        // Draw systems in constellation
+        constLayout.systems.forEach((systemLayout, systemId) => {
+            const sysX = x - width/2 + systemLayout.x * scale;
+            const sysY = y - height/2 + systemLayout.y * scale;
+            
+            // Get system data
+            const system = this.getSystemData(systemId);
+            if (!system) return;
+            
+            // Determine color based on security
+            const color = this.getSecurityColor(system.security_status || 0);
+            
+            // Draw system
+            this.ctx.fillStyle = color;
+            this.ctx.beginPath();
+            this.ctx.arc(sysX, sysY, systemLayout.radius * scale, 0, Math.PI * 2);
+            this.ctx.fill();
+            
+            // Draw system name if zoomed in
+            if (scale > 1.2) {
+                this.ctx.fillStyle = '#ffffff';
+                this.ctx.font = `${10 * scale}px Consolas`;
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText(system.name, sysX, sysY - systemLayout.radius * scale - 5);
+            }
+        });
+    });
+    
+    // Draw connections between constellations
+    this.drawRegionConnections();
+}
+
+drawRegionConnections() {
+    if (!this.regionConnections) return;
+    
+    this.ctx.strokeStyle = 'rgba(0, 212, 255, 0.2)';
+    this.ctx.lineWidth = 1;
+    
+    const centerX = this.canvas.width / 2;
+    const centerY = this.canvas.height / 2;
+    const scale = this.scale;
+    
+    // Draw inter-constellation connections with bezier curves
+    const drawnConnections = new Set();
+    
+    this.regionConnections.forEach(conn => {
+        // Avoid duplicate connections
+        const connKey = `${conn.from.constId}-${conn.to.constId}`;
+        const reverseKey = `${conn.to.constId}-${conn.from.constId}`;
+        
+        if (drawnConnections.has(connKey) || drawnConnections.has(reverseKey)) {
+            return;
+        }
+        
+        drawnConnections.add(connKey);
+        
+        if (conn.from.constId !== conn.to.constId) {
+            // Inter-constellation connection
+            const fromConst = this.regionLayout.get(conn.from.constId);
+            const toConst = this.regionLayout.get(conn.to.constId);
+            
+            if (fromConst && toConst) {
+                const x1 = centerX + (fromConst.x - this.canvas.width * 0.4) * scale + this.offsetX;
+                const y1 = centerY + (fromConst.y - this.canvas.height * 0.4) * scale + this.offsetY;
+                const x2 = centerX + (toConst.x - this.canvas.width * 0.4) * scale + this.offsetX;
+                const y2 = centerY + (toConst.y - this.canvas.height * 0.4) * scale + this.offsetY;
+                
+                // Draw curved connection
+                this.ctx.strokeStyle = 'rgba(255, 255, 0, 0.3)';
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                
+                const midX = (x1 + x2) / 2;
+                const midY = (y1 + y2) / 2;
+                const curve = 50 * scale;
+                
+                this.ctx.moveTo(x1, y1);
+                this.ctx.quadraticCurveTo(midX, midY - curve, x2, y2);
+                this.ctx.stroke();
+            }
+        }
+    });
+}
+
+drawRoundedRect(x, y, width, height, radius) {
+    this.ctx.beginPath();
+    this.ctx.moveTo(x + radius, y);
+    this.ctx.lineTo(x + width - radius, y);
+    this.ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    this.ctx.lineTo(x + width, y + height - radius);
+    this.ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    this.ctx.lineTo(x + radius, y + height);
+    this.ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    this.ctx.lineTo(x, y + radius);
+    this.ctx.quadraticCurveTo(x, y, x + radius, y);
+    this.ctx.closePath();
+}
+
+updateRegionDetailPanel() {
+    // Update the left panel to show constellation list
+    const regionList = document.getElementById('regionList');
+    regionList.innerHTML = '';
+    
+    if (this.selectedRegion && this.regionLayout) {
+        // Add region title
+        const title = document.createElement('div');
+        title.className = 'panel-section-title';
+        title.textContent = `${this.selectedRegion.name} Constellations`;
+        regionList.appendChild(title);
+        
+        // List constellations
+        this.regionLayout.forEach((constLayout, constId) => {
+            const constellation = this.getConstellationData(constId);
+            if (!constellation) return;
+            
+            const item = document.createElement('div');
+            item.className = 'constellation-item';
+            item.innerHTML = `
+                <div class="constellation-name">${constellation.name}</div>
+                <div class="constellation-stats">
+                    <span>${constLayout.systems.size} systems</span>
+                </div>
+            `;
+            
+            item.onclick = () => this.focusOnConstellation(constId);
+            regionList.appendChild(item);
+        });
+    }
+}
+
+// Update your main draw method
+draw() {
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    
+    if (this.viewMode === 'regions') {
+        this.drawGrid();
+        this.drawRegions();
+    } else if (this.viewMode === 'region-detail') {
+        this.drawGrid();
+        this.drawRegionDetail();
+    }
+}
             
          // Replace this section in loadUniverseData method (around line 270-290)
 async loadUniverseData() {
@@ -361,76 +579,107 @@ async loadUniverseData() {
                 this.draw();
             }
             
-            async selectRegion(region) {
-                this.selectedRegion = region;
+ async selectRegion(region) {
+    if (this.viewMode === 'regions') {
+        // Switch to detailed view
+        this.showRegionDetail(region);
+        return; // Important: return here to prevent old behavior
+    }
+    
+    // If already in detail view, just update selection
+    this.selectedRegion = region;
+    this.updateRegionDetailPanel();
+    this.draw();
+}
+
+// Also, you need to add the helper methods that are missing:
+
+showLoading(message) {
+    document.getElementById('loadingOverlay').style.display = 'flex';
+    document.getElementById('loadingProgress').textContent = message || 'Loading...';
+}
+
+async getRegionDetailData(regionId) {
+    // Get region data from universe cache
+    if (this.universeData) {
+        const regionData = this.universeData.regions[regionId];
+        if (!regionData) throw new Error('Region not found');
+        
+        // Build complete region data with constellations and systems
+        const completeRegion = {
+            ...regionData,
+            constellations: []
+        };
+        
+        // Get constellation details
+        for (const constId of regionData.constellations) {
+            const constellation = this.universeData.constellations[constId];
+            if (constellation) {
+                const constWithSystems = {
+                    ...constellation,
+                    systems: []
+                };
                 
-                // Update UI
-                document.querySelectorAll('.region-item').forEach(item => {
-                    item.classList.toggle('active', item.textContent === region.name);
-                });
-                
-                // Show loading
-                document.getElementById('loadingOverlay').style.display = 'flex';
-                document.getElementById('loadingProgress').textContent = 
-                    `Loading systems in ${region.name}...`;
-                
-                try {
-                    // If we have cached universe data, use it
-                    if (this.universeData && this.universeData.systems) {
-                        this.systems = [];
-                        
-                        // Get all systems in this region from cache
-                        for (const [systemId, systemData] of Object.entries(this.universeData.systems)) {
-                            if (systemData.region_id === region.id) {
-                                this.systems.push({
-                                    system_id: parseInt(systemId),
-                                    name: systemData.name,
-                                    position: systemData.position,
-                                    security_status: systemData.security_status,
-                                    constellation_id: systemData.constellation_id,
-                                    region_id: systemData.region_id,
-                                    region_name: region.name,
-                                    constellation_name: this.universeData.constellations[systemData.constellation_id]?.name,
-                                    stargates: systemData.stargates
-                                });
-                            }
-                        }
-                        
-                        // Load connections from cache
-                        this.loadCachedConnections();
-                    } else {
-                        // Fall back to API call
-                        const response = await fetch(
-                            `http://localhost:3001/api/universe/regions/${region.id}/systems`
-                        );
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        const data = await response.json();
-                        this.systems = data.systems;
-                        
-                        // Load connections
-                        await this.loadSystemConnections();
+                // Get systems for this constellation
+                for (const systemId of constellation.systems) {
+                    const system = this.universeData.systems[systemId];
+                    if (system) {
+                        constWithSystems.systems.push({
+                            id: systemId,
+                            name: system.name,
+                            security_status: system.security_status,
+                            position: system.position,
+                            connections: system.stargates || []
+                        });
                     }
-                    
-                    this.viewMode = 'systems';
-                    
-                    // Show back button
-                    document.getElementById('backToRegionsBtn').style.display = 'block';
-                    
-                    // Update system count
-                    document.getElementById('systemCount').textContent = this.systems.length;
-                    
-                    // Focus on the region's systems
-                    this.focusOnSystems(this.systems);
-                    
-                } catch (error) {
-                    console.error('Failed to load region systems:', error);
-                    alert(`Failed to load systems for ${region.name}`);
-                } finally {
-                    this.hideLoading();
                 }
+                
+                completeRegion.constellations.push(constWithSystems);
             }
+        }
+        
+        return completeRegion;
+    } else {
+        // Fallback to API
+        const response = await fetch(`http://localhost:3001/api/universe/regions/${regionId}/details`);
+        if (!response.ok) throw new Error('Failed to fetch region details');
+        return await response.json();
+    }
+}
+
+getConstellationData(constId) {
+    if (this.universeData && this.universeData.constellations) {
+        return this.universeData.constellations[constId];
+    }
+    return null;
+}
+
+getSystemData(systemId) {
+    if (this.universeData && this.universeData.systems) {
+        return this.universeData.systems[systemId];
+    }
+    return null;
+}
+
+focusOnConstellation(constId) {
+    if (!this.regionLayout) return;
+    
+    const constLayout = this.regionLayout.get(constId);
+    if (!constLayout) return;
+    
+    const centerX = this.canvas.width / 2;
+    const centerY = this.canvas.height / 2;
+    
+    const x = centerX + (constLayout.x - this.canvas.width * 0.4);
+    const y = centerY + (constLayout.y - this.canvas.height * 0.4);
+    
+    this.scale = 2;
+    this.offsetX = this.canvas.width / 2 - x * this.scale;
+    this.offsetY = this.canvas.height / 2 - y * this.scale;
+    
+    this.selectedConstellation = constId;
+    this.draw();
+}
             
             loadCachedConnections() {
                 this.connections = [];
@@ -594,29 +843,28 @@ async loadUniverseData() {
             }
             
             draw() {
-                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                
-                // Draw grid
-                this.drawGrid();
-                
-                if (this.viewMode === 'regions') {
-                    // Draw regions
-                    this.drawRegions();
-                } else {
-                    // Draw connections
-                    if (this.showConnections) {
-                        this.drawConnections();
-                    }
-                    
-                    // Draw route
-                    if (this.currentRoute.length > 0) {
-                        this.drawRoute();
-                    }
-                    
-                    // Draw systems
-                    this.drawSystems();
-                }
-            }
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    
+    // Draw grid
+    this.drawGrid();
+    
+    if (this.viewMode === 'regions') {
+        // Draw regions overview
+        this.drawRegions();
+    } else if (this.viewMode === 'region-detail') {
+        // Draw detailed region view
+        this.drawRegionDetail();
+    } else if (this.viewMode === 'systems') {
+        // Draw old systems view
+        if (this.showConnections) {
+            this.drawConnections();
+        }
+        if (this.currentRoute.length > 0) {
+            this.drawRoute();
+        }
+        this.drawSystems();
+    }
+}
             
             drawRegions() {
                 const GRID_SIZE = 200;

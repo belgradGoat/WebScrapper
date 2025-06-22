@@ -404,6 +404,96 @@ body {
     color: #aaa;
 }
 
+/* Region Detail View Styles */
+.panel-section-title {
+    color: #00d4ff;
+    font-size: 14px;
+    font-weight: bold;
+    padding: 10px;
+    border-bottom: 2px solid #00d4ff;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.constellation-item {
+    padding: 12px;
+    margin: 5px;
+    background: rgba(0, 212, 255, 0.1);
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.constellation-item:hover {
+    background: rgba(0, 212, 255, 0.2);
+    border-color: #00d4ff;
+    transform: translateX(5px);
+}
+
+.constellation-name {
+    color: #00d4ff;
+    font-weight: bold;
+    font-size: 13px;
+    margin-bottom: 5px;
+}
+
+.constellation-stats {
+    color: #aaa;
+    font-size: 11px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.constellation-stats span {
+    color: #888;
+}
+
+/* System grid in constellation */
+.system-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 5px;
+    padding: 10px;
+}
+
+.system-node {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.system-node:hover {
+    transform: scale(1.1);
+    z-index: 10;
+}
+
+/* Connection lines styling */
+.constellation-connection {
+    stroke: rgba(255, 255, 0, 0.3);
+    stroke-width: 2;
+    fill: none;
+}
+
+.system-connection {
+    stroke: rgba(0, 212, 255, 0.2);
+    stroke-width: 1;
+    fill: none;
+}
+
+/* Constellation boundary */
+.constellation-boundary {
+    fill: rgba(0, 212, 255, 0.05);
+    stroke: rgba(0, 212, 255, 0.3);
+    stroke-width: 2;
+    stroke-dasharray: 5, 5;
+}
+
 /* Security status colors */
 .sec-high { color: #00ff00; }
 .sec-low { color: #ffff00; }
