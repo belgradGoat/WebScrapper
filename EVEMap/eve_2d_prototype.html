@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="eve-map-styles.css">
     <script src="eve-api-client.js"></script>
     <script src="eve-region-layout.js"></script>
-    <script src="eve-region-detail-layout.js"></script>
+    <script src="eve-region-detail-layout-engine.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -169,16 +169,18 @@
     </div>
 
     <script>
+// Then your EVEUniverseMap2D class continues as before...
         // Main EVE Universe Map Class - Updated to use FastAPI backend and cached data
         class EVEUniverseMap2D {
             constructor() {
-                this.canvas = document.getElementById('mapCanvas');
-                this.ctx = this.canvas.getContext('2d');
-                
-                // Initialize API client with FastAPI backend URL
-                this.api = new EVEAPIClient({
-                    proxyURL: 'http://localhost:3001/api'
-                });
+                        // Add this line at the very beginning
+        this.canvas = document.getElementById('mapCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        
+        // Initialize API client with FastAPI backend URL
+        this.api = new EVEAPIClient({
+            proxyURL: 'http://localhost:3001/api'
+        });
                 
                 this.systems = [];
                 this.regions = [];
@@ -228,6 +230,306 @@
                 resize();
             }
             
+            drawRegionDetail() {
+    if (!this.regionLayout) return;
+    
+    const centerX = this.canvas.width / 2;
+    const centerY = this.canvas.height / 2;
+    const scale = this.scale;
+    
+    // Draw constellation boundaries with subway-style boxes
+    this.regionLayout.forEach((constLayout, constId) => {
+        const x = centerX + (constLayout.x - this.canvas.width * 0.4) * scale + this.offsetX;
+        const y = centerY + (constLayout.y - this.canvas.height * 0.4) * scale + this.offsetY;
+        const width = constLayout.width * scale;
+        const height = constLayout.height * scale;
+        
+        // Draw constellation container
+        this.ctx.fillStyle = 'rgba(20, 20, 30, 0.8)';
+        this.ctx.strokeStyle = 'rgba(0, 212, 255, 0.3)';
+        this.ctx.lineWidth = 2;
+        
+        // Draw rounded rectangle with thicker borders
+        this.drawRoundedRect(x - width/2, y - height/2, width, height, 15);
+        this.ctx.fill();
+        this.ctx.stroke();
+        
+        // Draw constellation name as station label
+        const constellation = this.getConstellationData(constId);
+        if (constellation && scale > 0.5) {
+            // Background for label
+            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            const labelWidth = this.ctx.measureText(constellation.name).width + 20;
+            this.drawRoundedRect(x - labelWidth/2, y - height/2 - 25, labelWidth, 30, 5);
+            this.ctx.fill();
+            
+            // Label text
+            this.ctx.fillStyle = '#00d4ff';
+            this.ctx.font = `bold ${Math.max(14, 16 * scale)}px Consolas`;
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(constellation.name, x, y - height/2 - 5);
+        }
+    });
+    
+    // Draw all connections first (behind systems)
+    this.drawSubwayConnections();
+    
+    // Then draw systems on top
+    this.drawSubwaySystems();
+}
+
+drawSubwayConnections() {
+    if (!this.regionConnections || !this.regionLayout) return;
+    
+    const centerX = this.canvas.width / 2;
+    const centerY = this.canvas.height / 2;
+    const scale = this.scale;
+    
+    // Group connections by type
+    const intraConnections = [];
+    const interConnections = [];
+    
+    this.regionConnections.forEach(conn => {
+        if (conn.from.constId === conn.to.constId) {
+            intraConnections.push(conn);
+        } else {
+            interConnections.push(conn);
+        }
+    });
+    
+    // Draw intra-constellation connections first
+    this.ctx.lineCap = 'round';
+    this.ctx.lineJoin = 'round';
+    
+    intraConnections.forEach(conn => {
+        const fromConst = this.regionLayout.get(conn.from.constId);
+        const toConst = this.regionLayout.get(conn.to.constId);
+        
+        if (fromConst && toConst && fromConst.systems && toConst.systems) {
+            const fromSystem = fromConst.systems.get(conn.from.systemId);
+            const toSystem = toConst.systems.get(conn.to.systemId);
+            
+            if (fromSystem && toSystem) {
+                const x1 = centerX + (fromConst.x - this.canvas.width * 0.4 + fromSystem.x - fromConst.width/2) * scale + this.offsetX;
+                const y1 = centerY + (fromConst.y - this.canvas.height * 0.4 + fromSystem.y - fromConst.height/2) * scale + this.offsetY;
+                const x2 = centerX + (toConst.x - this.canvas.width * 0.4 + toSystem.x - toConst.width/2) * scale + this.offsetX;
+                const y2 = centerY + (toConst.y - this.canvas.height * 0.4 + toSystem.y - toConst.height/2) * scale + this.offsetY;
+                
+                // Draw subway-style connection
+                this.drawSubwayLine(x1, y1, x2, y2, fromSystem.system.security_status);
+            }
+        }
+    });
+    
+    // Draw inter-constellation connections with special styling
+    this.ctx.save();
+    this.ctx.setLineDash([15, 10]);
+    this.ctx.lineCap = 'round';
+    
+    interConnections.forEach(conn => {
+        const fromConst = this.regionLayout.get(conn.from.constId);
+        const toConst = this.regionLayout.get(conn.to.constId);
+        
+        if (fromConst && toConst && fromConst.systems && toConst.systems) {
+            const fromSystem = fromConst.systems.get(conn.from.systemId);
+            const toSystem = toConst.systems.get(conn.to.systemId);
+            
+            if (fromSystem && toSystem) {
+                const x1 = centerX + (fromConst.x - this.canvas.width * 0.4 + fromSystem.x - fromConst.width/2) * scale + this.offsetX;
+                const y1 = centerY + (fromConst.y - this.canvas.height * 0.4 + fromSystem.y - fromConst.height/2) * scale + this.offsetY;
+                const x2 = centerX + (toConst.x - this.canvas.width * 0.4 + toSystem.x - toConst.width/2) * scale + this.offsetX;
+                const y2 = centerY + (toConst.y - this.canvas.height * 0.4 + toSystem.y - toConst.height/2) * scale + this.offsetY;
+                
+                // Inter-constellation lines are thicker and dashed
+                const avgSec = (fromSystem.system.security_status + toSystem.system.security_status) / 2;
+                this.drawSubwayLine(x1, y1, x2, y2, avgSec, true);
+            }
+        }
+    });
+    
+    this.ctx.restore();
+}
+
+drawSubwayLine(x1, y1, x2, y2, secStatus, isInterConst = false) {
+    // Determine line color based on security - subway line colors
+    let lineColor = '#666666';
+    let lineWidth = 5;
+    
+    if (secStatus >= 0.5) {
+        lineColor = '#00ff00'; // Green line for high-sec
+    } else if (secStatus >= 0.1) {
+        lineColor = '#ffaa00'; // Orange/yellow line for low-sec
+    } else {
+        lineColor = '#ff4444'; // Red line for null-sec
+    }
+    
+    // Inter-constellation connections are thicker
+    if (isInterConst) {
+        lineWidth = 7;
+        lineColor = '#ffd700'; // Gold color for transfers
+    }
+    
+    this.ctx.strokeStyle = lineColor;
+    this.ctx.lineWidth = lineWidth * (this.scale > 1 ? 1 : 0.8);
+    
+    // Add subtle glow for better visibility
+    if (this.scale > 0.8) {
+        this.ctx.shadowColor = lineColor;
+        this.ctx.shadowBlur = 10;
+    }
+    
+    // Draw curved subway-style lines
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    this.ctx.beginPath();
+    this.ctx.moveTo(x1, y1);
+    
+    if (distance > 100) {
+        // For longer distances, use bezier curves like subway maps
+        if (Math.abs(dx) > Math.abs(dy)) {
+            // Horizontal-dominant connection
+            const cpx = x1 + dx * 0.5;
+            this.ctx.bezierCurveTo(cpx, y1, cpx, y2, x2, y2);
+        } else {
+            // Vertical-dominant connection
+            const cpy = y1 + dy * 0.5;
+            this.ctx.bezierCurveTo(x1, cpy, x2, cpy, x2, y2);
+        }
+    } else {
+        // Short connections are straight
+        this.ctx.lineTo(x2, y2);
+    }
+    
+    this.ctx.stroke();
+    this.ctx.shadowBlur = 0;
+}
+
+drawSubwaySystems() {
+    if (!this.regionLayout) return;
+    
+    const centerX = this.canvas.width / 2;
+    const centerY = this.canvas.height / 2;
+    const scale = this.scale;
+    
+    this.regionLayout.forEach((constLayout, constId) => {
+        const constX = centerX + (constLayout.x - this.canvas.width * 0.4) * scale + this.offsetX;
+        const constY = centerY + (constLayout.y - this.canvas.height * 0.4) * scale + this.offsetY;
+        
+        constLayout.systems.forEach((systemLayout, systemId) => {
+            const sysX = constX + (systemLayout.x - constLayout.width/2) * scale;
+            const sysY = constY + (systemLayout.y - constLayout.height/2) * scale;
+            
+            const system = systemLayout.system;
+            if (!system) return;
+            
+            // Determine station style based on security
+            const secStatus = system.security_status || 0;
+            let stationColor = this.getSecurityColor(secStatus);
+            let stationStyle = 'standard';
+            
+            // Check if it's a hub (multiple connections)
+            if (systemLayout.radius > 10) stationStyle = 'hub';
+            if (systemLayout.radius < 7) stationStyle = 'terminal';
+            
+            // Draw station circle - subway station style
+            const radius = systemLayout.radius * scale;
+            
+            // Outer white ring for all stations
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.beginPath();
+            this.ctx.arc(sysX, sysY, radius + 3, 0, Math.PI * 2);
+            this.ctx.fill();
+            
+            // Main station circle
+            this.ctx.fillStyle = '#1a1a2e';
+            this.ctx.strokeStyle = stationColor;
+            this.ctx.lineWidth = 4;
+            
+            this.ctx.beginPath();
+            this.ctx.arc(sysX, sysY, radius, 0, Math.PI * 2);
+            this.ctx.fill();
+            this.ctx.stroke();
+            
+            // Inner indicator for main route stations
+            if (systemLayout.onMainRoute) {
+                this.ctx.fillStyle = stationColor;
+                this.ctx.beginPath();
+                this.ctx.arc(sysX, sysY, radius * 0.4, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
+            
+            // Station name label - always visible for important stations
+            if (scale > 0.8 || stationStyle === 'hub' || systemLayout.onMainRoute) {
+                const label = system.name;
+                const fontSize = Math.max(10, 12 * scale);
+                this.ctx.font = `bold ${fontSize}px Arial`;
+                
+                // Measure text for background
+                const metrics = this.ctx.measureText(label);
+                const labelWidth = metrics.width + 10;
+                const labelHeight = fontSize + 6;
+                
+                // Position label below station
+                const labelX = sysX - labelWidth/2;
+                const labelY = sysY + radius + 8;
+                
+                // Draw label background
+                this.ctx.fillStyle = 'rgba(26, 26, 46, 0.95)';
+                this.ctx.strokeStyle = stationColor;
+                this.ctx.lineWidth = 1;
+                
+                this.drawRoundedRect(labelX, labelY, labelWidth, labelHeight, 3);
+                this.ctx.fill();
+                this.ctx.stroke();
+                
+                // Draw label text
+                this.ctx.fillStyle = '#ffffff';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.fillText(label, sysX, labelY + labelHeight/2);
+            }
+            
+            // Hover effect
+            if (this.hoveredSystem === system || this.selectedSystem === system) {
+                this.ctx.strokeStyle = '#00d4ff';
+                this.ctx.lineWidth = 3;
+                this.ctx.setLineDash([5, 5]);
+                this.ctx.beginPath();
+                this.ctx.arc(sysX, sysY, radius + 8, 0, Math.PI * 2);
+                this.ctx.stroke();
+                this.ctx.setLineDash([]);
+                
+                // Show security badge on hover
+                const badgeX = sysX + radius + 5;
+                const badgeY = sysY - radius - 5;
+                
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+                this.ctx.strokeStyle = stationColor;
+                this.ctx.lineWidth = 2;
+                
+                this.drawRoundedRect(badgeX, badgeY, 45, 22, 3);
+                this.ctx.fill();
+                this.ctx.stroke();
+                
+                this.ctx.fillStyle = stationColor;
+                this.ctx.font = 'bold 12px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText(secStatus.toFixed(1), badgeX + 22, badgeY + 13);
+            }
+        });
+    });
+}
+
+// Also make sure to add the missing getSecurityColor method if it doesn't exist:
+getSecurityColor(secStatus) {
+    if (secStatus >= 0.5) return '#00ff00';
+    else if (secStatus >= 0.1) return '#ffaa00';
+    else if (secStatus >= 0.0) return '#ff8800';
+    else return '#ff4444';
+}
+
             setupEventListeners() {
                 // Mouse events
                 this.canvas.addEventListener('mousedown', this.handleMouseDown.bind(this));
@@ -308,71 +610,6 @@ async loadRegionDetail(region) {
     }
 }
 
-drawRegionDetail() {
-    if (!this.regionLayout) return;
-    
-    const centerX = this.canvas.width / 2;
-    const centerY = this.canvas.height / 2;
-    const scale = this.scale;
-    
-    // Draw constellation boundaries
-    this.regionLayout.forEach((constLayout, constId) => {
-        const x = centerX + (constLayout.x - this.canvas.width * 0.4) * scale + this.offsetX;
-        const y = centerY + (constLayout.y - this.canvas.height * 0.4) * scale + this.offsetY;
-        const width = constLayout.width * scale;
-        const height = constLayout.height * scale;
-        
-        // Draw constellation background
-        this.ctx.fillStyle = 'rgba(0, 212, 255, 0.05)';
-        this.ctx.strokeStyle = 'rgba(0, 212, 255, 0.3)';
-        this.ctx.lineWidth = 2;
-        
-        // Rounded rectangle
-        this.drawRoundedRect(x - width/2, y - height/2, width, height, 10);
-        this.ctx.fill();
-        this.ctx.stroke();
-        
-        // Draw constellation name
-        const constellation = this.getConstellationData(constId);
-        if (constellation && scale > 0.5) {
-            this.ctx.fillStyle = '#00d4ff';
-            this.ctx.font = `${Math.max(12, 14 * scale)}px Consolas`;
-            this.ctx.textAlign = 'center';
-            this.ctx.fillText(constellation.name, x, y - height/2 + 20);
-        }
-        
-        // Draw systems in constellation
-        constLayout.systems.forEach((systemLayout, systemId) => {
-            const sysX = x - width/2 + systemLayout.x * scale;
-            const sysY = y - height/2 + systemLayout.y * scale;
-            
-            // Get system data
-            const system = this.getSystemData(systemId);
-            if (!system) return;
-            
-            // Determine color based on security
-            const color = this.getSecurityColor(system.security_status || 0);
-            
-            // Draw system
-            this.ctx.fillStyle = color;
-            this.ctx.beginPath();
-            this.ctx.arc(sysX, sysY, systemLayout.radius * scale, 0, Math.PI * 2);
-            this.ctx.fill();
-            
-            // Draw system name if zoomed in
-            if (scale > 1.2) {
-                this.ctx.fillStyle = '#ffffff';
-                this.ctx.font = `${10 * scale}px Consolas`;
-                this.ctx.textAlign = 'center';
-                this.ctx.fillText(system.name, sysX, sysY - systemLayout.radius * scale - 5);
-            }
-        });
-    });
-    
-    // Draw connections between constellations
-    this.drawRegionConnections();
-}
-
 drawRegionConnections() {
     if (!this.regionConnections) return;
     
@@ -440,28 +677,69 @@ drawRoundedRect(x, y, width, height, radius) {
 }
 
 updateRegionDetailPanel() {
-    // Update the left panel to show constellation list
     const regionList = document.getElementById('regionList');
     regionList.innerHTML = '';
     
     if (this.selectedRegion && this.regionLayout) {
-        // Add region title
+        // Add region title with subway map styling
         const title = document.createElement('div');
         title.className = 'panel-section-title';
-        title.textContent = `${this.selectedRegion.name} Constellations`;
+        title.style.background = 'linear-gradient(90deg, #00d4ff, #0099cc)';
+        title.style.color = '#000';
+        title.innerHTML = `<strong>${this.selectedRegion.name}</strong> Transit Map`;
         regionList.appendChild(title);
         
-        // List constellations
+        // Add line legend
+        const legend = document.createElement('div');
+        legend.className = 'subway-legend';
+        legend.innerHTML = `
+            <div style="padding: 10px; background: rgba(0,0,0,0.5); margin: 5px;">
+                <div style="display: flex; align-items: center; margin: 5px 0;">
+                    <div style="width: 30px; height: 4px; background: #00ff00; margin-right: 10px;"></div>
+                    <span style="font-size: 11px;">High-Sec Line (0.5+)</span>
+                </div>
+                <div style="display: flex; align-items: center; margin: 5px 0;">
+                    <div style="width: 30px; height: 4px; background: #ffff00; margin-right: 10px;"></div>
+                    <span style="font-size: 11px;">Low-Sec Line (0.1-0.4)</span>
+                </div>
+                <div style="display: flex; align-items: center; margin: 5px 0;">
+                    <div style="width: 30px; height: 4px; background: #ff4444; margin-right: 10px;"></div>
+                    <span style="font-size: 11px;">Null-Sec Line (0.0-)</span>
+                </div>
+                <div style="display: flex; align-items: center; margin: 5px 0;">
+                    <div style="width: 30px; height: 4px; background: #00d4ff; border: 1px dashed #fff; margin-right: 10px;"></div>
+                    <span style="font-size: 11px;">Inter-Constellation</span>
+                </div>
+            </div>
+        `;
+        regionList.appendChild(legend);
+        
+        // List constellations as "lines"
         this.regionLayout.forEach((constLayout, constId) => {
             const constellation = this.getConstellationData(constId);
             if (!constellation) return;
             
             const item = document.createElement('div');
-            item.className = 'constellation-item';
+            item.className = 'constellation-item subway-style';
+            
+            // Count security types
+            let highSec = 0, lowSec = 0, nullSec = 0;
+            constLayout.systems.forEach(sys => {
+                const sec = sys.system.security_status || 0;
+                if (sec >= 0.5) highSec++;
+                else if (sec >= 0.1) lowSec++;
+                else nullSec++;
+            });
+            
             item.innerHTML = `
-                <div class="constellation-name">${constellation.name}</div>
+                <div class="constellation-name">${constellation.name} Line</div>
                 <div class="constellation-stats">
-                    <span>${constLayout.systems.size} systems</span>
+                    <span>${constLayout.systems.size} stations</span>
+                </div>
+                <div class="security-breakdown" style="display: flex; gap: 5px; margin-top: 5px;">
+                    ${highSec > 0 ? `<span style="color: #00ff00;">●${highSec}</span>` : ''}
+                    ${lowSec > 0 ? `<span style="color: #ffff00;">●${lowSec}</span>` : ''}
+                    ${nullSec > 0 ? `<span style="color: #ff4444;">●${nullSec}</span>` : ''}
                 </div>
             `;
             

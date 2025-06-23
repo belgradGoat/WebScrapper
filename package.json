@@ -1,7 +1,0 @@
-{
-  "dependencies": {
-    "@huggingface/inference": "^4.0.4",
-    "db": "^6.0.3",
-    "mongo": "^0.1.0"
-  }
-}
