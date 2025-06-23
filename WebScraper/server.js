@@ -326,7 +326,6 @@ except Exception as e:
     }
 });
 
-// ...existing code...
 // ===================================================================
 // SITE-SPECIFIC SCRAPER CONFIGURATION & NEWS SOURCES
 // ===================================================================
@@ -548,7 +547,7 @@ app.get('/api/news', async (req, res) => {
 });
 
 // ===================================================================
-// ALL SCRAPING FUNCTIONS (UNCHANGED FROM YOUR ORIGINAL)
+// ALL SCRAPING FUNCTIONS
 // ===================================================================
 async function scrapeNewsFromSources(keyword, maxNeeded) {
     console.log(`  [Scraper] Initiated for keyword: "${keyword}"`);
@@ -953,6 +952,119 @@ async function fetchFromGuardianAPI(keyword, maxResults) {
     }
 }
 
+// Extracts the published date from the article container using various selectors or patterns
+// If no date is found, it falls back to the current date
+// Supports both selector-based extraction and pattern-based extraction from text content
+// Returns the date in ISO format
+
+function extractPublishedDate($container, siteName, articleUrl) {
+    // Try existing selector-based extraction first
+    const now = new Date();
+    const dateSelectors = {
+        'aljazeera.com': [
+            { selector: 'time[datetime]', attribute: 'datetime' },
+            { selector: '.gc__date time', attribute: 'datetime' },
+            { selector: '.gc__date', text: true }
+        ],
+        // ... other site selectors ...
+    };
+    
+    const siteSpecificSelectors = dateSelectors[siteName] || [];
+    const genericSelectors = [
+        { selector: 'time[datetime]', attribute: 'datetime' },
+        { selector: '.date', text: true },
+        { selector: 'time', text: true }
+    ];
+
+    const allSelectorsToTry = [...siteSpecificSelectors, ...genericSelectors];
+
+    // First try to extract using DOM selectors
+    for (const selObj of allSelectorsToTry) {
+        const dateElement = $container.find(selObj.selector).first();
+        if (dateElement.length > 0) {
+            let dateStr = selObj.attribute ? dateElement.attr(selObj.attribute) : dateElement.text().trim();
+            
+            if (dateStr) {
+                let cleanedDateStr = dateStr.replace(/(Published\s*(on)?|Updated|Last update on|ET|\s*\|.*)/gi, '').trim();
+                const parsed = new Date(cleanedDateStr);
+                if (!isNaN(parsed.getTime()) && parsed < now && parsed > new Date('2010-01-01')) {
+                    return parsed.toISOString();
+                }
+            }
+        }
+    }
+    
+    // If selector-based extraction failed, try pattern-based extraction from text content
+    if (siteName === 'aljazeera.com' || articleUrl.includes('aljazeera.com')) {
+        const articleText = $container.text();
+        return extractDateFromText(articleText, now) || now.toISOString();
+    }
+    
+    return now.toISOString();
+}
+
+// Add this new helper function for pattern-based date extraction
+function extractDateFromText(text, currentDate = new Date()) {
+    // Common date patterns found in news articles
+    const datePatterns = [
+        // "December 15, 2023", "Dec 15, 2023", "15 December 2023"
+        /(\d{1,2})\s+(January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{4})/i,
+        /(January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2}),?\s+(\d{4})/i,
+        
+        // "2023-12-15", "2023/12/15"
+        /(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/,
+        
+        // "15/12/2023", "15-12-2023" (European format)
+        /(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/,
+        
+        // ISO format "2023-12-15T10:30:00Z"
+        /(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})/,
+        
+        // "Published: December 15, 2023", "Updated: Dec 15, 2023"
+        /(?:Published|Updated|Posted):\s*(\w+\s+\d{1,2},?\s+\d{4})/i,
+        
+        // "15 hours ago", "2 days ago", etc.
+        /(\d+)\s+(hours?|days?|weeks?|months?)\s+ago/i
+    ];
+    
+    for (const pattern of datePatterns) {
+        const match = text.match(pattern);
+        if (match) {
+            try {
+                let extractedDate;
+                
+                // Handle relative dates like "2 days ago"
+                if (match[0].includes('ago')) {
+                    const amount = parseInt(match[1]);
+                    const unit = match[2].toLowerCase();
+                    extractedDate = new Date(currentDate);
+                    
+                    if (unit.includes('hour')) {
+                        extractedDate.setHours(extractedDate.getHours() - amount);
+                    } else if (unit.includes('day')) {
+                        extractedDate.setDate(extractedDate.getDate() - amount);
+                    } else if (unit.includes('week')) {
+                        extractedDate.setDate(extractedDate.getDate() - (amount * 7));
+                    } else if (unit.includes('month')) {
+                        extractedDate.setMonth(extractedDate.getMonth() - amount);
+                    }
+                } else {
+                    // Parse the extracted date string
+                    extractedDate = new Date(match[0].replace(/(?:Published|Updated|Posted):\s*/i, ''));
+                }
+                
+                // Validate the date
+                if (!isNaN(extractedDate.getTime()) && extractedDate <= currentDate) {
+                    return extractedDate.toISOString();
+                }
+            } catch (e) {
+                console.warn('Failed to parse date:', match[0], e);
+            }
+        }
+    }
+    
+    return null;
+}
 // ===================================================================
 // BLUESKY API INTEGRATION
 // ===================================================================

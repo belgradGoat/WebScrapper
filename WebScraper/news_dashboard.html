@@ -497,6 +497,67 @@
     border-color: #e0e0e0;
     transform: translateY(-1px);
 }
+.source-filter-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.source-filter-button {
+    background: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 0.8em;
+    display: flex;
+    align-items: center;
+}
+
+.source-filter-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    background-color: white;
+    min-width: 250px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 10;
+    border-radius: 6px;
+    padding: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.source-filter-content.show {
+    display: block;
+}
+
+.source-filter-item {
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+}
+
+.source-filter-item:hover {
+    background-color: #f8f8f8;
+}
+
+.source-filter-item input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+.source-filter-actions {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    border-top: 1px solid #eee;
+    margin-top: 5px;
+}
+
+.filtered-indicator {
+    font-size: 0.8em;
+    color: #ff6600;
+    margin-left: 8px;
+}
  </style>
 </head>
 <body>
@@ -604,7 +665,7 @@ let summaryHistory = [];
 
 // Data storage
 let newsSections = [
-    { id: 3, title: 'Conflicts', keyword: 'Conflict', language: 'en', articles: [], displayedCount: 0 }
+    { id: 3, title: 'News Aggregator', keyword: 'Conflict', language: 'en', articles: [], displayedCount: 0 }
 ];
 
 let blueskyData = {
@@ -918,32 +979,39 @@ function displayWeatherData() {
             rainDiv.style.color = '#28a745'; // Green
         }
     }
-    const forecastHTML = `
-        <div class="weather-forecast">
-            <h4>📅 Extended Forecast</h4>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px;">
-                ${forecast.slice(0, 6).map(period => `
-                    <div class="forecast-period ${period.name.toLowerCase().includes('today') ? 'today' : ''}">
-                        <h5>${period.name}</h5>
-                        <div style="font-size: 1.4em;">${period.is_daytime ? '☀️' : '🌙'}</div>
-                        <div class="temperature">${period.temperature}°${period.temperature_unit}</div>
-                        <div class="short-forecast">${period.short_forecast}</div>
-                    </div>
-                `).join('')}
-            </div>
-        </div>
-    `;
-    
-    const weatherHTML = `
-        ${currentHTML}
-        ${forecastHTML}
-        <div class="weather-updated">
-            Last updated: ${weatherData.lastUpdate ? weatherData.lastUpdate.toLocaleTimeString() : 'Unknown'} | 
-            Data from US National Weather Service
-        </div>
-    `;
-    
-    contentDiv.innerHTML = weatherHTML;
+}
+
+function refreshWeather() {
+    if (weatherData.location) {
+        loadWeatherData(weatherData.location.lat, weatherData.location.lon);
+    } else {
+        loadWeatherData();
+    }
+}
+
+function getCurrentLocationWeather() {
+    if (navigator.geolocation) {
+        showStatus('Getting your location...', 'info');
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                try {
+                    await loadWeatherData(lat, lon);
+                    showStatus('Weather updated with your location', 'success');
+                } catch (error) {
+                    showStatus('Failed to get weather for your location', 'error');
+                }
+            },
+            (error) => {
+                showStatus('Location access denied', 'warning');
+                loadWeatherData();
+            }
+        );
+    } else {
+        showStatus('Geolocation not supported', 'warning');
+        loadWeatherData();
+    }
 }
 
 function refreshWeather() {
@@ -991,6 +1059,23 @@ function createNewsSection(section) {
         <div class="section-header">
             <h2 class="section-title">${section.title}</h2>
             <div class="section-controls">
+                <div class="source-filter-dropdown">
+                    <button class="source-filter-button" onclick="toggleSourceFilter(${section.id}, event)">
+                        <span>🔍 Sources</span>
+                        <span class="filtered-indicator" id="filter-indicator-${section.id}" style="display: none;">
+                            (Filtered)
+                        </span>
+                    </button>
+                    <div class="source-filter-content" id="source-filter-${section.id}">
+                        <div id="source-checkboxes-${section.id}">
+                            <div class="source-filter-item"><em>Loading sources...</em></div>
+                        </div>
+                        <div class="source-filter-actions">
+                            <button class="btn btn-secondary" onclick="selectAllSources(${section.id})">Select All</button>
+                            <button class="btn btn-secondary" onclick="deselectAllSources(${section.id})">Deselect All</button>
+                        </div>
+                    </div>
+                </div>
                 <button class="btn btn-secondary" onclick="refreshSection(${section.id})">🔄</button>
                 <button class="btn btn-secondary" onclick="removeSection(${section.id})">❌</button>
             </div>
@@ -1016,7 +1101,15 @@ async function loadNewsForSection(section) {
         section.articles = articles;
         section.displayedCount = 0;
         
+        // Display articles and then populate the source filter
         displayNewsArticlesWithPagination(section.id, section);
+        
+        // Populate source filter dropdown
+        const dropdown = document.getElementById(`source-filter-${section.id}`);
+        if (dropdown && dropdown.classList.contains('show')) {
+            populateSourceFilter(section.id);
+        }
+        
         showStatus(`Loaded ${articles.length} articles for ${section.title}`, 'success');
         
     } catch (error) {
@@ -1072,34 +1165,73 @@ function displayNewsArticlesWithPagination(sectionId, section) {
         return;
     }
 
+    // Get source preferences
+    const sourcePreferences = getSourcePreferences(sectionId);
+    
+    // Filter articles by source
+    const filteredArticles = section.articles.filter(article => {
+        if (!article.source || !article.source.name) return true;
+        return sourcePreferences[article.source.name] !== false; // Default to show if not set
+    });
+    
+    // Sort articles by corrected date
+    const articlesWithCorrectedDates = filteredArticles.map(article => ({
+        ...article,
+        correctedDate: extractDateFromContent(article),
+        displayDate: new Date(extractDateFromContent(article))
+    }));
+    
+    // Sort by date (newest first)
+    articlesWithCorrectedDates.sort((a, b) => b.displayDate - a.displayDate);
+
     const articlesPerPage = CONFIG.articlesPerPage;
     const currentlyShowing = Math.min(
         section.displayedCount + articlesPerPage, 
-        section.articles.length
+        articlesWithCorrectedDates.length
     );
     
-    const articlesToShow = section.articles.slice(0, currentlyShowing);
+    const articlesToShow = articlesWithCorrectedDates.slice(0, currentlyShowing);
     
-    const articlesHTML = articlesToShow.map(article => `
-        <div class="news-item">
-            <div class="news-title">
-                <a href="${article.url}" target="_blank">${article.title}</a>
+    if (articlesToShow.length === 0) {
+        contentDiv.innerHTML = '<p>No articles match your selected sources. Try enabling more sources.</p>';
+        showMoreContainer.style.display = 'none';
+        return;
+    }
+    
+    const articlesHTML = articlesToShow.map(article => {
+        // Format the corrected date for display
+        const dateStr = article.displayDate.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+        
+        // Add a warning icon if the date was corrected
+        const dateWasCorrected = article.correctedDate !== article.publishedAt;
+        const dateIcon = dateWasCorrected ? '📅 ' : '';
+        
+        return `
+            <div class="news-item">
+                <div class="news-title">
+                    <a href="${article.url}" target="_blank">${article.title}</a>
+                </div>
+                <div class="news-meta">
+                    ${article.source?.name || 'Unknown Source'} • ${dateIcon}${dateStr}
+                    ${dateWasCorrected ? '<span style="color: #666; font-size: 0.8em;"> (date corrected)</span>' : ''}
+                </div>
+                <div class="news-summary">${article.description || 'No description available.'}</div>
             </div>
-            <div class="news-meta">
-                ${article.source?.name || 'Unknown Source'} • ${new Date(article.publishedAt).toLocaleDateString()}
-            </div>
-            <div class="news-summary">${article.description || 'No description available.'}</div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 
     contentDiv.innerHTML = articlesHTML;
     section.displayedCount = currentlyShowing;
     
-    if (section.articles.length > articlesPerPage) {
+    if (articlesWithCorrectedDates.length > articlesPerPage) {
         showMoreContainer.style.display = 'block';
         const showMoreBtn = document.getElementById(`showmore-btn-${sectionId}`);
         
-        if (currentlyShowing >= section.articles.length) {
+        if (currentlyShowing >= articlesWithCorrectedDates.length) {
             showMoreBtn.disabled = true;
             showMoreBtn.textContent = 'All Articles Loaded';
         } else {
@@ -1848,6 +1980,211 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Initializing Eagle Watchtower Dashboard...');
     initDashboard();
 });
+function extractDateFromContent(article) {
+    // If we already have a valid date that's not today, use it
+    const existingDate = new Date(article.publishedAt);
+    const today = new Date();
+    
+    // Check if the existing date seems wrong (e.g., it's today but shouldn't be)
+    const isSuspiciousDate = existingDate.toDateString() === today.toDateString();
+    
+    if (!isSuspiciousDate && existingDate < today) {
+        return article.publishedAt; // Date seems valid
+    }
+    
+    // Try to extract date from description or content
+    const searchText = (article.description || '') + ' ' + (article.content || '');
+    
+    // Common date patterns found in news articles
+    const datePatterns = [
+        // "December 15, 2023", "Dec 15, 2023", "15 December 2023"
+        /(\d{1,2})\s+(January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{4})/i,
+        /(January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2}),?\s+(\d{4})/i,
+        
+        // "2023-12-15", "2023/12/15"
+        /(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/,
+        
+        // "15/12/2023", "15-12-2023" (European format)
+        /(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/,
+        
+        // ISO format "2023-12-15T10:30:00Z"
+        /(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})/,
+        
+        // "Published: December 15, 2023", "Updated: Dec 15, 2023"
+        /(?:Published|Updated|Posted):\s*(\w+\s+\d{1,2},?\s+\d{4})/i,
+        
+        // "15 hours ago", "2 days ago", etc.
+        /(\d+)\s+(hours?|days?|weeks?|months?)\s+ago/i
+    ];
+    
+    for (const pattern of datePatterns) {
+        const match = searchText.match(pattern);
+        if (match) {
+            try {
+                let extractedDate;
+                
+                // Handle relative dates like "2 days ago"
+                if (match[0].includes('ago')) {
+                    const amount = parseInt(match[1]);
+                    const unit = match[2].toLowerCase();
+                    extractedDate = new Date();
+                    
+                    if (unit.includes('hour')) {
+                        extractedDate.setHours(extractedDate.getHours() - amount);
+                    } else if (unit.includes('day')) {
+                        extractedDate.setDate(extractedDate.getDate() - amount);
+                    } else if (unit.includes('week')) {
+                        extractedDate.setDate(extractedDate.getDate() - (amount * 7));
+                    } else if (unit.includes('month')) {
+                        extractedDate.setMonth(extractedDate.getMonth() - amount);
+                    }
+                } else {
+                    // Parse the extracted date string
+                    extractedDate = new Date(match[0].replace(/(?:Published|Updated|Posted):\s*/i, ''));
+                }
+                
+                // Validate the date
+                if (!isNaN(extractedDate.getTime()) && extractedDate <= today) {
+                    return extractedDate.toISOString();
+                }
+            } catch (e) {
+                console.warn('Failed to parse date:', match[0], e);
+            }
+        }
+    }
+    
+    // If no date found in content, return the original
+    return article.publishedAt;
+}
+
+// Source filter management
+function toggleSourceFilter(sectionId, event) {
+    event.stopPropagation();
+    const dropdown = document.getElementById(`source-filter-${sectionId}`);
+    dropdown.classList.toggle('show');
+    
+    // If we're opening the dropdown and it's the first time, populate it
+    if (dropdown.classList.contains('show') && dropdown.querySelector('#source-checkboxes-' + sectionId).innerHTML.includes('Loading')) {
+        populateSourceFilter(sectionId);
+    }
+}
+
+// Close all dropdowns when clicking elsewhere
+document.addEventListener('click', function(event) {
+    const dropdowns = document.querySelectorAll('.source-filter-content');
+    dropdowns.forEach(dropdown => {
+        if (dropdown.classList.contains('show') && !dropdown.contains(event.target)) {
+            dropdown.classList.remove('show');
+        }
+    });
+});
+
+// Populate the source filter dropdown
+function populateSourceFilter(sectionId) {
+    const section = newsSections.find(s => s.id === sectionId);
+    if (!section || !section.articles || section.articles.length === 0) return;
+    
+    // Get unique sources from articles
+    const sources = new Set();
+    section.articles.forEach(article => {
+        if (article.source && article.source.name) {
+            sources.add(article.source.name);
+        }
+    });
+    
+    // Create checkboxes
+    const checkboxesContainer = document.getElementById(`source-checkboxes-${sectionId}`);
+    checkboxesContainer.innerHTML = '';
+    
+    // Load saved source preferences
+    const sourcePreferences = getSourcePreferences(sectionId);
+    
+    Array.from(sources).sort().forEach(source => {
+        const isChecked = sourcePreferences[source] !== false; // Default to true if not set
+        
+        const item = document.createElement('div');
+        item.className = 'source-filter-item';
+        item.innerHTML = `
+            <input type="checkbox" id="source-${sectionId}-${source.replace(/\s+/g, '-')}" 
+                   data-source="${source}" ${isChecked ? 'checked' : ''}>
+            <label for="source-${sectionId}-${source.replace(/\s+/g, '-')}">${source}</label>
+        `;
+        
+        checkboxesContainer.appendChild(item);
+        
+        // Add change event to checkbox
+        const checkbox = item.querySelector('input[type="checkbox"]');
+        checkbox.addEventListener('change', () => {
+            updateSourcePreference(sectionId, source, checkbox.checked);
+            applySourceFilter(sectionId);
+        });
+    });
+    
+    // Apply current filters
+    applySourceFilter(sectionId);
+}
+
+// Get source preferences from localStorage
+function getSourcePreferences(sectionId) {
+    const savedPrefs = localStorage.getItem(`news-sources-${sectionId}`);
+    return savedPrefs ? JSON.parse(savedPrefs) : {};
+}
+
+// Save source preference
+function updateSourcePreference(sectionId, source, isEnabled) {
+    const preferences = getSourcePreferences(sectionId);
+    preferences[source] = isEnabled;
+    localStorage.setItem(`news-sources-${sectionId}`, JSON.stringify(preferences));
+}
+
+// Apply source filter to the displayed articles
+function applySourceFilter(sectionId) {
+    const section = newsSections.find(s => s.id === sectionId);
+    if (!section) return;
+    
+    const preferences = getSourcePreferences(sectionId);
+    const hasFilters = Object.values(preferences).includes(false);
+    
+    // Show/hide filter indicator
+    const indicator = document.getElementById(`filter-indicator-${sectionId}`);
+    if (indicator) {
+        indicator.style.display = hasFilters ? 'inline' : 'none';
+    }
+    
+    // Re-display the articles with filters
+    displayNewsArticlesWithPagination(sectionId, section);
+}
+
+// Select all sources
+function selectAllSources(sectionId) {
+    const checkboxes = document.querySelectorAll(`#source-checkboxes-${sectionId} input[type="checkbox"]`);
+    const preferences = getSourcePreferences(sectionId);
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+        const source = checkbox.getAttribute('data-source');
+        preferences[source] = true;
+    });
+    
+    localStorage.setItem(`news-sources-${sectionId}`, JSON.stringify(preferences));
+    applySourceFilter(sectionId);
+}
+
+// Deselect all sources
+function deselectAllSources(sectionId) {
+    const checkboxes = document.querySelectorAll(`#source-checkboxes-${sectionId} input[type="checkbox"]`);
+    const preferences = getSourcePreferences(sectionId);
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+        const source = checkbox.getAttribute('data-source');
+        preferences[source] = false;
+    });
+    
+    localStorage.setItem(`news-sources-${sectionId}`, JSON.stringify(preferences));
+    applySourceFilter(sectionId);
+}
 </script>
+
 </body>
 </html>
