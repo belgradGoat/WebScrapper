@@ -246,7 +246,10 @@
             <button class="control-btn" id="createUCSBtn" onclick="createUCS()" disabled>📐 Create UCS</button>
             <button class="control-btn" id="screenshotBtn" onclick="takeScreenshot()" disabled>📸 Take Screenshot</button>
             <button class="control-btn" id="saveBtn" onclick="saveSTEPCopy()" disabled>💾 Save Copy</button>
-            <button class="control-btn" onclick="testMeshData()" style="background: #ff9800; color: white;">🧪 Test Mesh</button>
+            <button class="control-btn" id="measureBtn" onclick="toggleMeasurement()" disabled>📏 Measure</button>
+            <button class="control-btn" id="wireframeBtn" onclick="toggleWireframe()" disabled>🔲 Wireframe</button>
+            <button class="control-btn" onclick="resetView()" disabled>🔄 Reset View</button>
+            <button class="control-btn" onclick="debugMeshData()">🐛 Debug Mesh</button>
         </div>
 
         <div class="viewer-container">
@@ -275,9 +278,45 @@
     </div>
 
     <!-- Load the compiled WASM module -->
+       <!-- Load the compiled WASM module -->
     <script src="step_viewer.js"></script>
+    
+    <!-- Add Three.js libraries -->
+    <!-- Load the compiled WASM module -->
+    <script src="step_viewer.js"></script>
+    
+    <!-- Add OpenCASCADE.js -->
+       <script src="https://cdn.jsdelivr.net/npm/opencascade.js@2.0.0-beta.b5ff984/dist/opencascade.js"></script>
+    
+    <!-- Add Three.js libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js"></script>
+    
     <script>
-        
+    // Add OpenCASCADE instance
+    let oc = null;
+    let ocInitialized = false;
+    
+    // Initialize OpenCASCADE
+    async function initOpenCascade() {
+        try {
+            console.log('Initializing OpenCASCADE.js...');
+            oc = await new opencascade({
+                locateFile: (file) => {
+                    if (file === 'opencascade.wasm') {
+                        return 'https://cdn.jsdelivr.net/npm/opencascade.js@2.0.0-beta.b5ff984/dist/opencascade.wasm';
+                    }
+                    return file;
+                }
+            });
+            ocInitialized = true;
+            console.log('OpenCASCADE.js initialized successfully');
+            return true;
+        } catch (error) {
+            console.error('Failed to initialize OpenCASCADE:', error);
+            return false;
+        }
+    }
+
     // Global variables
     let Module = null;
     let currentFile = null;
@@ -285,54 +324,590 @@
     let stepCopyData = null;
     let isModuleReady = false;
 
+    let scene, camera, renderer, controls;
+    let meshObject = null;
+    let measurementMode = false;
+    let measurementPoints = [];
+    let measurementLines = [];
+    let measurementMarkers = [];
+
     // Initialize when page loads
     window.addEventListener('load', initializeApp);
 
+     window.addEventListener('resize', () => {
+        if (camera && renderer) {
+            const container = document.getElementById('svgViewer');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+    });
+
     // Initialize Emscripten module
+         // Initialize Emscripten module
+       // Initialize Emscripten module
     async function initializeApp() {
         try {
             showMessage('Initializing STEP Viewer...', 'info');
             console.log('Starting initialization...');
             
-            // Check if the WASM module loader exists
+            // Initialize OpenCASCADE
+            const ocResult = await initOpenCascade();
+            if (!ocResult) {
+                console.warn('OpenCASCADE initialization failed, but continuing...');
+            }
+            
+            // Initialize your original WASM module
             if (typeof createModule !== 'undefined') {
-                console.log('createModule found, initializing...');
-                
+                console.log('Loading WASM module...');
                 Module = await createModule({
-                    canvas: document.getElementById('canvas'),
-                    onRuntimeInitialized: function() {
-                        console.log('Runtime initialized');
+                    onRuntimeInitialized: () => {
+                        console.log('WASM runtime initialized');
                         isModuleReady = true;
                         
+                        // Initialize the C++ processor
                         try {
-                            // Use 'this' instead of 'Module' - 'this' refers to the module instance
-                            this.ccall('initApp', null, [], []);
-                            showMessage('STEP Viewer initialized successfully!', 'success');
-                            console.log('Module initialized successfully');
-                        } catch (error) {
-                            console.error('Error calling initApp:', error);
-                            showMessage('Error initializing module: ' + error.message, 'error');
+                            Module.ccall('initApp', null, [], []);
+                            console.log('C++ processor initialized');
+                        } catch (e) {
+                            console.error('Failed to initialize C++ processor:', e);
+                        }
+                        
+                        showMessage('STEP Viewer initialized successfully!', 'success');
+                        // Only check functions if Module exists and is an object
+                        if (Module && typeof Module === 'object') {
+                            console.log('Available functions:', Object.keys(Module).filter(k => typeof Module[k] === 'function'));
                         }
                     },
-                    onAbort: function(what) {
-                        console.error('Module aborted:', what);
-                        showMessage('Module initialization aborted: ' + what, 'error');
-                    }
+                    print: (text) => console.log('Module output:', text),
+                    printErr: (text) => console.error('Module error:', text)
                 });
-                
-                console.log('Module assignment completed:', Module);
             } else {
                 console.log('createModule not found, running in demo mode');
-                isModuleReady = true;
-                showMessage('Running in demo mode - WASM module not loaded', 'info');
+                isModuleReady = false;
+                showMessage('Running in demo mode - limited functionality', 'info');
             }
+            
+            // Set up drag and drop listeners
+            setupDragAndDrop();
+            
         } catch (error) {
             console.error('Failed to initialize app:', error);
             showMessage('Failed to initialize application: ' + error.message, 'error');
+            // Continue in demo mode even if initialization fails
+            isModuleReady = false;
+            setupDragAndDrop();
         }
     }
 
+    // Initialize Three.js scene
+    function initThreeJS() {
+        const container = document.getElementById('svgViewer');
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        
+        // Scene setup
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf8f9fa);
+        
+        // Camera setup
+        camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 10000);
+        camera.position.set(100, 100, 200);
+        
+        // Renderer setup
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(width, height);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.innerHTML = '';
+        container.appendChild(renderer.domElement);
+        
+        // Load OrbitControls using import map approach
+        // For now, we'll create a simple orbit control functionality
+        setupOrbitControls();
+        
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.4);
+        directionalLight.position.set(100, 100, 50);
+        scene.add(directionalLight);
+        
+        // Grid helper
+        const gridHelper = new THREE.GridHelper(200, 20);
+        scene.add(gridHelper);
+        
+        // Axes helper
+        const axesHelper = new THREE.AxesHelper(50);
+        scene.add(axesHelper);
+        
+        // Add click handler for measurements
+        renderer.domElement.addEventListener('click', addMeasurementPoint);
+        
+        animate();
+    }
+    
+    // Simple orbit controls implementation
+    function setupOrbitControls() {
+        let mouseX = 0, mouseY = 0;
+        let targetRotationX = 0, targetRotationY = 0;
+        let isMouseDown = false;
+        let zoom = 1;
+        
+        const element = renderer.domElement;
+        
+        // Mouse controls
+        element.addEventListener('mousedown', (e) => {
+            isMouseDown = true;
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+        
+        element.addEventListener('mousemove', (e) => {
+            if (!isMouseDown) return;
+            
+            const deltaX = e.clientX - mouseX;
+            const deltaY = e.clientY - mouseY;
+            
+            targetRotationY += deltaX * 0.01;
+            targetRotationX += deltaY * 0.01;
+            
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            
+            updateCameraPosition();
+        });
+        
+        element.addEventListener('mouseup', () => {
+            isMouseDown = false;
+        });
+        
+        element.addEventListener('mouseleave', () => {
+            isMouseDown = false;
+        });
+        
+        // Wheel for zoom
+        element.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            zoom *= e.deltaY > 0 ? 1.1 : 0.9;
+            zoom = Math.max(0.1, Math.min(10, zoom));
+            updateCameraPosition();
+        });
+        
+            function updateCameraPosition() {
+            const distance = 200 * zoom;
+            const center = controls.target || new THREE.Vector3(0, 0, 0);
+            camera.position.x = center.x + distance * Math.sin(targetRotationY) * Math.cos(targetRotationX);
+            camera.position.y = center.y + distance * Math.sin(targetRotationX);
+            camera.position.z = center.z + distance * Math.cos(targetRotationY) * Math.cos(targetRotationX);
+            camera.lookAt(center);
+        }
+        
+        // Store as a simple object to maintain compatibility
+        controls = {
+            update: () => {},
+            target: new THREE.Vector3(0, 0, 0)
+        };
+    }
+    
+   
+        // Load mesh data into Three.js
+    function loadMeshIntoThreeJS() {
+        if (!Module || !isModuleReady) {
+            console.error('Module not ready');
+            return;
+        }
+        
+        // Debug the mesh data first
+        debugMeshData();
+        
+        const vertexCount = Module._getVertexCount();
+        const indexCount = Module._getIndexCount();
+        const normalCount = Module._getNormalCount();
+        
+        console.log(`Loading mesh: ${vertexCount} vertices, ${indexCount} indices, ${normalCount} normals`);
+        
+        if (vertexCount === 0) {
+            showMessage('No mesh data available', 'error');
+            return;
+        }
+        
+        // Remove existing mesh
+        if (meshObject) {
+            scene.remove(meshObject);
+            meshObject.geometry.dispose();
+            meshObject.material.dispose();
+        }
+        
+        // Get mesh data pointers
+        const vertexPtr = Module._getVertices();
+        const indexPtr = Module._getIndices();
+        const normalPtr = Module._getNormals();
+        
+        // Create typed arrays from WASM memory
+        const vertices = new Float32Array(Module.HEAPF32.buffer, vertexPtr, vertexCount);
+        const indices = new Uint32Array(Module.HEAPU32.buffer, indexPtr, indexCount);
+        const normals = normalCount > 0 ? new Float32Array(Module.HEAPF32.buffer, normalPtr, normalCount) : null;
+        
+        // Create Three.js geometry
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+        
+        if (normals && normalCount > 0) {
+            geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+        } else {
+            // Compute normals if not provided
+            geometry.computeVertexNormals();
+        }
+        
+        geometry.setIndex(new THREE.BufferAttribute(indices, 1));
+        
+        // Create material with double-sided rendering to ensure visibility
+        const material = new THREE.MeshPhongMaterial({
+            color: 0x667eea,
+            specular: 0x111111,
+            shininess: 100,
+            side: THREE.DoubleSide,
+            wireframe: false,
+            flatShading: false
+        });
+        
+        // Create mesh
+        meshObject = new THREE.Mesh(geometry, material);
+        scene.add(meshObject);
+        
+        // Add wireframe overlay for better visibility
+        const wireframeGeometry = new THREE.WireframeGeometry(geometry);
+        const wireframeMaterial = new THREE.LineBasicMaterial({ 
+            color: 0x000000, 
+            opacity: 0.1, 
+            transparent: true 
+        });
+        const wireframe = new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
+        meshObject.add(wireframe);
+        
+        // Center camera on object
+        geometry.computeBoundingBox();
+        const box = geometry.boundingBox;
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        
+        console.log('Bounding box:', {
+            min: box.min,
+            max: box.max,
+            center: center,
+            size: size
+        });
+        
+        // Adjust grid size based on model
+        const oldGrid = scene.children.find(child => child instanceof THREE.GridHelper);
+        if (oldGrid) {
+            scene.remove(oldGrid);
+        }
+        const gridSize = Math.ceil(maxDim * 2 / 10) * 10;
+        const gridHelper = new THREE.GridHelper(gridSize, 20);
+        scene.add(gridHelper);
+        
+        // Position camera
+        const distance = maxDim * 2;
+        camera.position.set(
+            center.x + distance * 0.5, 
+            center.y + distance * 0.5, 
+            center.z + distance
+        );
+        camera.lookAt(center);
+        
+        // Update controls target
+        if (controls && controls.target) {
+            controls.target.copy(center);
+        }
+        
+        // Enable viewer buttons
+        enableViewerButtons();
+        
+        showMessage(`3D model loaded successfully! (${vertexCount/3} vertices, ${indexCount/3} triangles)`, 'success');
+    }
 
+    // Extract mesh using OpenCASCADE.js
+    async function extractMeshWithOpenCascade(fileArrayBuffer) {
+        if (!ocInitialized || !oc) {
+            console.error('OpenCASCADE not initialized');
+            return null;
+        }
+        
+        console.log('Extracting mesh with OpenCASCADE...');
+        
+        try {
+            // Create a temporary file in OpenCASCADE's virtual filesystem
+            const fileName = "temp.step";
+            oc.FS.createDataFile("/", fileName, new Uint8Array(fileArrayBuffer), true, true, true);
+            
+            // Create a STEP reader
+            const reader = new oc.STEPControl_Reader_1();
+            
+            // Read the file
+            const readResult = reader.ReadFile(fileName);
+            if (readResult !== oc.IFSelect_ReturnStatus.IFSelect_RetDone) {
+                console.error('Failed to read STEP file');
+                return null;
+            }
+            
+            // Transfer roots
+            const transResult = reader.TransferRoots(new oc.Message_ProgressRange_1());
+            console.log(`Transferred ${transResult} roots`);
+            
+            // Get the shape
+            const shape = reader.OneShape();
+            
+            // Tessellate the shape
+            new oc.BRepMesh_IncrementalMesh_2(shape, 0.1, false, 0.5, true);
+            
+            // Extract mesh data
+            const meshData = {
+                vertices: [],
+                normals: [],
+                indices: []
+            };
+            
+            let indexOffset = 0;
+            
+            // Iterate through faces
+            const explorer = new oc.TopExp_Explorer_2(
+                shape, 
+                oc.TopAbs_ShapeEnum.TopAbs_FACE,
+                oc.TopAbs_ShapeEnum.TopAbs_SHAPE
+            );
+            
+            while (explorer.More()) {
+                const face = oc.TopoDS.Face_1(explorer.Current());
+                const location = new oc.TopLoc_Location_1();
+                const triangulation = oc.BRep_Tool.Triangulation(face, location);
+                
+                if (!triangulation.IsNull()) {
+                    const transformation = location.Transformation();
+                    const isReversed = face.Orientation_1() === oc.TopAbs_Orientation.TopAbs_REVERSED;
+                    
+                    // Get nodes (vertices)
+                    const nbNodes = triangulation.get().NbNodes();
+                    for (let i = 1; i <= nbNodes; i++) {
+                        const node = triangulation.get().Node(i);
+                        const transformed = node.Transformed(transformation);
+                        meshData.vertices.push(transformed.X(), transformed.Y(), transformed.Z());
+                    }
+                    
+                    // Get triangles
+                    const nbTriangles = triangulation.get().NbTriangles();
+                    for (let i = 1; i <= nbTriangles; i++) {
+                        const triangle = triangulation.get().Triangle(i);
+                        let n1 = new oc.Standard_Integer_1();
+                        let n2 = new oc.Standard_Integer_2();
+                        let n3 = new oc.Standard_Integer_3();
+                        triangle.Get(n1, n2, n3);
+                        
+                        if (isReversed) {
+                            meshData.indices.push(
+                                n1.get() - 1 + indexOffset,
+                                n3.get() - 1 + indexOffset,
+                                n2.get() - 1 + indexOffset
+                            );
+                        } else {
+                            meshData.indices.push(
+                                n1.get() - 1 + indexOffset,
+                                n2.get() - 1 + indexOffset,
+                                n3.get() - 1 + indexOffset
+                            );
+                        }
+                        
+                        // Cleanup
+                        n1.delete();
+                        n2.delete();
+                        n3.delete();
+                    }
+                    
+                    // Calculate normals for each face
+                    const faceNormal = new oc.gp_Vec_1();
+                    const uv = new oc.gp_Pnt2d_3(0, 0);
+                    const point = new oc.gp_Pnt_1();
+                    const D1U = new oc.gp_Vec_1();
+                    const D1V = new oc.gp_Vec_1();
+                    
+                    const surface = oc.BRep_Tool.Surface_2(face);
+                    if (!surface.IsNull()) {
+                        surface.get().D1(0.5, 0.5, point, D1U, D1V);
+                        faceNormal.SetX(D1U.Y() * D1V.Z() - D1U.Z() * D1V.Y());
+                        faceNormal.SetY(D1U.Z() * D1V.X() - D1U.X() * D1V.Z());
+                        faceNormal.SetZ(D1U.X() * D1V.Y() - D1U.Y() * D1V.X());
+                        faceNormal.Normalize();
+                        
+                        if (isReversed) {
+                            faceNormal.Reverse();
+                        }
+                    }
+                    
+                    // Add normals for each vertex
+                    for (let i = 0; i < nbNodes; i++) {
+                        meshData.normals.push(faceNormal.X(), faceNormal.Y(), faceNormal.Z());
+                    }
+                    
+                    // Cleanup
+                    faceNormal.delete();
+                    uv.delete();
+                    point.delete();
+                    D1U.delete();
+                    D1V.delete();
+                    
+                    indexOffset += nbNodes;
+                }
+                
+                triangulation.delete();
+                location.delete();
+                face.delete();
+                
+                explorer.Next();
+            }
+            
+            // Cleanup
+            explorer.delete();
+            shape.delete();
+            reader.delete();
+            
+            // Delete the temporary file
+            oc.FS.unlink("/" + fileName);
+            
+            console.log(`Extracted mesh: ${meshData.vertices.length / 3} vertices, ${meshData.indices.length / 3} triangles`);
+            
+            return meshData;
+            
+        } catch (error) {
+            console.error('Error extracting mesh with OpenCASCADE:', error);
+            return null;
+        }
+    }
+    <!-- filepath: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/STEPViewer/StepViewerInterface.html -->
+    // Load OpenCASCADE mesh data into Three.js
+    function loadOpenCascadeMeshIntoThreeJS(meshData) {
+        // Remove existing mesh
+        if (meshObject) {
+            scene.remove(meshObject);
+            meshObject.geometry.dispose();
+            meshObject.material.dispose();
+        }
+        
+        // Create Three.js geometry
+        const geometry = new THREE.BufferGeometry();
+        
+        // Set attributes
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(meshData.vertices, 3));
+        if (meshData.normals.length > 0) {
+            geometry.setAttribute('normal', new THREE.Float32BufferAttribute(meshData.normals, 3));
+        } else {
+            geometry.computeVertexNormals();
+        }
+        geometry.setIndex(meshData.indices);
+        
+        // Create material
+        const material = new THREE.MeshPhongMaterial({
+            color: 0x667eea,
+            specular: 0x111111,
+            shininess: 100,
+            side: THREE.DoubleSide,
+            wireframe: false
+        });
+        
+        // Create mesh
+        meshObject = new THREE.Mesh(geometry, material);
+        scene.add(meshObject);
+        
+        // Center camera on object
+        geometry.computeBoundingBox();
+        const box = geometry.boundingBox;
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        
+        console.log('OpenCASCADE mesh loaded:', {
+            vertices: meshData.vertices.length / 3,
+            triangles: meshData.indices.length / 3,
+            boundingBox: box,
+            center: center,
+            size: size
+        });
+        
+        // Adjust grid size based on model
+        const oldGrid = scene.children.find(child => child instanceof THREE.GridHelper);
+        if (oldGrid) {
+            scene.remove(oldGrid);
+        }
+        const gridSize = Math.ceil(maxDim * 2 / 10) * 10;
+        const gridHelper = new THREE.GridHelper(gridSize, 20);
+        scene.add(gridHelper);
+        
+        // Position camera
+        const distance = maxDim * 2;
+        camera.position.set(
+            center.x + distance * 0.5, 
+            center.y + distance * 0.5, 
+            center.z + distance
+        );
+        camera.lookAt(center);
+        
+        // Update controls target
+        if (controls && controls.target) {
+            controls.target.copy(center);
+        }
+        
+        // Enable viewer buttons
+        enableViewerButtons();
+        
+        showMessage(`3D model loaded successfully! (${meshData.vertices.length/3} vertices, ${meshData.indices.length/3} triangles)`, 'success');
+    }  
+    
+    // Add this debug function after loadMeshIntoThreeJS
+    function debugMeshData() {
+        if (!Module || !isModuleReady) {
+            console.error('Module not ready');
+            return;
+        }
+        
+        console.log('=== Debugging Mesh Data ===');
+        
+        try {
+            const vertexCount = Module._getVertexCount();
+            const indexCount = Module._getIndexCount();
+            const normalCount = Module._getNormalCount();
+            
+            console.log('Counts:', { vertexCount, indexCount, normalCount });
+            
+            if (vertexCount > 0) {
+                const vertexPtr = Module._getVertices();
+                const indexPtr = Module._getIndices();
+                const normalPtr = Module._getNormals();
+                
+                console.log('Pointers:', { vertexPtr, indexPtr, normalPtr });
+                
+                // Read first few values
+                const vertices = new Float32Array(Module.HEAPF32.buffer, vertexPtr, Math.min(30, vertexCount));
+                const indices = new Uint32Array(Module.HEAPU32.buffer, indexPtr, Math.min(30, indexCount));
+                
+                console.log('First 10 vertices (x,y,z):', Array.from(vertices.slice(0, 30)));
+                console.log('First 10 triangles (indices):', Array.from(indices.slice(0, 30)));
+                
+                // Check if vertices are reasonable
+                const maxCoord = Math.max(...Array.from(vertices).map(Math.abs));
+                const minCoord = Math.min(...Array.from(vertices).filter(v => v !== 0));
+                console.log('Coordinate range:', { min: minCoord, max: maxCoord });
+            }
+        } catch (e) {
+            console.error('Error in debugMeshData:', e);
+        }
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+    }
 
         // Utility functions
         function showMessage(message, type = 'info') {
@@ -438,13 +1013,16 @@
             return isValid;
         }
 
-        function resetUI() {
+                function resetUI() {
             // Reset buttons
             document.getElementById('createUCSBtn').disabled = true;
             document.getElementById('screenshotBtn').disabled = true;
             document.getElementById('saveBtn').disabled = true;
             document.getElementById('downloadImageBtn').disabled = true;
             document.getElementById('downloadSTEPBtn').disabled = true;
+            document.getElementById('measureBtn').disabled = true;
+            document.getElementById('wireframeBtn').disabled = true;
+            document.querySelector('button[onclick="resetView()"]').disabled = true;
             
             // Clear data
             screenshotData = null;
@@ -453,8 +1031,62 @@
             // Hide info panel
             document.getElementById('infoPanel').style.display = 'none';
             
-            // Reset viewer
-            document.getElementById('svgViewer').innerHTML = '<p style="color: #999;">Load a STEP file to see visualization</p>';
+            // Reset viewer - Don't clear innerHTML if renderer exists
+            if (renderer) {
+                // Clear the 3D scene instead of removing the renderer
+                if (meshObject) {
+                    scene.remove(meshObject);
+                    meshObject.geometry.dispose();
+                    meshObject.material.dispose();
+                    meshObject = null;
+                }
+                // Clear measurement objects
+                measurementLines.forEach(line => scene.remove(line));
+                measurementMarkers.forEach(marker => scene.remove(marker));
+                measurementLines = [];
+                measurementMarkers = [];
+                measurementPoints = [];
+            } else {
+                // Only reset innerHTML if no renderer exists
+                document.getElementById('svgViewer').innerHTML = '<p style="color: #999;">Load a STEP file to see visualization</p>';
+            }
+        }
+
+                // Create demo mesh for when module is not loaded
+        function createDemoMesh() {
+            // Remove existing mesh if any
+            if (meshObject) {
+                scene.remove(meshObject);
+                meshObject.geometry.dispose();
+                meshObject.material.dispose();
+            }
+            
+            // Create a demo box geometry
+            const geometry = new THREE.BoxGeometry(50, 50, 50);
+            
+            // Create material
+            const material = new THREE.MeshPhongMaterial({
+                color: 0x667eea,
+                specular: 0x111111,
+                shininess: 100,
+                side: THREE.DoubleSide,
+                wireframe: false
+            });
+            
+            // Create mesh
+            meshObject = new THREE.Mesh(geometry, material);
+            scene.add(meshObject);
+            
+            // Center camera on object
+            const center = new THREE.Vector3(0, 0, 0);
+            camera.position.set(100, 100, 100);
+            camera.lookAt(center);
+            controls.target.copy(center);
+            
+            // Enable viewer buttons
+            enableViewerButtons();
+            
+            showMessage('Demo 3D model loaded!', 'info');
         }
 
         // Drag and drop functionality
@@ -487,60 +1119,151 @@
 
         // Main functions
         async function loadFile() {
-            if (!currentFile) {
-                showMessage('No file selected', 'error');
-                return;
-            }
+        if (!currentFile) {
+            showMessage('No file selected', 'error');
+            return;
+        }
 
-            if (!isModuleReady) {
-                showMessage('Module not ready yet. Please wait...', 'error');
-                return;
-            }
-
-            showLoading(true);
+        showLoading(true);
+        
+        try {
+            // Read file as ArrayBuffer
+            const arrayBuffer = await readFileAsArrayBuffer(currentFile);
+            console.log('File read successfully, size:', arrayBuffer.byteLength);
             
-            try {
-                // Read file as ArrayBuffer
-                const arrayBuffer = await readFileAsArrayBuffer(currentFile);
-                
-                if (Module && Module.FS && Module.ccall) {
-                    // Write file to Emscripten file system
+            // Initialize OpenCASCADE if not already done
+            if (!ocInitialized) {
+                console.log('Initializing OpenCASCADE...');
+                const ocResult = await initOpenCascade();
+                if (!ocResult) {
+                    console.warn('OpenCASCADE initialization failed');
+                }
+            }
+            
+            // Initialize Three.js if not already done
+            if (!renderer) {
+                console.log('Initializing Three.js...');
+                initThreeJS();
+            }
+            
+            let loadSuccess = false;
+            
+            // Try to extract mesh with OpenCASCADE
+            if (ocInitialized) {
+                console.log('Attempting OpenCASCADE extraction...');
+                try {
+                    const meshData = await extractMeshWithOpenCascade(arrayBuffer);
+                    
+                    if (meshData && meshData.vertices.length > 0) {
+                        console.log('OpenCASCADE extraction successful');
+                        loadOpenCascadeMeshIntoThreeJS(meshData);
+                        loadSuccess = true;
+                        
+                        document.getElementById('createUCSBtn').disabled = false;
+                        document.getElementById('screenshotBtn').disabled = false;
+                        document.getElementById('saveBtn').disabled = false;
+                        
+                        showFileInfo();
+                        showMessage('STEP file loaded successfully with OpenCASCADE!', 'success');
+                    } else {
+                        console.warn('OpenCASCADE extraction returned no data');
+                    }
+                } catch (ocError) {
+                    console.error('OpenCASCADE extraction error:', ocError);
+                }
+            }
+            
+            // Fall back to the original method if OpenCASCADE fails
+             if (!loadSuccess && Module && isModuleReady) {
+                console.log('Attempting original WASM method...');
+                try {
+                    // Initialize the app if not already done
+                    if (!g_processor) {
+                        Module.ccall('initApp', null, [], []);
+                    }
+                    
                     const filename = '/tmp/' + currentFile.name;
                     const uint8Array = new Uint8Array(arrayBuffer);
                     Module.FS.writeFile(filename, uint8Array);
                     
-                    // Call C++ function to load the file
                     const result = Module.ccall('loadSTEPFile', 'number', ['string'], [filename]);
+                    console.log('loadSTEPFile result:', result);
                     
                     if (result === 1) {
                         document.getElementById('createUCSBtn').disabled = false;
                         document.getElementById('screenshotBtn').disabled = false;
                         document.getElementById('saveBtn').disabled = false;
                         
+                        loadMeshIntoThreeJS();
+                        loadSuccess = true;
+                        
                         showFileInfo();
                         showMessage('STEP file loaded successfully!', 'success');
                     } else {
-                        showMessage('Failed to load STEP file', 'error');
+                        console.error('loadSTEPFile returned:', result);
                     }
-                } else {
-                    // Demo mode
-                    await new Promise(resolve => setTimeout(resolve, 1500));
-                    
-                    document.getElementById('createUCSBtn').disabled = false;
-                    document.getElementById('screenshotBtn').disabled = false;
-                    document.getElementById('saveBtn').disabled = false;
-                    
-                    showFileInfo();
-                    showMessage('STEP file loaded successfully! (Demo mode)', 'success');
+                } catch (wasmError) {
+                    console.error('WASM method error:', wasmError);
                 }
-                
-            } catch (error) {
-                console.error('Error loading file:', error);
-                showMessage('Failed to load STEP file: ' + error.message, 'error');
-            } finally {
-                showLoading(false);
             }
+            
+            // If both methods failed, try demo mode
+            if (!loadSuccess) {
+                console.log('Both methods failed, loading demo mesh...');
+                if (!renderer) {
+                    initThreeJS();
+                }
+                createDemoMesh();
+                
+                document.getElementById('createUCSBtn').disabled = false;
+                document.getElementById('screenshotBtn').disabled = false;
+                document.getElementById('saveBtn').disabled = false;
+                
+                showFileInfo();
+                showMessage('STEP file loaded in demo mode (actual parsing failed)', 'warning');
+            }
+            
+        } catch (error) {
+            console.error('Error loading file:', error);
+            showMessage('Failed to load STEP file: ' + error.message, 'error');
+        } finally {
+            showLoading(false);
         }
+    }
+
+        function setupDragAndDrop() {
+        const uploadSection = document.getElementById('uploadSection');
+        
+        if (!uploadSection) {
+            console.error('Upload section not found');
+            return;
+        }
+        
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                if (isValidSTEPFile(file)) {
+                    currentFile = file;
+                    document.getElementById('loadBtn').disabled = false;
+                    showMessage(`File selected: ${file.name}`, 'success');
+                    resetUI();
+                }
+            }
+        });
+    }
 
         async function createUCS() {
             if (!isModuleReady) {
@@ -568,6 +1291,93 @@
                 showLoading(false);
             }
         }
+
+    // Viewer control functions
+    function toggleWireframe() {
+        if (meshObject && meshObject.material) {
+            meshObject.material.wireframe = !meshObject.material.wireframe;
+        }
+    }
+    
+    function resetView() {
+        if (camera && controls && meshObject) {
+            const geometry = meshObject.geometry;
+            geometry.computeBoundingBox();
+            const box = geometry.boundingBox;
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            
+            camera.position.set(center.x + maxDim, center.y + maxDim, center.z + maxDim);
+            camera.lookAt(center);
+            controls.target.copy(center);
+        }
+    }
+    
+    function enableViewerButtons() {
+        document.getElementById('measureBtn').disabled = false;
+        document.getElementById('wireframeBtn').disabled = false;
+        document.querySelector('button[onclick="resetView()"]').disabled = false;
+    }
+
+   
+    // Measurement functions
+    function toggleMeasurement() {
+        measurementMode = !measurementMode;
+        document.getElementById('measureBtn').style.background = measurementMode ? '#ff9800' : 'white';
+        document.getElementById('measureBtn').style.color = measurementMode ? 'white' : '#667eea';
+        
+        if (!measurementMode) {
+            // Clear measurements
+            measurementLines.forEach(line => scene.remove(line));
+            measurementMarkers.forEach(marker => scene.remove(marker));
+            measurementLines = [];
+            measurementMarkers = [];
+            measurementPoints = [];
+        }
+    }
+    
+    function addMeasurementPoint(event) {
+        if (!measurementMode || !renderer || !meshObject) return;
+        
+        const rect = renderer.domElement.getBoundingClientRect();
+        const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+        
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera(new THREE.Vector2(x, y), camera);
+        
+        const intersects = raycaster.intersectObject(meshObject);
+        
+        if (intersects.length > 0) {
+            const point = intersects[0].point;
+            measurementPoints.push(point);
+            
+            // Add visual marker
+            const markerGeometry = new THREE.SphereGeometry(1, 16, 16);
+            const markerMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+            const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+            marker.position.copy(point);
+            scene.add(marker);
+            measurementMarkers.push(marker);
+            
+            if (measurementPoints.length === 2) {
+                // Create line between points
+                const lineGeometry = new THREE.BufferGeometry().setFromPoints(measurementPoints);
+                const lineMaterial = new THREE.LineBasicMaterial({ color: 0xff0000, linewidth: 2 });
+                const line = new THREE.Line(lineGeometry, lineMaterial);
+                scene.add(line);
+                measurementLines.push(line);
+                
+                // Calculate and display distance
+                const distance = measurementPoints[0].distanceTo(measurementPoints[1]);
+                showMessage(`Distance: ${distance.toFixed(2)} units`, 'info');
+                
+                // Reset for next measurement
+                measurementPoints = [];
+            }
+        }
+    }
 
         async function takeScreenshot() {
             if (!isModuleReady) {
@@ -814,6 +1624,94 @@ END-ISO-10303-21;`;
                 console.log('\nAvailable Module properties:', Object.keys(Module).sort());
             }
         }
+    // Enhanced debug function to check mesh data
+    function debugMeshData() {
+        if (!Module || !isModuleReady) {
+            console.error('Module not ready');
+            return;
+        }
+        
+        console.log('=== Debugging Mesh Data ===');
+        
+        try {
+            const vertexCount = Module._getVertexCount();
+            const indexCount = Module._getIndexCount();
+            const normalCount = Module._getNormalCount();
+            
+            console.log('Counts:', { 
+                vertexCount, 
+                indexCount, 
+                normalCount,
+                vertices: vertexCount/3,
+                triangles: indexCount/3
+            });
+            
+            // Check if this is a box (8 unique vertices, 12 triangles)
+            if (vertexCount/3 <= 8 && indexCount/3 === 12) {
+                console.warn('⚠️ This looks like a bounding box, not the actual model!');
+            }
+            
+            if (vertexCount > 0) {
+                const vertexPtr = Module._getVertices();
+                const indexPtr = Module._getIndices();
+                const normalPtr = Module._getNormals();
+                
+                // Read all vertices to analyze
+                const vertices = new Float32Array(Module.HEAPF32.buffer, vertexPtr, vertexCount);
+                const indices = new Uint32Array(Module.HEAPU32.buffer, indexPtr, indexCount);
+                
+                // Analyze vertex positions
+                let minX = Infinity, minY = Infinity, minZ = Infinity;
+                let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+                
+                for (let i = 0; i < vertexCount; i += 3) {
+                    minX = Math.min(minX, vertices[i]);
+                    maxX = Math.max(maxX, vertices[i]);
+                    minY = Math.min(minY, vertices[i + 1]);
+                    maxY = Math.max(maxY, vertices[i + 1]);
+                    minZ = Math.min(minZ, vertices[i + 2]);
+                    maxZ = Math.max(maxZ, vertices[i + 2]);
+                }
+                
+                console.log('Vertex bounds:', {
+                    x: [minX, maxX],
+                    y: [minY, maxY],
+                    z: [minZ, maxZ],
+                    size: {
+                        x: maxX - minX,
+                        y: maxY - minY,
+                        z: maxZ - minZ
+                    }
+                });
+                
+                // Count unique vertices
+                const uniqueVertices = new Set();
+                for (let i = 0; i < vertexCount; i += 3) {
+                    const key = `${vertices[i].toFixed(3)},${vertices[i+1].toFixed(3)},${vertices[i+2].toFixed(3)}`;
+                    uniqueVertices.add(key);
+                }
+                console.log('Unique vertex positions:', uniqueVertices.size);
+                
+                // If it's a box, show the vertices
+                if (uniqueVertices.size === 8) {
+                    console.log('Box vertices:', Array.from(uniqueVertices));
+                }
+                
+                // Check what other functions might be available
+                console.log('\n=== Checking for other mesh extraction functions ===');
+                const meshFunctions = Object.keys(Module).filter(key => 
+                    key.includes('mesh') || key.includes('Mesh') || 
+                    key.includes('face') || key.includes('Face') ||
+                    key.includes('triangle') || key.includes('Triangle') ||
+                    key.includes('geometry') || key.includes('Geometry')
+                );
+                console.log('Mesh-related functions:', meshFunctions);
+            }
+        } catch (e) {
+            console.error('Error in debugMeshData:', e);
+        }
+    }
+
     </script>
 </body>
 </html>
