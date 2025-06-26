@@ -172,7 +172,12 @@
             const [showNewJobForm, setShowNewJobForm] = useState(false);
             const [editingPart, setEditingPart] = useState(null);
             const [draggedPart, setDraggedPart] = useState(null);
-            const [selectedWeek, setSelectedWeek] = useState(getWeekStart(new Date()));
+            const [selectedWeek, setSelectedWeek] = useState(() => {
+                // Start with today as the first day shown
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                return today.getTime();
+            });
             const [selectedJob, setSelectedJob] = useState(null);
 
             // Color palette for new jobs
@@ -203,11 +208,22 @@
                 return new Date(d.setDate(diff)).setHours(0, 0, 0, 0);
             }
 
+            // Get week start from any date (keeps the date in the middle of the week view)
+            function getWeekStartFromDate(date) {
+                // Just return the date at midnight
+                const d = new Date(date);
+                d.setHours(0, 0, 0, 0);
+                return d.getTime();
+            }
+
             // Get week days
             function getWeekDays(weekStart) {
                 const days = [];
+                const startDate = new Date(weekStart);
                 for (let i = 0; i < 7; i++) {
-                    days.push(new Date(weekStart.getTime() + i * 24 * 60 * 60 * 1000));
+                    const day = new Date(startDate);
+                    day.setDate(startDate.getDate() + i);
+                    days.push(day);
                 }
                 return days;
             }
@@ -250,14 +266,20 @@
                         createdAt: Date.now()
                     };
                     
+                    console.log('Creating job:', job);
+                    console.log('Selected week starts:', new Date(selectedWeek));
+                    
                     // Create parts for the job
                     const newParts = [];
                     const startDateTime = new Date(newJob.startDate);
                     startDateTime.setHours(newJob.startHour, newJob.startMinute, 0, 0);
                     let currentTime = startDateTime.getTime();
                     
+                    console.log('Start date/time for parts:', new Date(currentTime));
+                    console.log('Week days:', weekDays.map(d => d.toISOString()));
+                    
                     for (let i = 0; i < job.totalParts; i++) {
-                        newParts.push({
+                        const part = {
                             id: `part-${jobId}-${i + 1}`,
                             jobId: jobId,
                             partNumber: i + 1,
@@ -265,13 +287,16 @@
                             startTime: currentTime,
                             estimate: true,
                             status: 'scheduled'
-                        });
+                        };
+                        console.log(`Part ${i + 1} will start at:`, new Date(currentTime));
+                        newParts.push(part);
                         // Add cycle time for next part
                         currentTime += job.cycleTime * 60 * 1000;
                     }
                     
                     setJobs([...jobs, job]);
                     setParts([...parts, ...newParts]);
+                    
                     setNewJob({ 
                         name: '', 
                         machineId: '', 
@@ -418,7 +443,7 @@
                 ));
             };
 
-            const weekDays = getWeekDays(new Date(selectedWeek));
+            const weekDays = getWeekDays(selectedWeek);
 
             // Job Details Panel
             const JobDetailsPanel = ({ job, onClose }) => {
@@ -518,20 +543,27 @@
                                 <div className="flex items-center space-x-4">
                                     <div className="flex items-center space-x-2">
                                         <button
-                                            onClick={() => setSelectedWeek(getWeekStart(new Date(selectedWeek - 7 * 24 * 60 * 60 * 1000)))}
+                                            onClick={() => setSelectedWeek(selectedWeek - 7 * 24 * 60 * 60 * 1000)}
                                             className="p-2 hover:bg-gray-100 rounded"
                                         >
                                             ←
                                         </button>
                                         <Calendar className="h-5 w-5 text-gray-500" />
                                         <span className="font-medium">
-                                            Week of {formatDate(new Date(selectedWeek))}
+                                             {formatDate(new Date(selectedWeek))} - {formatDate(new Date(selectedWeek + 6 * 24 * 60 * 60 * 1000))}
                                         </span>
                                         <button
-                                            onClick={() => setSelectedWeek(getWeekStart(new Date(selectedWeek + 7 * 24 * 60 * 60 * 1000)))}
+                                            onClick={() => setSelectedWeek(selectedWeek + 7 * 24 * 60 * 60 * 1000)}
                                             className="p-2 hover:bg-gray-100 rounded"
                                         >
                                             →
+                                        </button>
+                                        <button
+                                            onClick={() => setSelectedWeek(getWeekStartFromDate(new Date()))}
+                                            className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded"
+                                            title="Go to today"
+                                        >
+                                            Today
                                         </button>
                                     </div>
                                     <button
@@ -701,8 +733,15 @@
                                         </div>
                                         {weekDays.map(day => (
                                             <div key={day.toISOString()} className="flex-shrink-0 border-r">
-                                                <div className="bg-gray-100 p-2 text-center font-medium border-b">
+                                                <div className={`p-2 text-center font-medium border-b ${
+                                                    day.toDateString() === new Date().toDateString() 
+                                                        ? 'bg-blue-100 text-blue-800' 
+                                                        : 'bg-gray-100'
+                                                }`}>
                                                     {formatDate(day)}
+                                                    {day.toDateString() === new Date().toDateString() && (
+                                                        <span className="ml-2 text-xs font-normal">(Today)</span>
+                                                    )}
                                                 </div>
                                                 <div className="flex">
                                                     {Array.from({ length: 24 }, (_, h) => (
