@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EVE SSO Callback</title>
+    <link rel="stylesheet" href="css/market-comparison.css">
+</head>
+<body>
+    <div class="callback-container" style="text-align: center; margin-top: 50px;">
+        <h2>Authenticating...</h2>
+        <div class="spinner"></div>
+        <p>Please wait while we complete your login.</p>
+        
+        <!-- Add debug info -->
+        <div style="margin-top: 20px; padding: 20px; background: #f0f0f0; border-radius: 5px;">
+            <h3>Debug Info:</h3>
+            <p>Current URL: <code id="currentUrl"></code></p>
+            <p>Authorization Code: <code id="authCode"></code></p>
+            <button id="copyBtn" style="margin-top: 10px;">Copy Code</button>
+            <button id="continueBtn" style="margin-top: 10px;">Continue with Login</button>
+        </div>
+        
+        <script>
+            // Show the current URL and code
+            document.getElementById('currentUrl').textContent = window.location.href;
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            document.getElementById('authCode').textContent = code || 'No code found';
+            
+            // Copy button
+            document.getElementById('copyBtn').addEventListener('click', () => {
+                navigator.clipboard.writeText(code);
+                alert('Code copied!');
+            });
+            
+            // Continue button
+            document.getElementById('continueBtn').addEventListener('click', () => {
+                // Load eve-auth.js and continue
+                const script = document.createElement('script');
+                script.src = 'js/eve-auth.js';
+                document.body.appendChild(script);
+            });
+        </script>
+    </div>
+</body>
+</html>

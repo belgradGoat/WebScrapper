@@ -249,7 +249,8 @@
             <button class="control-btn" id="measureBtn" onclick="toggleMeasurement()" disabled>📏 Measure</button>
             <button class="control-btn" id="wireframeBtn" onclick="toggleWireframe()" disabled>🔲 Wireframe</button>
             <button class="control-btn" onclick="resetView()" disabled>🔄 Reset View</button>
-            <button class="control-btn" onclick="debugMeshData()">🐛 Debug Mesh</button>
+            <button class="control-btn" onclick="exportToGLTF()" id="exportGLTFBtn" disabled>🎯 Export to glTF</button>
+            <button class="control-btn" onclick="exportTransformedSTEP()" id="exportTransformedBtn" disabled>📤 Export Transformed STEP</button>
         </div>
 
         <div class="viewer-container">
@@ -277,46 +278,37 @@
         </div>
     </div>
 
+    <!-- Load Three.js modules first -->
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+    </script>
+    
     <!-- Load the compiled WASM module -->
-       <!-- Load the compiled WASM module -->
     <script src="step_viewer.js"></script>
     
-    <!-- Add Three.js libraries -->
-    <!-- Load the compiled WASM module -->
-    <script src="step_viewer.js"></script>
-    
-    <!-- Add OpenCASCADE.js -->
-       <script src="https://cdn.jsdelivr.net/npm/opencascade.js@2.0.0-beta.b5ff984/dist/opencascade.js"></script>
-    
-    <!-- Add Three.js libraries -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.min.js"></script>
+    <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { TransformControls } from 'three/addons/controls/TransformControls.js';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // Make available globally
+    window.THREE = THREE;
+    window.GLTFLoader = GLTFLoader;
+    window.TransformControls = TransformControls;
+    window.OrbitControls = OrbitControls;
+
+    // Signal that Three.js is ready
+    window.dispatchEvent(new Event('threejs-ready'));
+    </script>
     
     <script>
-    // Add OpenCASCADE instance
-    let oc = null;
-    let ocInitialized = false;
-    
-    // Initialize OpenCASCADE
-    async function initOpenCascade() {
-        try {
-            console.log('Initializing OpenCASCADE.js...');
-            oc = await new opencascade({
-                locateFile: (file) => {
-                    if (file === 'opencascade.wasm') {
-                        return 'https://cdn.jsdelivr.net/npm/opencascade.js@2.0.0-beta.b5ff984/dist/opencascade.wasm';
-                    }
-                    return file;
-                }
-            });
-            ocInitialized = true;
-            console.log('OpenCASCADE.js initialized successfully');
-            return true;
-        } catch (error) {
-            console.error('Failed to initialize OpenCASCADE:', error);
-            return false;
-        }
-    }
-
     // Global variables
     let Module = null;
     let currentFile = null;
@@ -331,10 +323,18 @@
     let measurementLines = [];
     let measurementMarkers = [];
 
-    // Initialize when page loads
-    window.addEventListener('load', initializeApp);
+    // Wait for Three.js modules to load
+    window.addEventListener('threejs-ready', () => {
+        window.THREE = window.THREE;
+        window.GLTFLoader = window.GLTFLoader;
+        window.TransformControls = window.TransformControls;
+        window.OrbitControls = window.OrbitControls;
+        
+        // Now initialize your app
+        initializeApp();
+    });
 
-     window.addEventListener('resize', () => {
+    window.addEventListener('resize', () => {
         if (camera && renderer) {
             const container = document.getElementById('svgViewer');
             camera.aspect = container.clientWidth / container.clientHeight;
@@ -343,40 +343,30 @@
         }
     });
 
-    // Initialize Emscripten module
-         // Initialize Emscripten module
-       // Initialize Emscripten module
+    // Initialize app
     async function initializeApp() {
         try {
             showMessage('Initializing STEP Viewer...', 'info');
             console.log('Starting initialization...');
             
-            // Initialize OpenCASCADE
-            const ocResult = await initOpenCascade();
-            if (!ocResult) {
-                console.warn('OpenCASCADE initialization failed, but continuing...');
-            }
-            
-            // Initialize your original WASM module
+            // Initialize your WASM module
             if (typeof createModule !== 'undefined') {
                 console.log('Loading WASM module...');
                 Module = await createModule({
-                    onRuntimeInitialized: () => {
+                    onRuntimeInitialized: function() {
                         console.log('WASM runtime initialized');
                         isModuleReady = true;
                         
                         // Initialize the C++ processor
                         try {
-                            Module.ccall('initApp', null, [], []);
-                            console.log('C++ processor initialized');
+                            if (Module._initApp) {
+                                Module._initApp();
+                                console.log('C++ processor initialized via direct call');
+                            } else {
+                                console.error('_initApp function not found');
+                            }
                         } catch (e) {
                             console.error('Failed to initialize C++ processor:', e);
-                        }
-                        
-                        showMessage('STEP Viewer initialized successfully!', 'success');
-                        // Only check functions if Module exists and is an object
-                        if (Module && typeof Module === 'object') {
-                            console.log('Available functions:', Object.keys(Module).filter(k => typeof Module[k] === 'function'));
                         }
                     },
                     print: (text) => console.log('Module output:', text),
@@ -391,10 +381,11 @@
             // Set up drag and drop listeners
             setupDragAndDrop();
             
+            showMessage('STEP Viewer ready!', 'success');
+            
         } catch (error) {
             console.error('Failed to initialize app:', error);
             showMessage('Failed to initialize application: ' + error.message, 'error');
-            // Continue in demo mode even if initialization fails
             isModuleReady = false;
             setupDragAndDrop();
         }
@@ -421,8 +412,7 @@
         container.innerHTML = '';
         container.appendChild(renderer.domElement);
         
-        // Load OrbitControls using import map approach
-        // For now, we'll create a simple orbit control functionality
+        // Setup controls
         setupOrbitControls();
         
         // Lighting
@@ -447,79 +437,252 @@
         animate();
     }
     
-    // Simple orbit controls implementation
+    // Setup orbit controls
     function setupOrbitControls() {
-        let mouseX = 0, mouseY = 0;
-        let targetRotationX = 0, targetRotationY = 0;
-        let isMouseDown = false;
-        let zoom = 1;
-        
-        const element = renderer.domElement;
-        
-        // Mouse controls
-        element.addEventListener('mousedown', (e) => {
-            isMouseDown = true;
-            mouseX = e.clientX;
-            mouseY = e.clientY;
-        });
-        
-        element.addEventListener('mousemove', (e) => {
-            if (!isMouseDown) return;
-            
-            const deltaX = e.clientX - mouseX;
-            const deltaY = e.clientY - mouseY;
-            
-            targetRotationY += deltaX * 0.01;
-            targetRotationX += deltaY * 0.01;
-            
-            mouseX = e.clientX;
-            mouseY = e.clientY;
-            
-            updateCameraPosition();
-        });
-        
-        element.addEventListener('mouseup', () => {
-            isMouseDown = false;
-        });
-        
-        element.addEventListener('mouseleave', () => {
-            isMouseDown = false;
-        });
-        
-        // Wheel for zoom
-        element.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            zoom *= e.deltaY > 0 ? 1.1 : 0.9;
-            zoom = Math.max(0.1, Math.min(10, zoom));
-            updateCameraPosition();
-        });
-        
-            function updateCameraPosition() {
-            const distance = 200 * zoom;
-            const center = controls.target || new THREE.Vector3(0, 0, 0);
-            camera.position.x = center.x + distance * Math.sin(targetRotationY) * Math.cos(targetRotationX);
-            camera.position.y = center.y + distance * Math.sin(targetRotationX);
-            camera.position.z = center.z + distance * Math.cos(targetRotationY) * Math.cos(targetRotationX);
-            camera.lookAt(center);
+        if (!OrbitControls) {
+            console.error('OrbitControls not loaded');
+            return;
         }
         
-        // Store as a simple object to maintain compatibility
-        controls = {
-            update: () => {},
-            target: new THREE.Vector3(0, 0, 0)
-        };
+        controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.screenSpacePanning = false;
+        controls.minDistance = 10;
+        controls.maxDistance = 1000;
+        controls.maxPolarAngle = Math.PI;
+        controls.target.set(0, 0, 0);
     }
-    
-   
-        // Load mesh data into Three.js
+
+    function animate() {
+        requestAnimationFrame(animate);
+        if (controls && controls.update) {
+            controls.update();
+        }
+        if (renderer && scene && camera) {
+            renderer.render(scene, camera);
+        }
+    }
+
+    // Transformation tracking
+    class TransformationManager {
+        constructor() {
+            this.transformations = [];
+            this.originalMatrix = new THREE.Matrix4();
+        }
+        
+        startTracking(object) {
+            this.originalMatrix.copy(object.matrixWorld);
+        }
+        
+        addTransformation(type, data) {
+            this.transformations.push({
+                type: type,
+                timestamp: Date.now(),
+                data: data
+            });
+        }
+        
+        trackRotation(euler) {
+            this.addTransformation('rotation', {
+                x: euler.x,
+                y: euler.y,
+                z: euler.z
+            });
+        }
+        
+        trackTranslation(position) {
+            this.addTransformation('translation', {
+                x: position.x,
+                y: position.y,
+                z: position.z
+            });
+        }
+        
+        trackScale(scale) {
+            this.addTransformation('scale', {
+                x: scale.x,
+                y: scale.y,
+                z: scale.z
+            });
+        }
+        
+        getTransformationMatrix() {
+            const matrix = new THREE.Matrix4();
+            
+            for (const transform of this.transformations) {
+                switch (transform.type) {
+                    case 'translation':
+                        matrix.makeTranslation(
+                            transform.data.x,
+                            transform.data.y,
+                            transform.data.z
+                        );
+                        break;
+                    case 'rotation':
+                        const rotMatrix = new THREE.Matrix4();
+                        rotMatrix.makeRotationFromEuler(
+                            new THREE.Euler(
+                                transform.data.x,
+                                transform.data.y,
+                                transform.data.z
+                            )
+                        );
+                        matrix.multiply(rotMatrix);
+                        break;
+                    case 'scale':
+                        matrix.scale(new THREE.Vector3(
+                            transform.data.x,
+                            transform.data.y,
+                            transform.data.z
+                        ));
+                        break;
+                }
+            }
+            
+            return matrix;
+        }
+        
+        exportToJSON() {
+            return JSON.stringify(this.transformations);
+        }
+    }
+
+    const transformManager = new TransformationManager();
+
+    // Main file loading function
+    async function loadFile() {
+        if (!currentFile) {
+            showMessage('No file selected', 'error');
+            return;
+        }
+
+        showLoading(true);
+        
+        try {
+            // Read file
+            const arrayBuffer = await readFileAsArrayBuffer(currentFile);
+            console.log('File read successfully, size:', arrayBuffer.byteLength);
+            
+            // Initialize Three.js if needed
+            if (!renderer) {
+                console.log('Initializing Three.js...');
+                initThreeJS();
+            }
+            
+            // Step 1: Convert STEP to glTF using C++ module
+            let gltfData = null;
+            
+            if (Module && isModuleReady) {
+                try {
+                    // Write STEP file to WASM filesystem
+                    const filename = '/tmp/' + currentFile.name;
+                    const uint8Array = new Uint8Array(arrayBuffer);
+                    Module.FS.writeFile(filename, uint8Array);
+                    
+                    // Load STEP file in C++ module
+                    const loadResult = Module.ccall('loadSTEPFile', 'number', ['string'], [filename]);
+                    
+                    if (loadResult === 1) {
+                        // Convert to glTF
+                        const gltfFilename = '/tmp/converted.gltf';
+                        const exportResult = Module.ccall('exportToGLTF', 'number', ['string'], [gltfFilename]);
+                        
+                        if (exportResult === 1) {
+                            // Read glTF data
+                            gltfData = Module.FS.readFile(gltfFilename, { encoding: 'utf8' });
+                            console.log('STEP converted to glTF successfully');
+                        }
+                    }
+                } catch (error) {
+                    console.error('STEP to glTF conversion error:', error);
+                }
+            }
+            
+            // Step 2: Load glTF into Three.js
+            if (gltfData) {
+                await loadGLTFIntoThreeJS(gltfData);
+                enableInteractionControls();
+                showFileInfo();
+                showMessage('STEP file converted and loaded successfully!', 'success');
+            } else {
+                // Fallback - load mesh data directly from C++ module
+                loadMeshIntoThreeJS();
+                showFileInfo();
+            }
+            
+        } catch (error) {
+            console.error('Error loading file:', error);
+            showMessage('Failed to load STEP file: ' + error.message, 'error');
+            // Load demo mesh
+            createDemoMesh();
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    // Load glTF into Three.js
+    async function loadGLTFIntoThreeJS(gltfData) {
+        const loader = new GLTFLoader();
+        
+        // Convert string to blob
+        const blob = new Blob([gltfData], { type: 'model/gltf+json' });
+        const url = URL.createObjectURL(blob);
+        
+        return new Promise((resolve, reject) => {
+            loader.load(
+                url,
+                (gltf) => {
+                    // Remove existing mesh
+                    if (meshObject) {
+                        scene.remove(meshObject);
+                        meshObject.traverse((child) => {
+                            if (child.geometry) child.geometry.dispose();
+                            if (child.material) child.material.dispose();
+                        });
+                    }
+                    
+                    // Add glTF scene
+                    meshObject = gltf.scene;
+                    scene.add(meshObject);
+                    
+                    // Center camera
+                    const box = new THREE.Box3().setFromObject(meshObject);
+                    const center = box.getCenter(new THREE.Vector3());
+                    const size = box.getSize(new THREE.Vector3());
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    
+                    camera.position.set(
+                        center.x + maxDim * 1.5,
+                        center.y + maxDim * 1.5,
+                        center.z + maxDim * 1.5
+                    );
+                    camera.lookAt(center);
+                    
+                    if (controls) {
+                        controls.target.copy(center);
+                    }
+                    
+                    URL.revokeObjectURL(url);
+                    resolve();
+                },
+                (progress) => {
+                    console.log('Loading glTF...', progress);
+                },
+                (error) => {
+                    URL.revokeObjectURL(url);
+                    reject(error);
+                }
+            );
+        });
+    }
+
+    // Load mesh data directly from C++ module
     function loadMeshIntoThreeJS() {
         if (!Module || !isModuleReady) {
             console.error('Module not ready');
             return;
         }
-        
-        // Debug the mesh data first
-        debugMeshData();
         
         const vertexCount = Module._getVertexCount();
         const indexCount = Module._getIndexCount();
@@ -544,267 +707,22 @@
         const indexPtr = Module._getIndices();
         const normalPtr = Module._getNormals();
         
-        // Create typed arrays from WASM memory
+        // Create typed arrays
         const vertices = new Float32Array(Module.HEAPF32.buffer, vertexPtr, vertexCount);
         const indices = new Uint32Array(Module.HEAPU32.buffer, indexPtr, indexCount);
         const normals = normalCount > 0 ? new Float32Array(Module.HEAPF32.buffer, normalPtr, normalCount) : null;
         
-        // Create Three.js geometry
+        // Create geometry
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
         
         if (normals && normalCount > 0) {
             geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
         } else {
-            // Compute normals if not provided
             geometry.computeVertexNormals();
         }
         
         geometry.setIndex(new THREE.BufferAttribute(indices, 1));
-        
-        // Create material with double-sided rendering to ensure visibility
-        const material = new THREE.MeshPhongMaterial({
-            color: 0x667eea,
-            specular: 0x111111,
-            shininess: 100,
-            side: THREE.DoubleSide,
-            wireframe: false,
-            flatShading: false
-        });
-        
-        // Create mesh
-        meshObject = new THREE.Mesh(geometry, material);
-        scene.add(meshObject);
-        
-        // Add wireframe overlay for better visibility
-        const wireframeGeometry = new THREE.WireframeGeometry(geometry);
-        const wireframeMaterial = new THREE.LineBasicMaterial({ 
-            color: 0x000000, 
-            opacity: 0.1, 
-            transparent: true 
-        });
-        const wireframe = new THREE.LineSegments(wireframeGeometry, wireframeMaterial);
-        meshObject.add(wireframe);
-        
-        // Center camera on object
-        geometry.computeBoundingBox();
-        const box = geometry.boundingBox;
-        const center = box.getCenter(new THREE.Vector3());
-        const size = box.getSize(new THREE.Vector3());
-        const maxDim = Math.max(size.x, size.y, size.z);
-        
-        console.log('Bounding box:', {
-            min: box.min,
-            max: box.max,
-            center: center,
-            size: size
-        });
-        
-        // Adjust grid size based on model
-        const oldGrid = scene.children.find(child => child instanceof THREE.GridHelper);
-        if (oldGrid) {
-            scene.remove(oldGrid);
-        }
-        const gridSize = Math.ceil(maxDim * 2 / 10) * 10;
-        const gridHelper = new THREE.GridHelper(gridSize, 20);
-        scene.add(gridHelper);
-        
-        // Position camera
-        const distance = maxDim * 2;
-        camera.position.set(
-            center.x + distance * 0.5, 
-            center.y + distance * 0.5, 
-            center.z + distance
-        );
-        camera.lookAt(center);
-        
-        // Update controls target
-        if (controls && controls.target) {
-            controls.target.copy(center);
-        }
-        
-        // Enable viewer buttons
-        enableViewerButtons();
-        
-        showMessage(`3D model loaded successfully! (${vertexCount/3} vertices, ${indexCount/3} triangles)`, 'success');
-    }
-
-    // Extract mesh using OpenCASCADE.js
-    async function extractMeshWithOpenCascade(fileArrayBuffer) {
-        if (!ocInitialized || !oc) {
-            console.error('OpenCASCADE not initialized');
-            return null;
-        }
-        
-        console.log('Extracting mesh with OpenCASCADE...');
-        
-        try {
-            // Create a temporary file in OpenCASCADE's virtual filesystem
-            const fileName = "temp.step";
-            oc.FS.createDataFile("/", fileName, new Uint8Array(fileArrayBuffer), true, true, true);
-            
-            // Create a STEP reader
-            const reader = new oc.STEPControl_Reader_1();
-            
-            // Read the file
-            const readResult = reader.ReadFile(fileName);
-            if (readResult !== oc.IFSelect_ReturnStatus.IFSelect_RetDone) {
-                console.error('Failed to read STEP file');
-                return null;
-            }
-            
-            // Transfer roots
-            const transResult = reader.TransferRoots(new oc.Message_ProgressRange_1());
-            console.log(`Transferred ${transResult} roots`);
-            
-            // Get the shape
-            const shape = reader.OneShape();
-            
-            // Tessellate the shape
-            new oc.BRepMesh_IncrementalMesh_2(shape, 0.1, false, 0.5, true);
-            
-            // Extract mesh data
-            const meshData = {
-                vertices: [],
-                normals: [],
-                indices: []
-            };
-            
-            let indexOffset = 0;
-            
-            // Iterate through faces
-            const explorer = new oc.TopExp_Explorer_2(
-                shape, 
-                oc.TopAbs_ShapeEnum.TopAbs_FACE,
-                oc.TopAbs_ShapeEnum.TopAbs_SHAPE
-            );
-            
-            while (explorer.More()) {
-                const face = oc.TopoDS.Face_1(explorer.Current());
-                const location = new oc.TopLoc_Location_1();
-                const triangulation = oc.BRep_Tool.Triangulation(face, location);
-                
-                if (!triangulation.IsNull()) {
-                    const transformation = location.Transformation();
-                    const isReversed = face.Orientation_1() === oc.TopAbs_Orientation.TopAbs_REVERSED;
-                    
-                    // Get nodes (vertices)
-                    const nbNodes = triangulation.get().NbNodes();
-                    for (let i = 1; i <= nbNodes; i++) {
-                        const node = triangulation.get().Node(i);
-                        const transformed = node.Transformed(transformation);
-                        meshData.vertices.push(transformed.X(), transformed.Y(), transformed.Z());
-                    }
-                    
-                    // Get triangles
-                    const nbTriangles = triangulation.get().NbTriangles();
-                    for (let i = 1; i <= nbTriangles; i++) {
-                        const triangle = triangulation.get().Triangle(i);
-                        let n1 = new oc.Standard_Integer_1();
-                        let n2 = new oc.Standard_Integer_2();
-                        let n3 = new oc.Standard_Integer_3();
-                        triangle.Get(n1, n2, n3);
-                        
-                        if (isReversed) {
-                            meshData.indices.push(
-                                n1.get() - 1 + indexOffset,
-                                n3.get() - 1 + indexOffset,
-                                n2.get() - 1 + indexOffset
-                            );
-                        } else {
-                            meshData.indices.push(
-                                n1.get() - 1 + indexOffset,
-                                n2.get() - 1 + indexOffset,
-                                n3.get() - 1 + indexOffset
-                            );
-                        }
-                        
-                        // Cleanup
-                        n1.delete();
-                        n2.delete();
-                        n3.delete();
-                    }
-                    
-                    // Calculate normals for each face
-                    const faceNormal = new oc.gp_Vec_1();
-                    const uv = new oc.gp_Pnt2d_3(0, 0);
-                    const point = new oc.gp_Pnt_1();
-                    const D1U = new oc.gp_Vec_1();
-                    const D1V = new oc.gp_Vec_1();
-                    
-                    const surface = oc.BRep_Tool.Surface_2(face);
-                    if (!surface.IsNull()) {
-                        surface.get().D1(0.5, 0.5, point, D1U, D1V);
-                        faceNormal.SetX(D1U.Y() * D1V.Z() - D1U.Z() * D1V.Y());
-                        faceNormal.SetY(D1U.Z() * D1V.X() - D1U.X() * D1V.Z());
-                        faceNormal.SetZ(D1U.X() * D1V.Y() - D1U.Y() * D1V.X());
-                        faceNormal.Normalize();
-                        
-                        if (isReversed) {
-                            faceNormal.Reverse();
-                        }
-                    }
-                    
-                    // Add normals for each vertex
-                    for (let i = 0; i < nbNodes; i++) {
-                        meshData.normals.push(faceNormal.X(), faceNormal.Y(), faceNormal.Z());
-                    }
-                    
-                    // Cleanup
-                    faceNormal.delete();
-                    uv.delete();
-                    point.delete();
-                    D1U.delete();
-                    D1V.delete();
-                    
-                    indexOffset += nbNodes;
-                }
-                
-                triangulation.delete();
-                location.delete();
-                face.delete();
-                
-                explorer.Next();
-            }
-            
-            // Cleanup
-            explorer.delete();
-            shape.delete();
-            reader.delete();
-            
-            // Delete the temporary file
-            oc.FS.unlink("/" + fileName);
-            
-            console.log(`Extracted mesh: ${meshData.vertices.length / 3} vertices, ${meshData.indices.length / 3} triangles`);
-            
-            return meshData;
-            
-        } catch (error) {
-            console.error('Error extracting mesh with OpenCASCADE:', error);
-            return null;
-        }
-    }
-    <!-- filepath: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/STEPViewer/StepViewerInterface.html -->
-    // Load OpenCASCADE mesh data into Three.js
-    function loadOpenCascadeMeshIntoThreeJS(meshData) {
-        // Remove existing mesh
-        if (meshObject) {
-            scene.remove(meshObject);
-            meshObject.geometry.dispose();
-            meshObject.material.dispose();
-        }
-        
-        // Create Three.js geometry
-        const geometry = new THREE.BufferGeometry();
-        
-        // Set attributes
-        geometry.setAttribute('position', new THREE.Float32BufferAttribute(meshData.vertices, 3));
-        if (meshData.normals.length > 0) {
-            geometry.setAttribute('normal', new THREE.Float32BufferAttribute(meshData.normals, 3));
-        } else {
-            geometry.computeVertexNormals();
-        }
-        geometry.setIndex(meshData.indices);
         
         // Create material
         const material = new THREE.MeshPhongMaterial({
@@ -819,425 +737,293 @@
         meshObject = new THREE.Mesh(geometry, material);
         scene.add(meshObject);
         
-        // Center camera on object
+        // Center camera
         geometry.computeBoundingBox();
         const box = geometry.boundingBox;
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
         const maxDim = Math.max(size.x, size.y, size.z);
         
-        console.log('OpenCASCADE mesh loaded:', {
-            vertices: meshData.vertices.length / 3,
-            triangles: meshData.indices.length / 3,
-            boundingBox: box,
-            center: center,
-            size: size
-        });
-        
-        // Adjust grid size based on model
-        const oldGrid = scene.children.find(child => child instanceof THREE.GridHelper);
-        if (oldGrid) {
-            scene.remove(oldGrid);
-        }
-        const gridSize = Math.ceil(maxDim * 2 / 10) * 10;
-        const gridHelper = new THREE.GridHelper(gridSize, 20);
-        scene.add(gridHelper);
-        
         // Position camera
-        const distance = maxDim * 2;
         camera.position.set(
-            center.x + distance * 0.5, 
-            center.y + distance * 0.5, 
-            center.z + distance
+            center.x + maxDim * 1.5,
+            center.y + maxDim * 1.5,
+            center.z + maxDim * 1.5
         );
         camera.lookAt(center);
         
-        // Update controls target
-        if (controls && controls.target) {
+        if (controls) {
             controls.target.copy(center);
         }
         
-        // Enable viewer buttons
         enableViewerButtons();
+        showMessage(`3D model loaded successfully!`, 'success');
+    }
+
+    // Enable interaction controls
+    function enableInteractionControls() {
+        if (!meshObject || !TransformControls) return;
         
-        showMessage(`3D model loaded successfully! (${meshData.vertices.length/3} vertices, ${meshData.indices.length/3} triangles)`, 'success');
-    }  
-    
-    // Add this debug function after loadMeshIntoThreeJS
-    function debugMeshData() {
-        if (!Module || !isModuleReady) {
-            console.error('Module not ready');
+        // Start tracking transformations
+        transformManager.startTracking(meshObject);
+        
+        // Add transform controls
+        const transformControls = new TransformControls(camera, renderer.domElement);
+        transformControls.attach(meshObject);
+        scene.add(transformControls);
+        
+        // Disable orbit controls when using transform controls
+        transformControls.addEventListener('dragging-changed', (event) => {
+            if (controls) controls.enabled = !event.value;
+        });
+        
+        // Track changes
+        transformControls.addEventListener('change', () => {
+            if (transformControls.mode === 'translate') {
+                transformManager.trackTranslation(meshObject.position);
+            } else if (transformControls.mode === 'rotate') {
+                transformManager.trackRotation(meshObject.rotation);
+            } else if (transformControls.mode === 'scale') {
+                transformManager.trackScale(meshObject.scale);
+            }
+        });
+        
+        // Add keyboard controls
+        window.addEventListener('keydown', (event) => {
+            switch (event.key) {
+                case 'g': // Translate
+                    transformControls.setMode('translate');
+                    break;
+                case 'r': // Rotate
+                    transformControls.setMode('rotate');
+                    break;
+                case 's': // Scale
+                    transformControls.setMode('scale');
+                    break;
+            }
+        });
+        
+        enableViewerButtons();
+    }
+
+    // Export with transformations
+    async function exportTransformedSTEP() {
+        if (!Module || !isModuleReady || !currentFile) {
+            showMessage('No file loaded', 'error');
             return;
         }
         
-        console.log('=== Debugging Mesh Data ===');
+        showLoading(true);
         
         try {
-            const vertexCount = Module._getVertexCount();
-            const indexCount = Module._getIndexCount();
-            const normalCount = Module._getNormalCount();
+            // Get transformation data
+            const transformJSON = transformManager.exportToJSON();
             
-            console.log('Counts:', { vertexCount, indexCount, normalCount });
+            // For now, save with transformation info in header
+            const filename = '/tmp/transformed.step';
+            const result = Module.ccall('saveSTEPCopy', 'number', ['string'], [filename]);
             
-            if (vertexCount > 0) {
-                const vertexPtr = Module._getVertices();
-                const indexPtr = Module._getIndices();
-                const normalPtr = Module._getNormals();
+            if (result === 1) {
+                // Read the file
+                const stepData = Module.FS.readFile(filename, { encoding: 'utf8' });
                 
-                console.log('Pointers:', { vertexPtr, indexPtr, normalPtr });
+                // Add transformation info
+                const transformedData = `/* Transformations Applied:\n${transformJSON}\n*/\n${stepData}`;
                 
-                // Read first few values
-                const vertices = new Float32Array(Module.HEAPF32.buffer, vertexPtr, Math.min(30, vertexCount));
-                const indices = new Uint32Array(Module.HEAPU32.buffer, indexPtr, Math.min(30, indexCount));
+                // Download
+                const blob = new Blob([transformedData], { type: 'application/step' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = currentFile.name.replace(/\.(step|stp)$/i, '_transformed.step');
+                a.click();
+                URL.revokeObjectURL(url);
                 
-                console.log('First 10 vertices (x,y,z):', Array.from(vertices.slice(0, 30)));
-                console.log('First 10 triangles (indices):', Array.from(indices.slice(0, 30)));
-                
-                // Check if vertices are reasonable
-                const maxCoord = Math.max(...Array.from(vertices).map(Math.abs));
-                const minCoord = Math.min(...Array.from(vertices).filter(v => v !== 0));
-                console.log('Coordinate range:', { min: minCoord, max: maxCoord });
+                showMessage('Transformed STEP file exported successfully!', 'success');
+            } else {
+                showMessage('Failed to export transformed STEP', 'error');
             }
-        } catch (e) {
-            console.error('Error in debugMeshData:', e);
+            
+        } catch (error) {
+            console.error('Export error:', error);
+            showMessage('Failed to export: ' + error.message, 'error');
+        } finally {
+            showLoading(false);
         }
     }
 
-    function animate() {
-        requestAnimationFrame(animate);
-        controls.update();
-        renderer.render(scene, camera);
-    }
-
-        // Utility functions
-        function showMessage(message, type = 'info') {
-            const messagesDiv = document.getElementById('messages');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${type}`;
-            messageDiv.textContent = message;
-            messagesDiv.appendChild(messageDiv);
-            
-            // Remove message after 5 seconds
-            setTimeout(() => {
-                if (messageDiv.parentNode) {
-                    messageDiv.parentNode.removeChild(messageDiv);
-                }
-            }, 5000);
+    // Create demo mesh
+    function createDemoMesh() {
+        if (!renderer) {
+            initThreeJS();
         }
-
-        function showLoading(show) {
-            document.getElementById('loading').style.display = show ? 'block' : 'none';
-        }
-
-        function showFileInfo() {
-            const infoPanel = document.getElementById('infoPanel');
-            const fileInfo = document.getElementById('fileInfo');
-            
-            fileInfo.innerHTML = `
-                <div class="info-item">
-                    <strong>Filename:</strong> ${currentFile.name}
-                </div>
-                <div class="info-item">
-                    <strong>File Size:</strong> ${(currentFile.size / 1024).toFixed(2)} KB
-                </div>
-                <div class="info-item">
-                    <strong>Last Modified:</strong> ${new Date(currentFile.lastModified).toLocaleString()}
-                </div>
-            `;
-            
-            infoPanel.style.display = 'block';
-        }
-
-        function showUCSInfo() {
-            const ucsInfo = document.getElementById('ucsInfo');
-            
-            if (Module && isModuleReady) {
-                try {
-                    const ucsInfoStr = Module.ccall('getUCSInfo', 'string', [], []);
-                    const bboxInfoStr = Module.ccall('getBoundingBoxInfo', 'string', [], []);
-                    
-                    ucsInfo.innerHTML = `
-                        <div class="info-item">
-                            <strong>UCS:</strong> ${ucsInfoStr}
-                        </div>
-                        <div class="info-item">
-                            <strong>Bounding Box:</strong> ${bboxInfoStr}
-                        </div>
-                    `;
-                } catch (error) {
-                    console.error('Error getting UCS info:', error);
-                    ucsInfo.innerHTML = `
-                        <div class="info-item">
-                            <strong>UCS:</strong> Created successfully
-                        </div>
-                    `;
-                }
-            } else {
-                ucsInfo.innerHTML = `
-                    <div class="info-item">
-                        <strong>Origin:</strong> (0.00, 0.00, 0.00)
-                    </div>
-                    <div class="info-item">
-                        <strong>X Direction:</strong> (1.00, 0.00, 0.00)
-                    </div>
-                    <div class="info-item">
-                        <strong>Y Direction:</strong> (0.00, 1.00, 0.00)
-                    </div>
-                    <div class="info-item">
-                        <strong>Z Direction:</strong> (0.00, 0.00, 1.00)
-                    </div>
-                `;
-            }
-        }
-
-        // File handling
-        function handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (file && isValidSTEPFile(file)) {
-                currentFile = file;
-                document.getElementById('loadBtn').disabled = false;
-                showMessage(`File selected: ${file.name}`, 'success');
-                resetUI();
-            }
-        }
-
-        function isValidSTEPFile(file) {
-            const validExtensions = ['.step', '.stp'];
-            const fileName = file.name.toLowerCase();
-            const isValid = validExtensions.some(ext => fileName.endsWith(ext));
-            
-            if (!isValid) {
-                showMessage('Please select a valid STEP file (.step or .stp)', 'error');
-            }
-            
-            return isValid;
-        }
-
-                function resetUI() {
-            // Reset buttons
-            document.getElementById('createUCSBtn').disabled = true;
-            document.getElementById('screenshotBtn').disabled = true;
-            document.getElementById('saveBtn').disabled = true;
-            document.getElementById('downloadImageBtn').disabled = true;
-            document.getElementById('downloadSTEPBtn').disabled = true;
-            document.getElementById('measureBtn').disabled = true;
-            document.getElementById('wireframeBtn').disabled = true;
-            document.querySelector('button[onclick="resetView()"]').disabled = true;
-            
-            // Clear data
-            screenshotData = null;
-            stepCopyData = null;
-            
-            // Hide info panel
-            document.getElementById('infoPanel').style.display = 'none';
-            
-            // Reset viewer - Don't clear innerHTML if renderer exists
-            if (renderer) {
-                // Clear the 3D scene instead of removing the renderer
-                if (meshObject) {
-                    scene.remove(meshObject);
-                    meshObject.geometry.dispose();
-                    meshObject.material.dispose();
-                    meshObject = null;
-                }
-                // Clear measurement objects
-                measurementLines.forEach(line => scene.remove(line));
-                measurementMarkers.forEach(marker => scene.remove(marker));
-                measurementLines = [];
-                measurementMarkers = [];
-                measurementPoints = [];
-            } else {
-                // Only reset innerHTML if no renderer exists
-                document.getElementById('svgViewer').innerHTML = '<p style="color: #999;">Load a STEP file to see visualization</p>';
-            }
-        }
-
-                // Create demo mesh for when module is not loaded
-        function createDemoMesh() {
-            // Remove existing mesh if any
-            if (meshObject) {
-                scene.remove(meshObject);
-                meshObject.geometry.dispose();
-                meshObject.material.dispose();
-            }
-            
-            // Create a demo box geometry
-            const geometry = new THREE.BoxGeometry(50, 50, 50);
-            
-            // Create material
-            const material = new THREE.MeshPhongMaterial({
-                color: 0x667eea,
-                specular: 0x111111,
-                shininess: 100,
-                side: THREE.DoubleSide,
-                wireframe: false
-            });
-            
-            // Create mesh
-            meshObject = new THREE.Mesh(geometry, material);
-            scene.add(meshObject);
-            
-            // Center camera on object
-            const center = new THREE.Vector3(0, 0, 0);
-            camera.position.set(100, 100, 100);
-            camera.lookAt(center);
-            controls.target.copy(center);
-            
-            // Enable viewer buttons
-            enableViewerButtons();
-            
-            showMessage('Demo 3D model loaded!', 'info');
-        }
-
-        // Drag and drop functionality
-        const uploadSection = document.getElementById('uploadSection');
         
-        uploadSection.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadSection.classList.add('dragover');
+        // Remove existing mesh
+        if (meshObject) {
+            scene.remove(meshObject);
+            meshObject.geometry.dispose();
+            meshObject.material.dispose();
+        }
+        
+        // Create demo box
+        const geometry = new THREE.BoxGeometry(50, 50, 50);
+        const material = new THREE.MeshPhongMaterial({
+            color: 0x667eea,
+            specular: 0x111111,
+            shininess: 100,
+            side: THREE.DoubleSide
         });
+        
+        meshObject = new THREE.Mesh(geometry, material);
+        scene.add(meshObject);
+        
+        // Center camera
+        camera.position.set(100, 100, 100);
+        camera.lookAt(0, 0, 0);
+        if (controls) {
+            controls.target.set(0, 0, 0);
+        }
+        
+        enableViewerButtons();
+        showMessage('Demo 3D model loaded!', 'info');
+    }
 
-        uploadSection.addEventListener('dragleave', () => {
-            uploadSection.classList.remove('dragover');
-        });
-
-        uploadSection.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadSection.classList.remove('dragover');
-            
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                const file = files[0];
-                if (isValidSTEPFile(file)) {
-                    currentFile = file;
-                    document.getElementById('loadBtn').disabled = false;
-                    showMessage(`File selected: ${file.name}`, 'success');
-                    resetUI();
-                }
-            }
-        });
-
-        // Main functions
-        async function loadFile() {
-        if (!currentFile) {
-            showMessage('No file selected', 'error');
+    // UI functions
+    async function createUCS() {
+        if (!isModuleReady) {
+            showMessage('Module not ready', 'error');
             return;
         }
 
         showLoading(true);
         
         try {
-            // Read file as ArrayBuffer
-            const arrayBuffer = await readFileAsArrayBuffer(currentFile);
-            console.log('File read successfully, size:', arrayBuffer.byteLength);
-            
-            // Initialize OpenCASCADE if not already done
-            if (!ocInitialized) {
-                console.log('Initializing OpenCASCADE...');
-                const ocResult = await initOpenCascade();
-                if (!ocResult) {
-                    console.warn('OpenCASCADE initialization failed');
-                }
-            }
-            
-            // Initialize Three.js if not already done
-            if (!renderer) {
-                console.log('Initializing Three.js...');
-                initThreeJS();
-            }
-            
-            let loadSuccess = false;
-            
-            // Try to extract mesh with OpenCASCADE
-            if (ocInitialized) {
-                console.log('Attempting OpenCASCADE extraction...');
-                try {
-                    const meshData = await extractMeshWithOpenCascade(arrayBuffer);
-                    
-                    if (meshData && meshData.vertices.length > 0) {
-                        console.log('OpenCASCADE extraction successful');
-                        loadOpenCascadeMeshIntoThreeJS(meshData);
-                        loadSuccess = true;
-                        
-                        document.getElementById('createUCSBtn').disabled = false;
-                        document.getElementById('screenshotBtn').disabled = false;
-                        document.getElementById('saveBtn').disabled = false;
-                        
-                        showFileInfo();
-                        showMessage('STEP file loaded successfully with OpenCASCADE!', 'success');
-                    } else {
-                        console.warn('OpenCASCADE extraction returned no data');
-                    }
-                } catch (ocError) {
-                    console.error('OpenCASCADE extraction error:', ocError);
-                }
-            }
-            
-            // Fall back to the original method if OpenCASCADE fails
-             if (!loadSuccess && Module && isModuleReady) {
-                console.log('Attempting original WASM method...');
-                try {
-                    // Initialize the app if not already done
-                    if (!g_processor) {
-                        Module.ccall('initApp', null, [], []);
-                    }
-                    
-                    const filename = '/tmp/' + currentFile.name;
-                    const uint8Array = new Uint8Array(arrayBuffer);
-                    Module.FS.writeFile(filename, uint8Array);
-                    
-                    const result = Module.ccall('loadSTEPFile', 'number', ['string'], [filename]);
-                    console.log('loadSTEPFile result:', result);
-                    
-                    if (result === 1) {
-                        document.getElementById('createUCSBtn').disabled = false;
-                        document.getElementById('screenshotBtn').disabled = false;
-                        document.getElementById('saveBtn').disabled = false;
-                        
-                        loadMeshIntoThreeJS();
-                        loadSuccess = true;
-                        
-                        showFileInfo();
-                        showMessage('STEP file loaded successfully!', 'success');
-                    } else {
-                        console.error('loadSTEPFile returned:', result);
-                    }
-                } catch (wasmError) {
-                    console.error('WASM method error:', wasmError);
-                }
-            }
-            
-            // If both methods failed, try demo mode
-            if (!loadSuccess) {
-                console.log('Both methods failed, loading demo mesh...');
-                if (!renderer) {
-                    initThreeJS();
-                }
-                createDemoMesh();
+            if (Module && Module.ccall) {
+                Module.ccall('createUCS', null, [], []);
                 
-                document.getElementById('createUCSBtn').disabled = false;
-                document.getElementById('screenshotBtn').disabled = false;
-                document.getElementById('saveBtn').disabled = false;
-                
-                showFileInfo();
-                showMessage('STEP file loaded in demo mode (actual parsing failed)', 'warning');
+                // Get UCS info and track it
+                const ucsInfo = Module.ccall('getUCSInfo', 'string', [], []);
+                transformManager.addTransformation('ucs', { info: ucsInfo });
             }
+            
+            showUCSInfo();
+            showMessage('UCS created!', 'success');
             
         } catch (error) {
-            console.error('Error loading file:', error);
-            showMessage('Failed to load STEP file: ' + error.message, 'error');
+            console.error('Error creating UCS:', error);
+            showMessage('Failed to create UCS: ' + error.message, 'error');
         } finally {
             showLoading(false);
         }
     }
 
-        function setupDragAndDrop() {
-        const uploadSection = document.getElementById('uploadSection');
-        
-        if (!uploadSection) {
-            console.error('Upload section not found');
+    async function takeScreenshot() {
+        if (!renderer) {
+            showMessage('No 3D view to capture', 'error');
             return;
         }
+
+        try {
+            // Render the scene
+            renderer.render(scene, camera);
+            
+            // Get canvas data
+            const dataURL = renderer.domElement.toDataURL('image/png');
+            screenshotData = dataURL;
+            
+            // Enable download button
+            document.getElementById('downloadImageBtn').disabled = false;
+            
+            showMessage('Screenshot captured!', 'success');
+        } catch (error) {
+            console.error('Error taking screenshot:', error);
+            showMessage('Failed to take screenshot', 'error');
+        }
+    }
+
+    async function saveSTEPCopy() {
+        if (!isModuleReady) {
+            showMessage('Module not ready', 'error');
+            return;
+        }
+
+        showLoading(true);
+        
+        try {
+            const filename = '/tmp/copy.step';
+            
+            if (Module && Module.ccall && Module.FS) {
+                const result = Module.ccall('saveSTEPCopy', 'number', ['string'], [filename]);
+                
+                if (result === 1) {
+                    try {
+                        const stepData = Module.FS.readFile(filename, { encoding: 'utf8' });
+                        stepCopyData = new Blob([stepData], { type: 'application/step' });
+                        document.getElementById('downloadSTEPBtn').disabled = false;
+                        showMessage('STEP copy saved!', 'success');
+                    } catch (e) {
+                        console.error('Error reading STEP file:', e);
+                        showMessage('Failed to save STEP copy', 'error');
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error saving STEP copy:', error);
+            showMessage('Failed to save STEP copy: ' + error.message, 'error');
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    async function exportToGLTF() {
+        if (!isModuleReady || !currentFile) {
+            showMessage('Please load a STEP file first', 'error');
+            return;
+        }
+        
+        showLoading(true);
+        
+        try {
+            const filename = '/tmp/model.gltf';
+            
+            if (Module && Module.ccall) {
+                const result = Module.ccall('exportToGLTF', 'number', ['string'], [filename]);
+                
+                if (result === 1) {
+                    try {
+                        const gltfData = Module.FS.readFile(filename, { encoding: 'utf8' });
+                        
+                        // Create download
+                        const blob = new Blob([gltfData], { type: 'model/gltf+json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = currentFile.name.replace(/\.(step|stp)$/i, '') + '.gltf';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        
+                        showMessage('glTF exported successfully!', 'success');
+                    } catch (e) {
+                        console.error('Error reading glTF file:', e);
+                        showMessage('Export failed', 'error');
+                    }
+                } else {
+                    showMessage('Failed to export glTF', 'error');
+                }
+            }
+        } catch (error) {
+            console.error('Error exporting glTF:', error);
+            showMessage('Failed to export glTF: ' + error.message, 'error');
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    // Helper functions
+    function setupDragAndDrop() {
+        const uploadSection = document.getElementById('uploadSection');
         
         uploadSection.addEventListener('dragover', (e) => {
             e.preventDefault();
@@ -1265,453 +1051,204 @@
         });
     }
 
-        async function createUCS() {
-            if (!isModuleReady) {
-                showMessage('Module not ready', 'error');
-                return;
-            }
+    function readFileAsArrayBuffer(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = reject;
+            reader.readAsArrayBuffer(file);
+        });
+    }
 
-            showLoading(true);
-            
-            try {
-                if (Module && Module.ccall) {
-                    Module.ccall('createUCS', null, [], []);
-                } else {
-                    // Demo mode
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                }
-                
-                showUCSInfo();
-                showMessage('UCS created successfully!', 'success');
-                
-            } catch (error) {
-                console.error('Error creating UCS:', error);
-                showMessage('Failed to create UCS: ' + error.message, 'error');
-            } finally {
-                showLoading(false);
-            }
-        }
+    function toggleMeasurement() {
+        measurementMode = !measurementMode;
+        document.getElementById('measureBtn').classList.toggle('active');
+        showMessage(measurementMode ? 'Measurement mode ON' : 'Measurement mode OFF', 'info');
+    }
 
-    // Viewer control functions
     function toggleWireframe() {
         if (meshObject && meshObject.material) {
             meshObject.material.wireframe = !meshObject.material.wireframe;
         }
     }
-    
+
     function resetView() {
         if (camera && controls && meshObject) {
-            const geometry = meshObject.geometry;
-            geometry.computeBoundingBox();
-            const box = geometry.boundingBox;
+            const box = new THREE.Box3().setFromObject(meshObject);
             const center = box.getCenter(new THREE.Vector3());
             const size = box.getSize(new THREE.Vector3());
             const maxDim = Math.max(size.x, size.y, size.z);
             
-            camera.position.set(center.x + maxDim, center.y + maxDim, center.z + maxDim);
+            camera.position.set(
+                center.x + maxDim * 1.5,
+                center.y + maxDim * 1.5,
+                center.z + maxDim * 1.5
+            );
             camera.lookAt(center);
             controls.target.copy(center);
         }
     }
-    
-    function enableViewerButtons() {
-        document.getElementById('measureBtn').disabled = false;
-        document.getElementById('wireframeBtn').disabled = false;
-        document.querySelector('button[onclick="resetView()"]').disabled = false;
-    }
 
-   
-    // Measurement functions
-    function toggleMeasurement() {
-        measurementMode = !measurementMode;
-        document.getElementById('measureBtn').style.background = measurementMode ? '#ff9800' : 'white';
-        document.getElementById('measureBtn').style.color = measurementMode ? 'white' : '#667eea';
-        
-        if (!measurementMode) {
-            // Clear measurements
-            measurementLines.forEach(line => scene.remove(line));
-            measurementMarkers.forEach(marker => scene.remove(marker));
-            measurementLines = [];
-            measurementMarkers = [];
-            measurementPoints = [];
-        }
-    }
-    
     function addMeasurementPoint(event) {
-        if (!measurementMode || !renderer || !meshObject) return;
+        if (!measurementMode || !renderer) return;
         
-        const rect = renderer.domElement.getBoundingClientRect();
-        const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-        const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-        
-        const raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera(new THREE.Vector2(x, y), camera);
-        
-        const intersects = raycaster.intersectObject(meshObject);
-        
-        if (intersects.length > 0) {
-            const point = intersects[0].point;
-            measurementPoints.push(point);
-            
-            // Add visual marker
-            const markerGeometry = new THREE.SphereGeometry(1, 16, 16);
-            const markerMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-            const marker = new THREE.Mesh(markerGeometry, markerMaterial);
-            marker.position.copy(point);
-            scene.add(marker);
-            measurementMarkers.push(marker);
-            
-            if (measurementPoints.length === 2) {
-                // Create line between points
-                const lineGeometry = new THREE.BufferGeometry().setFromPoints(measurementPoints);
-                const lineMaterial = new THREE.LineBasicMaterial({ color: 0xff0000, linewidth: 2 });
-                const line = new THREE.Line(lineGeometry, lineMaterial);
-                scene.add(line);
-                measurementLines.push(line);
-                
-                // Calculate and display distance
-                const distance = measurementPoints[0].distanceTo(measurementPoints[1]);
-                showMessage(`Distance: ${distance.toFixed(2)} units`, 'info');
-                
-                // Reset for next measurement
-                measurementPoints = [];
-            }
+        // Implementation for measurement point selection
+        // This would use raycasting to select points on the mesh
+    }
+
+    function downloadImage() {
+        if (screenshotData) {
+            const a = document.createElement('a');
+            a.href = screenshotData;
+            a.download = 'step_viewer_screenshot.png';
+            a.click();
         }
     }
 
-        async function takeScreenshot() {
-            if (!isModuleReady) {
-                showMessage('Module not ready', 'error');
-                return;
-            }
-
-            showLoading(true);
-            
-            try {
-                const filename = '/tmp/screenshot.svg';
-                const width = 800;
-                const height = 600;
-                
-                if (Module && Module.ccall && Module.FS) {
-                    const result = Module.ccall('takeScreenshot', 'number', ['string', 'number', 'number'], 
-                                               [filename, width, height]);
-                    
-                    if (result === 1) {
-                        // Read the generated SVG file
-                        try {
-                            const svgData = Module.FS.readFile(filename, { encoding: 'utf8' });
-                            
-                            // Display the SVG in the viewer
-                            document.getElementById('svgViewer').innerHTML = svgData;
-                            
-                            // Save for download
-                            screenshotData = new Blob([svgData], { type: 'image/svg+xml' });
-                            document.getElementById('downloadImageBtn').disabled = false;
-                            showMessage('Screenshot captured successfully!', 'success');
-                        } catch (e) {
-                            console.error('Error reading SVG file:', e);
-                            showMessage('Screenshot saved but could not display', 'error');
-                        }
-                    } else {
-                        showMessage('Failed to take screenshot', 'error');
-                    }
-                } else {
-                    // Demo mode - create a simple SVG
-                    await new Promise(resolve => setTimeout(resolve, 800));
-                    
-                    const demoSvg = `
-                        <svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
-                            <rect width="800" height="600" fill="#f0f0f0"/>
-                            <text x="400" y="50" text-anchor="middle" font-family="Arial" font-size="24" font-weight="bold">STEP File Visualization (Demo)</text>
-                            <rect x="200" y="150" width="400" height="300" fill="none" stroke="#667eea" stroke-width="3"/>
-                            <line x1="400" y1="300" x2="480" y2="300" stroke="red" stroke-width="4"/>
-                            <text x="485" y="305" fill="red" font-family="Arial" font-size="16">X</text>
-                            <line x1="400" y1="300" x2="400" y2="220" stroke="green" stroke-width="4"/>
-                            <text x="405" y="215" fill="green" font-family="Arial" font-size="16">Y</text>
-                            <circle cx="400" cy="300" r="6" fill="blue"/>
-                            <text x="410" y="290" fill="blue" font-family="Arial" font-size="16">Z</text>
-                            <text x="50" y="550" font-family="Arial" font-size="14">Demo Mode - File: ${currentFile ? currentFile.name : 'demo.step'}</text>
-                        </svg>
-                    `;
-                    
-                    document.getElementById('svgViewer').innerHTML = demoSvg;
-                    screenshotData = new Blob([demoSvg], { type: 'image/svg+xml' });
-                    document.getElementById('downloadImageBtn').disabled = false;
-                    showMessage('Screenshot captured! (Demo mode)', 'success');
-                }
-                
-            } catch (error) {
-                console.error('Error taking screenshot:', error);
-                showMessage('Failed to take screenshot: ' + error.message, 'error');
-            } finally {
-                showLoading(false);
-            }
-        }
-
-        async function saveSTEPCopy() {
-            if (!isModuleReady) {
-                showMessage('Module not ready', 'error');
-                return;
-            }
-
-            showLoading(true);
-            
-            try {
-                const filename = '/tmp/copy.step';
-                
-                if (Module && Module.ccall && Module.FS) {
-                    const result = Module.ccall('saveSTEPCopy', 'number', ['string'], [filename]);
-                    
-                    if (result === 1) {
-                        try {
-                            const stepData = Module.FS.readFile(filename);
-                            stepCopyData = new Blob([stepData], { type: 'application/step' });
-                            document.getElementById('downloadSTEPBtn').disabled = false;
-                            showMessage('STEP copy saved successfully!', 'success');
-                        } catch (e) {
-                            console.error('Error reading STEP file:', e);
-                            showMessage('STEP copy saved but could not read file for download', 'error');
-                        }
-                    } else {
-                        showMessage('Failed to save STEP copy', 'error');
-                    }
-                } else {
-                    // Demo mode
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    const demoStep = `ISO-10303-21;
-HEADER;
-/* Demo STEP file with UCS information */
-/* Original file: ${currentFile ? currentFile.name : 'demo.step'} */
-/* UCS Origin: (0.000, 0.000, 0.000) */
-ENDSEC;
-DATA;
-/* Demo geometry data would go here */
-ENDSEC;
-END-ISO-10303-21;`;
-                    stepCopyData = new Blob([demoStep], { type: 'application/step' });
-                    document.getElementById('downloadSTEPBtn').disabled = false;
-                    showMessage('STEP copy saved! (Demo mode)', 'success');
-                }
-                
-            } catch (error) {
-                console.error('Error saving STEP copy:', error);
-                showMessage('Failed to save STEP copy: ' + error.message, 'error');
-            } finally {
-                showLoading(false);
-            }
-        }
-
-        // Download functions
-        function downloadImage() {
-            if (!screenshotData) {
-                showMessage('No screenshot available', 'error');
-                return;
-            }
-            
-            const url = URL.createObjectURL(screenshotData);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = (currentFile ? currentFile.name.replace(/\.(step|stp)$/i, '') : 'screenshot') + '.svg';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            
-            showMessage('Screenshot downloaded!', 'success');
-        }
-
-        function downloadSTEP() {
-            if (!stepCopyData) {
-                showMessage('No STEP copy available', 'error');
-                return;
-            }
-            
+    function downloadSTEP() {
+        if (stepCopyData) {
             const url = URL.createObjectURL(stepCopyData);
             const a = document.createElement('a');
             a.href = url;
-            a.download = (currentFile ? currentFile.name.replace(/\.(step|stp)$/i, '') : 'model') + '_copy.step';
-            document.body.appendChild(a);
+            a.download = 'step_file_copy.step';
             a.click();
-            document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            
-            showMessage('STEP file downloaded!', 'success');
-        }
-
-// Find around line 742 and replace this section:
-
-        // Utility function to read file as ArrayBuffer
-        function readFileAsArrayBuffer(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = () => reject(reader.error);
-                reader.readAsArrayBuffer(file);
-            });
-        }
-
-// Replace the testMeshData function with this version:
-
-        function testMeshData() {
-            if (!Module || !isModuleReady) {
-                console.log('Module not ready');
-                return;
-            }
-            
-            // First, let's see what functions are actually exported
-            console.log('=== Checking all Module exports ===');
-            const exportedFunctions = Object.keys(Module).filter(key => typeof Module[key] === 'function');
-            console.log('All exported functions:', exportedFunctions);
-            
-            // Look for underscore-prefixed functions
-            const underscoreFunctions = exportedFunctions.filter(f => f.startsWith('_'));
-            console.log('Functions with underscore:', underscoreFunctions);
-            
-            // Check if our specific functions exist
-            console.log('\n=== Checking specific functions ===');
-            console.log('Module._getVertexCount exists:', typeof Module._getVertexCount);
-            console.log('Module._getIndexCount exists:', typeof Module._getIndexCount);
-            console.log('Module._getNormalCount exists:', typeof Module._getNormalCount);
-            console.log('Module._getVertices exists:', typeof Module._getVertices);
-            console.log('Module._getNormals exists:', typeof Module._getNormals);
-            console.log('Module._getIndices exists:', typeof Module._getIndices);
-            
-            // Try direct function calls
-            if (Module._getVertexCount) {
-                console.log('\n=== Direct function calls ===');
-                try {
-                    const vertexCount = Module._getVertexCount();
-                    const indexCount = Module._getIndexCount();
-                    const normalCount = Module._getNormalCount();
-                    
-                    console.log(`Mesh Data:
-                    - Vertex count: ${vertexCount}
-                    - Index count: ${indexCount}
-                    - Normal count: ${normalCount}
-                    - Triangle count: ${indexCount / 3}
-                    - Vertex coordinates: ${vertexCount / 3}`);
-                    
-                    if (vertexCount > 0) {
-                        // Get the actual mesh data
-                        const vertexPtr = Module._getVertices();
-                        const indexPtr = Module._getIndices();
-                        const normalPtr = Module._getNormals();
-                        
-                        console.log('Pointers:', { vertexPtr, indexPtr, normalPtr });
-                        
-                        if (vertexPtr && indexPtr) {
-                            // Read first few values
-                            const vertices = new Float32Array(Module.HEAPF32.buffer, vertexPtr, Math.min(9, vertexCount));
-                            const indices = new Uint32Array(Module.HEAPU32.buffer, indexPtr, Math.min(9, indexCount));
-                            const normals = new Float32Array(Module.HEAPF32.buffer, normalPtr, Math.min(9, normalCount));
-                            
-                            console.log('First few vertices:', Array.from(vertices));
-                            console.log('First few indices:', Array.from(indices));
-                            console.log('First few normals:', Array.from(normals));
-                            console.log('✓ Mesh extraction working!');
-                            showMessage('✓ Mesh extraction working! Check console for details.', 'success');
-                            return true;
-                        }
-                    } else {
-                        console.log('No mesh data found - make sure a STEP file is loaded first');
-                        showMessage('No mesh data found. Load a STEP file first.', 'error');
-                    }
-                } catch (e) {
-                    console.error('Error calling functions:', e);
-                }
-            } else {
-                console.log('Functions not found as Module properties');
-                console.log('\nAvailable Module properties:', Object.keys(Module).sort());
-            }
-        }
-    // Enhanced debug function to check mesh data
-    function debugMeshData() {
-        if (!Module || !isModuleReady) {
-            console.error('Module not ready');
-            return;
-        }
-        
-        console.log('=== Debugging Mesh Data ===');
-        
-        try {
-            const vertexCount = Module._getVertexCount();
-            const indexCount = Module._getIndexCount();
-            const normalCount = Module._getNormalCount();
-            
-            console.log('Counts:', { 
-                vertexCount, 
-                indexCount, 
-                normalCount,
-                vertices: vertexCount/3,
-                triangles: indexCount/3
-            });
-            
-            // Check if this is a box (8 unique vertices, 12 triangles)
-            if (vertexCount/3 <= 8 && indexCount/3 === 12) {
-                console.warn('⚠️ This looks like a bounding box, not the actual model!');
-            }
-            
-            if (vertexCount > 0) {
-                const vertexPtr = Module._getVertices();
-                const indexPtr = Module._getIndices();
-                const normalPtr = Module._getNormals();
-                
-                // Read all vertices to analyze
-                const vertices = new Float32Array(Module.HEAPF32.buffer, vertexPtr, vertexCount);
-                const indices = new Uint32Array(Module.HEAPU32.buffer, indexPtr, indexCount);
-                
-                // Analyze vertex positions
-                let minX = Infinity, minY = Infinity, minZ = Infinity;
-                let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
-                
-                for (let i = 0; i < vertexCount; i += 3) {
-                    minX = Math.min(minX, vertices[i]);
-                    maxX = Math.max(maxX, vertices[i]);
-                    minY = Math.min(minY, vertices[i + 1]);
-                    maxY = Math.max(maxY, vertices[i + 1]);
-                    minZ = Math.min(minZ, vertices[i + 2]);
-                    maxZ = Math.max(maxZ, vertices[i + 2]);
-                }
-                
-                console.log('Vertex bounds:', {
-                    x: [minX, maxX],
-                    y: [minY, maxY],
-                    z: [minZ, maxZ],
-                    size: {
-                        x: maxX - minX,
-                        y: maxY - minY,
-                        z: maxZ - minZ
-                    }
-                });
-                
-                // Count unique vertices
-                const uniqueVertices = new Set();
-                for (let i = 0; i < vertexCount; i += 3) {
-                    const key = `${vertices[i].toFixed(3)},${vertices[i+1].toFixed(3)},${vertices[i+2].toFixed(3)}`;
-                    uniqueVertices.add(key);
-                }
-                console.log('Unique vertex positions:', uniqueVertices.size);
-                
-                // If it's a box, show the vertices
-                if (uniqueVertices.size === 8) {
-                    console.log('Box vertices:', Array.from(uniqueVertices));
-                }
-                
-                // Check what other functions might be available
-                console.log('\n=== Checking for other mesh extraction functions ===');
-                const meshFunctions = Object.keys(Module).filter(key => 
-                    key.includes('mesh') || key.includes('Mesh') || 
-                    key.includes('face') || key.includes('Face') ||
-                    key.includes('triangle') || key.includes('Triangle') ||
-                    key.includes('geometry') || key.includes('Geometry')
-                );
-                console.log('Mesh-related functions:', meshFunctions);
-            }
-        } catch (e) {
-            console.error('Error in debugMeshData:', e);
         }
     }
 
+    function handleFileSelect(event) {
+        const file = event.target.files[0];
+        if (file && isValidSTEPFile(file)) {
+            currentFile = file;
+            document.getElementById('loadBtn').disabled = false;
+            showMessage(`File selected: ${file.name}`, 'success');
+            resetUI();
+        }
+    }
+
+    function isValidSTEPFile(file) {
+        const validExtensions = ['.step', '.stp'];
+        const fileName = file.name.toLowerCase();
+        const isValid = validExtensions.some(ext => fileName.endsWith(ext));
+        
+        if (!isValid) {
+            showMessage('Please select a valid STEP file (.step or .stp)', 'error');
+        }
+        
+        return isValid;
+    }
+
+    function resetUI() {
+        // Reset buttons
+        document.getElementById('createUCSBtn').disabled = true;
+        document.getElementById('screenshotBtn').disabled = true;
+        document.getElementById('saveBtn').disabled = true;
+        document.getElementById('downloadImageBtn').disabled = true;
+        document.getElementById('downloadSTEPBtn').disabled = true;
+        document.getElementById('measureBtn').disabled = true;
+        document.getElementById('wireframeBtn').disabled = true;
+        document.querySelector('button[onclick="resetView()"]').disabled = true;
+        document.getElementById('exportGLTFBtn').disabled = true;
+        document.getElementById('exportTransformedBtn').disabled = true;
+        
+        // Clear data
+        screenshotData = null;
+        stepCopyData = null;
+        
+        // Hide info panel
+        document.getElementById('infoPanel').style.display = 'none';
+        
+        // Clear 3D scene
+        if (meshObject) {
+            scene.remove(meshObject);
+            meshObject.geometry.dispose();
+            meshObject.material.dispose();
+            meshObject = null;
+        }
+        
+        // Clear measurements
+        measurementLines.forEach(line => scene.remove(line));
+        measurementMarkers.forEach(marker => scene.remove(marker));
+        measurementLines = [];
+        measurementMarkers = [];
+        measurementPoints = [];
+    }
+
+    function enableViewerButtons() {
+        document.getElementById('createUCSBtn').disabled = false;
+        document.getElementById('screenshotBtn').disabled = false;
+        document.getElementById('saveBtn').disabled = false;
+        document.getElementById('measureBtn').disabled = false;
+        document.getElementById('wireframeBtn').disabled = false;
+        document.querySelector('button[onclick="resetView()"]').disabled = false;
+        document.getElementById('exportGLTFBtn').disabled = false;
+        document.getElementById('exportTransformedBtn').disabled = false;
+    }
+
+    function showMessage(message, type = 'info') {
+        const messagesDiv = document.getElementById('messages');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${type}`;
+        messageDiv.textContent = message;
+        messagesDiv.appendChild(messageDiv);
+        
+        // Remove message after 5 seconds
+        setTimeout(() => {
+            if (messageDiv.parentNode) {
+                messageDiv.parentNode.removeChild(messageDiv);
+            }
+        }, 5000);
+    }
+
+    function showLoading(show) {
+        document.getElementById('loading').style.display = show ? 'block' : 'none';
+    }
+
+    function showFileInfo() {
+        const infoPanel = document.getElementById('infoPanel');
+        const fileInfo = document.getElementById('fileInfo');
+        
+        fileInfo.innerHTML = `
+            <div class="info-item">
+                <strong>Filename:</strong> ${currentFile.name}
+            </div>
+            <div class="info-item">
+                <strong>File Size:</strong> ${(currentFile.size / 1024).toFixed(2)} KB
+            </div>
+            <div class="info-item">
+                <strong>Last Modified:</strong> ${new Date(currentFile.lastModified).toLocaleString()}
+            </div>
+        `;
+        
+        infoPanel.style.display = 'block';
+    }
+
+    function showUCSInfo() {
+        const ucsInfo = document.getElementById('ucsInfo');
+        
+        if (Module && isModuleReady) {
+            try {
+                const ucsInfoStr = Module.ccall('getUCSInfo', 'string', [], []);
+                const bboxInfoStr = Module.ccall('getBoundingBoxInfo', 'string', [], []);
+                
+                ucsInfo.innerHTML = `
+                    <div class="info-item">
+                        <strong>UCS:</strong> ${ucsInfoStr}
+                    </div>
+                    <div class="info-item">
+                        <strong>Bounding Box:</strong> ${bboxInfoStr}
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error getting UCS info:', error);
+                ucsInfo.innerHTML = `
+                    <div class="info-item">
+                        <strong>UCS:</strong> Created successfully
+                    </div>
+                `;
+            }
+        }
+    }
     </script>
 </body>
 </html>

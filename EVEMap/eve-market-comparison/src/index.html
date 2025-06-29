@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EVE Market Comparison Tool</title>
+    <link rel="stylesheet" href="css/market-comparison.css">
+    <script src="js/eve-auth.js" defer></script>
+    <script src="js/eve-market-api.js" defer></script>
+    <script src="js/market-comparison.js" defer></script>
+    <script src="js/market-ui.js" defer></script>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>EVE Market Comparison Tool</h1>
+            <button id="loginBtn">Login with EVE Online</button>
+        </header>
+        <main>
+            <section id="marketComparison">
+                <h2>Compare Markets</h2>
+                <div class="input-group">
+                    <input type="text" id="publicMarketInput" placeholder="Public Market ID (e.g., 10000002 for The Forge)">
+                    <input type="text" id="privateMarketInput" placeholder="Private Structure ID (e.g., 1035466617946)">
+                    <button id="compareBtn">Compare</button>
+                </div>
+                <div id="comparisonResults">
+                    <!-- Comparison results will be displayed here -->
+                </div>
+            </section>
+        </main>
+        <footer>
+            <p>&copy; 2023 EVE Market Comparison Tool</p>
+        </footer>
+    </div>
+    <script>
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', () => {
+            // Add event listeners and initialize UI components
+            const loginBtn = document.getElementById('loginBtn');
+            const compareBtn = document.getElementById('compareBtn');
+
+            loginBtn.addEventListener('click', () => {
+                // Trigger login process
+                authenticateUser();
+            });
+
+            compareBtn.addEventListener('click', () => {
+                // Fetch and compare market data
+                const publicMarketId = document.getElementById('publicMarketInput').value;
+                const privateMarketId = document.getElementById('privateMarketInput').value;
+                compareMarkets(publicMarketId, privateMarketId);
+            });
+        });
+        
+        async function exchangeCodeForToken(code) {
+            try {
+                const response = await fetch('/api/token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ code })
+                });
+        
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    console.error('Token exchange failed:', data);
+                    throw new Error(data.error_description || data.error || 'Failed to exchange code for token');
+                }
+        
+                return data.access_token;
+            } catch (error) {
+                console.error('Network or parsing error:', error);
+                throw error;
+            }
+        }
+        
+
+    </script>
+</body>
+</html>

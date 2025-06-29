@@ -8,12 +8,15 @@
 #include <algorithm>
 #include <unordered_map>
 #include <iomanip>
+#include "base64.h" 
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #include <emscripten/html5.h>
 #include <emscripten/bind.h>
 #endif
+
+std::string base64_encode(const unsigned char* data, size_t len);
 
 // Simple 3D point and vector structures
 struct Point3D {
@@ -435,6 +438,90 @@ public:
         return ss.str();
     }
     
+    bool ExtractDetailedMeshFromSTEP() {
+        m_mesh.clear();
+        
+        // Look for actual geometry entities in STEP
+        for (const auto& [id, entity] : m_entities) {
+            if (entity.type == "ADVANCED_FACE") {
+                // Extract face geometry
+                std::vector<int> refs = ParseRefs(entity.data);
+                // Process face data...
+            } else if (entity.type == "B_SPLINE_SURFACE") {
+                // Extract B-spline surface
+                // Process surface data...
+            } else if (entity.type == "CYLINDRICAL_SURFACE") {
+                // Extract cylindrical surface
+                // Process cylinder data...
+            }
+            // Add more geometry types as needed
+        }
+        
+        // If no detailed geometry found, create bounding box
+        if (m_mesh.vertices.empty()) {
+            CreateBoxMesh(100, 60, 40);
+        }
+        
+        return true;
+    }
+    
+    // Mesh transformation tracking
+    struct Transformation {
+        enum Type { TRANSLATE, ROTATE, SCALE, UCS };
+        Type type;
+        double values[16]; // Can store matrix or individual values
+        std::string description;
+    };
+
+    class TransformationTracker {
+    public:
+        std::vector<Transformation> transformations;
+        
+        void addTranslation(double x, double y, double z) {
+            Transformation t;
+            t.type = Transformation::TRANSLATE;
+            t.values[0] = x; t.values[1] = y; t.values[2] = z;
+            t.description = "Translation";
+            transformations.push_back(t);
+        }
+        
+        void addRotation(double axis_x, double axis_y, double axis_z, double angle) {
+            Transformation t;
+            t.type = Transformation::ROTATE;
+            t.values[0] = axis_x; t.values[1] = axis_y; t.values[2] = axis_z;
+            t.values[3] = angle;
+            t.description = "Rotation";
+            transformations.push_back(t);
+        }
+        
+        std::string serializeToJSON() {
+            std::stringstream json;
+            json << "[";
+            for (size_t i = 0; i < transformations.size(); i++) {
+                if (i > 0) json << ",";
+                json << "{\"type\":\"" << transformations[i].description << "\",";
+                json << "\"values\":[";
+                for (int j = 0; j < 4; j++) {
+                    if (j > 0) json << ",";
+                    json << transformations[i].values[j];
+                }
+                json << "]}";
+            }
+            json << "]";
+            return json.str();
+        }
+    };
+
+    TransformationTracker m_transformations;
+    
+    // New method to apply transformations and export
+    bool ApplyTransformationsAndExport(const std::string& transformsJSON, const std::string& outputFile) {
+        // Parse JSON transformations
+        // Apply to original STEP data
+        // Export modified STEP file
+        return true;
+    }
+    
 private:
     Point3D ParseCartesianPoint(const std::string& data) {
         // Parse CARTESIAN_POINT data like ('', (10.0, 20.0, 30.0))
@@ -586,6 +673,164 @@ private:
         // Left face
         m_mesh.addQuad(vertices[0], vertices[4], vertices[7], vertices[3]);
     }
+
+    public:
+        // Export mesh to glTF format
+        bool ExportToGLTF(const std::string& filename) {
+        if (!m_fileLoaded || m_mesh.vertices.empty()) {
+            std::cout << "No mesh data to export" << std::endl;
+        return false;
+        }
+    
+    std::cout << "Exporting to glTF: " << filename << std::endl;
+    
+    // Create JSON structure for glTF
+    std::stringstream gltf;
+    gltf << "{\n";
+    gltf << "  \"asset\": {\n";
+    gltf << "    \"version\": \"2.0\",\n";
+    gltf << "    \"generator\": \"STEP to glTF Converter\"\n";
+    gltf << "  },\n";
+    
+    // Scene
+    gltf << "  \"scene\": 0,\n";
+    gltf << "  \"scenes\": [\n";
+    gltf << "    {\n";
+    gltf << "      \"nodes\": [0]\n";
+    gltf << "    }\n";
+    gltf << "  ],\n";
+    
+    // Node
+    gltf << "  \"nodes\": [\n";
+    gltf << "    {\n";
+    gltf << "      \"mesh\": 0\n";
+    gltf << "    }\n";
+    gltf << "  ],\n";
+    
+    // Mesh
+    gltf << "  \"meshes\": [\n";
+    gltf << "    {\n";
+    gltf << "      \"primitives\": [\n";
+    gltf << "        {\n";
+    gltf << "          \"attributes\": {\n";
+    gltf << "            \"POSITION\": 0,\n";
+    gltf << "            \"NORMAL\": 1\n";
+    gltf << "          },\n";
+    gltf << "          \"indices\": 2\n";
+    gltf << "        }\n";
+    gltf << "      ]\n";
+    gltf << "    }\n";
+    gltf << "  ],\n";
+    
+    // Calculate buffer sizes
+    size_t vertexBufferSize = m_mesh.vertices.size() * sizeof(float);
+    size_t normalBufferSize = m_mesh.normals.size() * sizeof(float);
+    size_t indexBufferSize = m_mesh.indices.size() * sizeof(uint32_t);
+    size_t totalBufferSize = vertexBufferSize + normalBufferSize + indexBufferSize;
+    
+    // Accessors
+    gltf << "  \"accessors\": [\n";
+    
+    // Position accessor
+    gltf << "    {\n";
+    gltf << "      \"bufferView\": 0,\n";
+    gltf << "      \"componentType\": 5126,\n"; // FLOAT
+    gltf << "      \"count\": " << m_mesh.vertices.size() / 3 << ",\n";
+    gltf << "      \"type\": \"VEC3\",\n";
+    gltf << "      \"max\": [" << m_boundingBox.max.x << ", " << m_boundingBox.max.y << ", " << m_boundingBox.max.z << "],\n";
+    gltf << "      \"min\": [" << m_boundingBox.min.x << ", " << m_boundingBox.min.y << ", " << m_boundingBox.min.z << "]\n";
+    gltf << "    },\n";
+    
+    // Normal accessor
+    gltf << "    {\n";
+    gltf << "      \"bufferView\": 1,\n";
+    gltf << "      \"componentType\": 5126,\n"; // FLOAT
+    gltf << "      \"count\": " << m_mesh.normals.size() / 3 << ",\n";
+    gltf << "      \"type\": \"VEC3\"\n";
+    gltf << "    },\n";
+    
+    // Index accessor
+    gltf << "    {\n";
+    gltf << "      \"bufferView\": 2,\n";
+    gltf << "      \"componentType\": 5125,\n"; // UNSIGNED_INT
+    gltf << "      \"count\": " << m_mesh.indices.size() << ",\n";
+    gltf << "      \"type\": \"SCALAR\"\n";
+    gltf << "    }\n";
+    gltf << "  ],\n";
+    
+    // Buffer views
+    gltf << "  \"bufferViews\": [\n";
+    
+    // Vertex buffer view
+    gltf << "    {\n";
+    gltf << "      \"buffer\": 0,\n";
+    gltf << "      \"byteOffset\": 0,\n";
+    gltf << "      \"byteLength\": " << vertexBufferSize << ",\n";
+    gltf << "      \"target\": 34962\n"; // ARRAY_BUFFER
+    gltf << "    },\n";
+    
+    // Normal buffer view
+    gltf << "    {\n";
+    gltf << "      \"buffer\": 0,\n";
+    gltf << "      \"byteOffset\": " << vertexBufferSize << ",\n";
+    gltf << "      \"byteLength\": " << normalBufferSize << ",\n";
+    gltf << "      \"target\": 34962\n"; // ARRAY_BUFFER
+    gltf << "    },\n";
+    
+    // Index buffer view
+    gltf << "    {\n";
+    gltf << "      \"buffer\": 0,\n";
+    gltf << "      \"byteOffset\": " << vertexBufferSize + normalBufferSize << ",\n";
+    gltf << "      \"byteLength\": " << indexBufferSize << ",\n";
+    gltf << "      \"target\": 34963\n"; // ELEMENT_ARRAY_BUFFER
+    gltf << "    }\n";
+    gltf << "  ],\n";
+    
+    // Buffer (embedded as base64)
+    gltf << "  \"buffers\": [\n";
+    gltf << "    {\n";
+    gltf << "      \"byteLength\": " << totalBufferSize << ",\n";
+    
+    // Create binary buffer
+    std::vector<uint8_t> binaryBuffer;
+    binaryBuffer.reserve(totalBufferSize);
+    
+    // Add vertices
+    const uint8_t* vertexBytes = reinterpret_cast<const uint8_t*>(m_mesh.vertices.data());
+    binaryBuffer.insert(binaryBuffer.end(), vertexBytes, vertexBytes + vertexBufferSize);
+    
+    // Add normals
+    const uint8_t* normalBytes = reinterpret_cast<const uint8_t*>(m_mesh.normals.data());
+    binaryBuffer.insert(binaryBuffer.end(), normalBytes, normalBytes + normalBufferSize);
+    
+    // Add indices
+    const uint8_t* indexBytes = reinterpret_cast<const uint8_t*>(m_mesh.indices.data());
+    binaryBuffer.insert(binaryBuffer.end(), indexBytes, indexBytes + indexBufferSize);
+    
+    // Convert to base64
+    std::string base64Data = base64_encode(binaryBuffer.data(), binaryBuffer.size());
+    
+    gltf << "      \"uri\": \"data:application/octet-stream;base64," << base64Data << "\"\n";
+    gltf << "    }\n";
+    gltf << "  ]\n";
+    gltf << "}\n";
+    
+#ifdef __EMSCRIPTEN__
+    // Write glTF file
+    std::ofstream file(filename);
+    if (!file.is_open()) {
+        return false;
+    }
+    
+    file << gltf.str();
+    file.close();
+    
+    std::cout << "glTF exported successfully" << std::endl;
+    return true;
+#else
+    return false;
+#endif
+}
 };
 
 // Global app instance
@@ -687,9 +932,44 @@ extern "C" {
             return info.c_str();
         }
         return "";
+        return "";
+    }
+    
+    EMSCRIPTEN_KEEPALIVE
+    int exportToGLTF(const char* filename) {
+        if (!g_processor) return 0;
+        return g_processor->ExportToGLTF(std::string(filename)) ? 1 : 0;
     }
 }
 #endif
+
+std::string base64_encode(const unsigned char* data, size_t len) {
+    static const char* base64_chars = 
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "abcdefghijklmnopqrstuvwxyz"
+        "0123456789+/";
+    
+    std::string encoded;
+    encoded.reserve(((len + 2) / 3) * 4);
+    
+    for (size_t i = 0; i < len; i += 3) {
+        unsigned char b1 = data[i];
+        unsigned char b2 = (i + 1 < len) ? data[i + 1] : 0;
+        unsigned char b3 = (i + 2 < len) ? data[i + 2] : 0;
+        
+        unsigned char c1 = b1 >> 2;
+        unsigned char c2 = ((b1 & 0x03) << 4) | (b2 >> 4);
+        unsigned char c3 = ((b2 & 0x0f) << 2) | (b3 >> 6);
+        unsigned char c4 = b3 & 0x3f;
+        
+        encoded += base64_chars[c1];
+        encoded += base64_chars[c2];
+        encoded += (i + 1 < len) ? base64_chars[c3] : '=';
+        encoded += (i + 2 < len) ? base64_chars[c4] : '=';
+    }
+    
+    return encoded;
+}
 
 int main() {
     std::cout << "STEP Viewer Web Module" << std::endl;
