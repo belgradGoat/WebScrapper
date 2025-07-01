@@ -445,22 +445,22 @@
             'M5': {
                 name: 'Heidenhain 640 M5',
                 type: 'Machining Center',
-                tools: generateToolRange(1, 200), // Tools available in database
+                tools: generateToolRange(1, 10000), // Full range of tools 1-10000
                 maxSlots: 130, // Physical tool slots in machine
                 location: 'Shop Floor A',
                 ipAddress: '10.164.181.22', // IP address for machine connection
                 tncFolder: 'M5-C42-HERM-UR\\Seb', // TNC folder path
-                notes: 'Sample machine - edit to match your setup'
+                notes: 'Sample machine - supports all tools 1-10000'
             },
             'M3': {
                 name: 'Heidenhain 640 M3',
                 type: 'Machining Center',
-                tools: generateToolRange(1, 150),
+                tools: generateToolRange(1, 10000), // Full range of tools 1-10000
                 maxSlots: 100,
                 location: 'Shop Floor B',
                 ipAddress: '10.164.181.23',
                 tncFolder: 'M3-C42-HERM-UR\\Seb',
-                notes: 'Sample machine - edit to match your setup'
+                notes: 'Sample machine - supports all tools 1-10000'
             }
         };
 
@@ -1062,22 +1062,22 @@
                     'M5': {
                         name: 'Heidenhain 640 M5',
                         type: 'Machining Center',
-                        tools: generateToolRange(1, 200),
+                        tools: generateToolRange(1, 10000), // Full range 1-10000
                         maxSlots: 130,
                         location: 'Shop Floor A',
                         ipAddress: '10.164.181.22',
                         tncFolder: 'M5-C42-HERM-UR\\Seb',
-                        notes: 'Sample machine - edit to match your setup'
+                        notes: 'Sample machine - supports all tools 1-10000'
                     },
                     'M3': {
                         name: 'Heidenhain 640 M3',
                         type: 'Machining Center',
-                        tools: generateToolRange(1, 150),
+                        tools: generateToolRange(1, 10000), // Full range 1-10000
                         maxSlots: 100,
                         location: 'Shop Floor B',
                         ipAddress: '10.164.181.23',
                         tncFolder: 'M3-C42-HERM-UR\\Seb',
-                        notes: 'Sample machine - edit to match your setup'
+                        notes: 'Sample machine - supports all tools 1-10000'
                     }
                 };
                 saveMachineDatabase();
