@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NC Tool Analyzer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            padding: 25px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+
+        .section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        .file-upload {
+            border: 3px dashed #3498db;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            background: white;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .file-upload:hover {
+            border-color: #2980b9;
+            background: #f0f8ff;
+        }
+
+        .file-upload.dragover {
+            border-color: #27ae60;
+            background: #f0fff0;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-text {
+            font-size: 1.2rem;
+            color: #7f8c8d;
+            margin-bottom: 15px;
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: #3498db;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+        }
+
+        .btn-success:hover {
+            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        }
+
+        .btn-warning:hover {
+            box-shadow: 0 5px 15px rgba(243, 156, 18, 0.4);
+        }
+
+        .results {
+            margin-top: 30px;
+        }
+
+        .tool-list {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .tool-item {
+            padding: 8px 15px;
+            margin: 5px 0;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+
+        .tool-available {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+
+        .tool-missing {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+
+        .machine-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-left: 5px solid #3498db;
+        }
+
+        .machine-card.perfect-match {
+            border-left-color: #27ae60;
+        }
+
+        .machine-card.close-match {
+            border-left-color: #f39c12;
+        }
+
+        .machine-card.poor-match {
+            border-left-color: #e74c3c;
+        }
+
+        .match-percentage {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .match-perfect { color: #27ae60; }
+        .match-good { color: #f39c12; }
+        .match-poor { color: #e74c3c; }
+
+        .missing-tools {
+            margin-top: 15px;
+            padding: 15px;
+            background: #fff3cd;
+            border-radius: 5px;
+            border: 1px solid #ffeaa7;
+        }
+
+        .stock-dimensions {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #2196f3;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border: 1px solid #f5c6cb;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border: 1px solid #c3e6cb;
+        }
+
+        .machine-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .machine-chip {
+            background: #e9ecef;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .machine-chip:hover {
+            background: #dee2e6;
+        }
+
+        .machine-chip.selected {
+            background: #3498db;
+            color: white;
+            border-color: #2980b9;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e0e0e0;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 15px 25px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .tab.active {
+            border-bottom-color: #3498db;
+            color: #3498db;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 NC Tool Analyzer</h1>
+            <p>Upload NC files to analyze tool requirements and find matching machines</p>
+        </div>
+
+        <div class="main-content">
+            <!-- File Upload Section -->
+            <div class="section">
+                <h2>📁 Upload NC File</h2>
+                <div class="file-upload" id="fileUpload">
+                    <div class="upload-icon">📄</div>
+                    <div class="upload-text">
+                        <strong>Click to upload</strong> or drag and drop your NC file here
+                    </div>
+                    <div>Supported formats: .nc, .txt, .cnc, .prg</div>
+                    <input type="file" class="file-input" id="fileInput" accept=".nc,.txt,.cnc,.prg">
+                </div>
+                <button class="btn" onclick="processFile()">🔍 Analyze Tools</button>
+            </div>
+
+            <!-- Loading Animation -->
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Analyzing NC file and comparing with machine databases...</p>
+            </div>
+
+            <!-- Results Section -->
+            <div class="results" id="results" style="display: none;">
+                <!-- Tabs for different views -->
+                <div class="tabs">
+                    <div class="tab active" onclick="switchTab('overview')">📊 Overview</div>
+                    <div class="tab" onclick="switchTab('machines')">🏭 Machine Matches</div>
+                    <div class="tab" onclick="switchTab('tools')">🔧 Tool Details</div>
+                </div>
+
+                <!-- Overview Tab -->
+                <div class="tab-content active" id="overview-tab">
+                    <div class="section">
+                        <h2>📊 Analysis Overview</h2>
+                        <div id="fileInfo"></div>
+                        <div id="stockDimensions"></div>
+                        <div id="toolSummary"></div>
+                    </div>
+                </div>
+
+                <!-- Machine Matches Tab -->
+                <div class="tab-content" id="machines-tab">
+                    <div class="section">
+                        <h2>🏭 Machine Compatibility</h2>
+                        <div id="machineResults"></div>
+                    </div>
+                </div>
+
+                <!-- Tool Details Tab -->
+                <div class="tab-content" id="tools-tab">
+                    <div class="section">
+                        <h2>🔧 Required Tools</h2>
+                        <div id="toolDetails"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Machine database with available tools
+        const machineDatabase = {
+            'M5': {
+                name: 'Heidenhain 640 M5',
+                type: 'Machining Center',
+                tools: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25, 30, 35, 40],
+                maxTools: 40,
+                location: 'Shop Floor A'
+            },
+            'M3': {
+                name: 'Heidenhain 640 M3',
+                type: 'Machining Center',
+                tools: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30],
+                maxTools: 30,
+                location: 'Shop Floor B'
+            },
+            'M7': {
+                name: 'Haas VF-4',
+                type: 'Vertical Mill',
+                tools: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 21, 22, 23, 24, 25],
+                maxTools: 25,
+                location: 'Shop Floor A'
+            },
+            'L1': {
+                name: 'Mazak Lathe',
+                type: 'Turning Center',
+                tools: [1, 2, 3, 4, 5, 11, 12, 13, 14, 15, 31, 32, 33, 34, 35],
+                maxTools: 15,
+                location: 'Shop Floor C'
+            }
+        };
+
+        let currentFile = null;
+        let analysisResults = null;
+
+        // File upload handling
+        const fileUpload = document.getElementById('fileUpload');
+        const fileInput = document.getElementById('fileInput');
+
+        fileUpload.addEventListener('click', () => fileInput.click());
+        fileUpload.addEventListener('dragover', handleDragOver);
+        fileUpload.addEventListener('drop', handleDrop);
+        fileInput.addEventListener('change', handleFileSelect);
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            fileUpload.classList.add('dragover');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            fileUpload.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(e) {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        }
+
+        function handleFile(file) {
+            currentFile = file;
+            const uploadText = fileUpload.querySelector('.upload-text');
+            uploadText.innerHTML = `<strong>✅ ${file.name}</strong><br>Ready to analyze`;
+        }
+
+        // NC File Analysis Functions
+        function processFile() {
+            if (!currentFile) {
+                alert('Please select an NC file first!');
+                return;
+            }
+
+            showLoading(true);
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                analyzeNCFile(content);
+            };
+            reader.readAsText(currentFile);
+        }
+
+        function analyzeNCFile(content) {
+            const lines = content.split('\n');
+            const toolNumbers = [];
+            const blkFormData = [];
+            const cutterCompInfo = {};
+            const presetValues = [];
+            const fValueErrors = [];
+            
+            let currentToolNumber = null;
+
+            // Process each line
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                const lineNumber = i + 1;
+
+                // Check for TOOL CALL
+                const toolCallMatch = line.match(/TOOL CALL (\d+)/);
+                if (toolCallMatch) {
+                    currentToolNumber = parseInt(toolCallMatch[1]);
+                    if (!toolNumbers.includes(currentToolNumber)) {
+                        toolNumbers.push(currentToolNumber);
+                    }
+                    
+                    // Initialize cutter comp as off
+                    cutterCompInfo[currentToolNumber] = 'Off';
+                    
+                    // Look for RR/RL in subsequent lines until next tool call
+                    for (let j = i + 1; j < lines.length; j++) {
+                        const nextLine = lines[j];
+                        if (nextLine.match(/TOOL CALL (\d+)/)) break;
+                        if (nextLine.includes(' RR') || nextLine.includes(' RL')) {
+                            cutterCompInfo[currentToolNumber] = 'On';
+                            break;
+                        }
+                    }
+                }
+
+                // Check for BLK FORM
+                const blkFormMatch = line.match(/BLK FORM \d+\.?\d* (?:Z )?X([-+]?\d+\.?\d*) Y([-+]?\d+\.?\d*) Z([-+]?\d+\.?\d*)/);
+                if (blkFormMatch) {
+                    blkFormData.push({
+                        x: parseFloat(blkFormMatch[1]),
+                        y: parseFloat(blkFormMatch[2]),
+                        z: parseFloat(blkFormMatch[3])
+                    });
+                }
+
+                // Check for Q339 (preset values)
+                const q339Match = line.match(/Q339=([-+]?\d+\.?\d*)/);
+                if (q339Match) {
+                    presetValues.push(parseFloat(q339Match[1]));
+                }
+
+                // Check F values
+                const fMatches = line.match(/F(\d+(?:\.\d*)?)/g);
+                if (fMatches) {
+                    fMatches.forEach(match => {
+                        const fValue = parseFloat(match.substring(1));
+                        if (fValue > 80000) {
+                            fValueErrors.push({
+                                line: lineNumber,
+                                value: fValue,
+                                text: line.trim()
+                            });
+                        }
+                    });
+                }
+            }
+
+            // Calculate stock dimensions
+            let dimensions = null;
+            if (blkFormData.length >= 2) {
+                const width = Math.abs(blkFormData[1].x - blkFormData[0].x);
+                const height = Math.abs(blkFormData[1].y - blkFormData[0].y);
+                const depth = Math.abs(blkFormData[1].z - blkFormData[0].z);
+                dimensions = { width, height, depth };
+            }
+
+            // Store results
+            analysisResults = {
+                fileName: currentFile.name,
+                toolNumbers: toolNumbers.sort((a, b) => a - b),
+                cutterCompInfo,
+                presetValues,
+                fValueErrors,
+                dimensions,
+                totalTools: toolNumbers.length
+            };
+
+            // Analyze machine compatibility
+            const machineAnalysis = analyzeMachineCompatibility(toolNumbers);
+            analysisResults.machineAnalysis = machineAnalysis;
+
+            showLoading(false);
+            displayResults();
+        }
+
+        function analyzeMachineCompatibility(requiredTools) {
+            const machineAnalysis = [];
+
+            for (const [machineId, machine] of Object.entries(machineDatabase)) {
+                const availableTools = machine.tools;
+                const matchingTools = requiredTools.filter(tool => availableTools.includes(tool));
+                const missingTools = requiredTools.filter(tool => !availableTools.includes(tool));
+                
+                const matchPercentage = (matchingTools.length / requiredTools.length) * 100;
+                
+                let matchLevel = 'poor';
+                if (matchPercentage === 100) matchLevel = 'perfect';
+                else if (matchPercentage >= 80) matchLevel = 'good';
+                
+                machineAnalysis.push({
+                    machineId,
+                    machineName: machine.name,
+                    machineType: machine.type,
+                    location: machine.location,
+                    matchingTools,
+                    missingTools,
+                    matchPercentage: Math.round(matchPercentage),
+                    matchLevel,
+                    totalAvailableTools: availableTools.length,
+                    maxTools: machine.maxTools
+                });
+            }
+
+            // Sort by match percentage (best matches first)
+            return machineAnalysis.sort((a, b) => b.matchPercentage - a.matchPercentage);
+        }
+
+        function displayResults() {
+            const results = document.getElementById('results');
+            results.style.display = 'block';
+
+            // Display file info and overview
+            displayOverview();
+            displayMachineResults();
+            displayToolDetails();
+
+            // Scroll to results
+            results.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function displayOverview() {
+            const fileInfo = document.getElementById('fileInfo');
+            const stockDimensions = document.getElementById('stockDimensions');
+            const toolSummary = document.getElementById('toolSummary');
+
+            // File info
+            fileInfo.innerHTML = `
+                <div class="success-message">
+                    <strong>📄 File:</strong> ${analysisResults.fileName}<br>
+                    <strong>🔧 Tools Required:</strong> ${analysisResults.totalTools}<br>
+                    <strong>⚠️ F-Value Errors:</strong> ${analysisResults.fValueErrors.length}
+                </div>
+            `;
+
+            // Stock dimensions
+            if (analysisResults.dimensions) {
+                const dim = analysisResults.dimensions;
+                stockDimensions.innerHTML = `
+                    <div class="stock-dimensions">
+                        <h3>📏 Stock Dimensions</h3>
+                        <strong>Width:</strong> ${dim.width.toFixed(2)} mm<br>
+                        <strong>Height:</strong> ${dim.height.toFixed(2)} mm<br>
+                        <strong>Depth:</strong> ${dim.depth.toFixed(2)} mm
+                    </div>
+                `;
+            }
+
+            // Tool summary
+            const bestMatch = analysisResults.machineAnalysis[0];
+            toolSummary.innerHTML = `
+                <div class="tool-list">
+                    <h3>🎯 Best Machine Match</h3>
+                    <div class="machine-card ${bestMatch.matchLevel}-match">
+                        <div class="match-percentage match-${bestMatch.matchLevel === 'perfect' ? 'perfect' : bestMatch.matchLevel === 'good' ? 'good' : 'poor'}">
+                            ${bestMatch.matchPercentage}% Match - ${bestMatch.machineName}
+                        </div>
+                        <strong>Type:</strong> ${bestMatch.machineType}<br>
+                        <strong>Location:</strong> ${bestMatch.location}<br>
+                        <strong>Missing Tools:</strong> ${bestMatch.missingTools.length === 0 ? 'None!' : bestMatch.missingTools.join(', ')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function displayMachineResults() {
+            const machineResults = document.getElementById('machineResults');
+            let html = '';
+
+            analysisResults.machineAnalysis.forEach(machine => {
+                const matchClass = machine.matchLevel === 'perfect' ? 'perfect' : 
+                                 machine.matchLevel === 'good' ? 'good' : 'poor';
+                
+                html += `
+                    <div class="machine-card ${machine.matchLevel}-match">
+                        <div class="match-percentage match-${matchClass}">
+                            ${machine.matchPercentage}% Match
+                        </div>
+                        <h3>${machine.machineName} (${machine.machineId})</h3>
+                        <p><strong>Type:</strong> ${machine.machineType}</p>
+                        <p><strong>Location:</strong> ${machine.location}</p>
+                        <p><strong>Available Tools:</strong> ${machine.totalAvailableTools}/${machine.maxTools}</p>
+                        <p><strong>Matching Tools:</strong> ${machine.matchingTools.length}/${analysisResults.totalTools}</p>
+                        
+                        ${machine.missingTools.length > 0 ? `
+                            <div class="missing-tools">
+                                <strong>⚠️ Missing Tools:</strong> T${machine.missingTools.join(', T')}
+                                <br><small>Consider these tools for setup or use alternative machine</small>
+                            </div>
+                        ` : `
+                            <div class="success-message">
+                                ✅ All required tools are available on this machine!
+                            </div>
+                        `}
+                    </div>
+                `;
+            });
+
+            machineResults.innerHTML = html;
+        }
+
+        function displayToolDetails() {
+            const toolDetails = document.getElementById('toolDetails');
+            let html = '<div class="tool-list">';
+
+            analysisResults.toolNumbers.forEach(toolNum => {
+                const isAvailableOnBest = analysisResults.machineAnalysis[0].matchingTools.includes(toolNum);
+                const cutterComp = analysisResults.cutterCompInfo[toolNum] || 'Off';
+                
+                html += `
+                    <div class="tool-item ${isAvailableOnBest ? 'tool-available' : 'tool-missing'}">
+                        T${toolNum} - Cutter Comp: ${cutterComp}
+                        ${!isAvailableOnBest ? ' ⚠️ Missing from best match' : ' ✅'}
+                    </div>
+                `;
+            });
+
+            if (analysisResults.presetValues.length > 0) {
+                html += '<h4>📍 Preset Values:</h4>';
+                analysisResults.presetValues.forEach(preset => {
+                    html += `<div class="tool-item" style="background: #e3f2fd;">Preset: ${preset}</div>`;
+                });
+            }
+
+            if (analysisResults.fValueErrors.length > 0) {
+                html += '<h4>⚠️ F-Value Errors (>80000):</h4>';
+                analysisResults.fValueErrors.forEach(error => {
+                    html += `
+                        <div class="tool-item tool-missing">
+                            Line ${error.line}: F${error.value} - ${error.text}
+                        </div>
+                    `;
+                });
+            }
+
+            html += '</div>';
+            toolDetails.innerHTML = html;
+        }
+
+        function showLoading(show) {
+            const loading = document.getElementById('loading');
+            loading.classList.toggle('show', show);
+        }
+
+        function switchTab(tabName) {
+            // Remove active class from all tabs and content
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // Add active class to clicked tab and corresponding content
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.add('active');
+        }
+
+        // Drag and drop styling
+        document.addEventListener('dragenter', e => e.preventDefault());
+        document.addEventListener('dragover', e => e.preventDefault());
+        document.addEventListener('dragleave', e => {
+            if (e.target === fileUpload) {
+                fileUpload.classList.remove('dragover');
+            }
+        });
+    </script>
+</body>
+</html>

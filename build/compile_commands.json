@@ -1,0 +1,8 @@
+[
+{
+  "directory": "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/build",
+  "command": "/usr/bin/clang++  -F/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks -isystem /opt/homebrew/include/opencascade -g -std=gnu++17 -arch arm64 -Wall -Wextra -o CMakeFiles/step_viewer.dir/src/main.cpp.o -c /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/STEPViewer/src/main.cpp",
+  "file": "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/STEPViewer/src/main.cpp",
+  "output": "CMakeFiles/step_viewer.dir/src/main.cpp.o"
+}
+]

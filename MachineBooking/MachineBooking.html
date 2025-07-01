@@ -118,46 +118,90 @@
 
             // Jobs are the parent containers
             const [jobs, setJobs] = useState([
-                { 
+                {
                     id: 'job-1',
-                    name: 'Part A-123',
-                    totalParts: 3,
-                    cycleTime: 1.8,
+                    name: 'Housing A-123',
+                    totalParts: 5,
+                    cycleTime: 45,
                     color: '#fbbf24', // amber
                     createdAt: Date.now()
                 },
-                { 
+                {
                     id: 'job-2',
                     name: 'Bracket B-456',
-                    totalParts: 2,
-                    cycleTime: 2.4,
+                    totalParts: 8,
+                    cycleTime: 72,
                     color: '#60a5fa', // blue
                     createdAt: Date.now()
                 },
-                { 
+                {
                     id: 'job-3',
                     name: 'Shaft C-789',
-                    totalParts: 4,
-                    cycleTime: 1.2,
+                    totalParts: 6,
+                    cycleTime: 38,
                     color: '#34d399', // green
+                    createdAt: Date.now()
+                },
+                {
+                    id: 'job-4',
+                    name: 'Cover D-101',
+                    totalParts: 12,
+                    cycleTime: 95,
+                    color: '#ef4444', // red
+                    createdAt: Date.now()
+                },
+                {
+                    id: 'job-5',
+                    name: 'Manifold E-567',
+                    totalParts: 4,
+                    cycleTime: 165,
+                    color: '#8b5cf6', // violet
+                    createdAt: Date.now()
+                },
+                {
+                    id: 'job-6',
+                    name: 'Flange F-890',
+                    totalParts: 10,
+                    cycleTime: 55,
+                    color: '#10b981', // emerald
                     createdAt: Date.now()
                 }
             ]);
 
             // Parts are the individual schedulable items
             const [parts, setParts] = useState([
-                // Job 1 parts
-                { id: 'part-1-1', jobId: 'job-1', partNumber: 1, machineId: 1, startTime: new Date().setHours(8, 0, 0, 0), estimate: true, status: 'scheduled' },
-                { id: 'part-1-2', jobId: 'job-1', partNumber: 2, machineId: 1, startTime: new Date().setHours(10, 0, 0, 0), estimate: true, status: 'scheduled' },
-                { id: 'part-1-3', jobId: 'job-1', partNumber: 3, machineId: 1, startTime: new Date().setHours(12, 0, 0, 0), estimate: true, status: 'scheduled' },
-                // Job 2 parts
-                { id: 'part-2-1', jobId: 'job-2', partNumber: 1, machineId: 2, startTime: new Date().setHours(9, 0, 0, 0), estimate: true, status: 'scheduled' },
-                { id: 'part-2-2', jobId: 'job-2', partNumber: 2, machineId: 2, startTime: new Date().setHours(11, 30, 0, 0), estimate: true, status: 'scheduled' },
-                // Job 3 parts
+                // Job 1 parts (Housing A-123) - 45 min each
+                { id: 'part-1-1', jobId: 'job-1', partNumber: 1, machineId: 1, startTime: new Date().setHours(7, 0, 0, 0), estimate: true, status: 'scheduled' },
+                { id: 'part-1-2', jobId: 'job-1', partNumber: 2, machineId: 1, startTime: new Date().setHours(8, 0, 0, 0), estimate: true, status: 'scheduled' },
+                { id: 'part-1-3', jobId: 'job-1', partNumber: 3, machineId: 1, startTime: new Date().setHours(9, 0, 0, 0), estimate: true, status: 'scheduled' },
+                { id: 'part-1-4', jobId: 'job-1', partNumber: 4, machineId: 1, startTime: new Date().setHours(10, 0, 0, 0), estimate: true, status: 'scheduled' },
+                { id: 'part-1-5', jobId: 'job-1', partNumber: 5, machineId: 1, startTime: new Date().setHours(11, 0, 0, 0), estimate: true, status: 'scheduled' },
+                
+                // Job 2 parts (Bracket B-456) - 72 min each
+                { id: 'part-2-1', jobId: 'job-2', partNumber: 1, machineId: 2, startTime: new Date().setHours(6, 0, 0, 0), estimate: true, status: 'scheduled' },
+                { id: 'part-2-2', jobId: 'job-2', partNumber: 2, machineId: 2, startTime: new Date().setHours(7, 30, 0, 0), estimate: true, status: 'scheduled' },
+                { id: 'part-2-3', jobId: 'job-2', partNumber: 3, machineId: 2, startTime: new Date().setHours(9, 0, 0, 0), estimate: true, status: 'scheduled' },
+                { id: 'part-2-4', jobId: 'job-2', partNumber: 4, machineId: 2, startTime: new Date().setHours(10, 30, 0, 0), estimate: true, status: 'scheduled' },
+                
+                // Job 3 parts (Shaft C-789) - 38 min each
                 { id: 'part-3-1', jobId: 'job-3', partNumber: 1, machineId: 3, startTime: new Date().setHours(8, 0, 0, 0), estimate: false, status: 'in-progress' },
-                { id: 'part-3-2', jobId: 'job-3', partNumber: 2, machineId: 3, startTime: new Date().setHours(9, 30, 0, 0), estimate: false, status: 'scheduled' },
-                { id: 'part-3-3', jobId: 'job-3', partNumber: 3, machineId: 3, startTime: new Date().setHours(11, 0, 0, 0), estimate: false, status: 'scheduled' },
-                { id: 'part-3-4', jobId: 'job-3', partNumber: 4, machineId: 3, startTime: new Date().setHours(12, 30, 0, 0), estimate: false, status: 'scheduled' },
+                { id: 'part-3-2', jobId: 'job-3', partNumber: 2, machineId: 3, startTime: new Date().setHours(9, 0, 0, 0), estimate: false, status: 'scheduled' },
+                { id: 'part-3-3', jobId: 'job-3', partNumber: 3, machineId: 3, startTime: new Date().setHours(10, 0, 0, 0), estimate: false, status: 'scheduled' },
+                { id: 'part-3-4', jobId: 'job-3', partNumber: 4, machineId: 3, startTime: new Date().setHours(11, 0, 0, 0), estimate: false, status: 'scheduled' },
+
+                // Job 4 parts (Cover D-101) - 95 min each
+                { id: 'part-4-1', jobId: 'job-4', partNumber: 1, machineId: 4, startTime: new Date().setHours(6, 0, 0, 0), estimate: true, status: 'scheduled' },
+                { id: 'part-4-2', jobId: 'job-4', partNumber: 2, machineId: 4, startTime: new Date().setHours(8, 0, 0, 0), estimate: true, status: 'scheduled' },
+                { id: 'part-4-3', jobId: 'job-4', partNumber: 3, machineId: 4, startTime: new Date().setHours(10, 0, 0, 0), estimate: true, status: 'scheduled' },
+
+                // Job 5 parts (Manifold E-567) - 165 min each
+                { id: 'part-5-1', jobId: 'job-5', partNumber: 1, machineId: 5, startTime: new Date().setHours(6, 0, 0, 0), estimate: false, status: 'scheduled' },
+                { id: 'part-5-2', jobId: 'job-5', partNumber: 2, machineId: 5, startTime: new Date().setHours(9, 0, 0, 0), estimate: false, status: 'scheduled' },
+
+                // Job 6 parts (Flange F-890) - 55 min each
+                { id: 'part-6-1', jobId: 'job-6', partNumber: 1, machineId: 6, startTime: new Date().setHours(7, 0, 0, 0), estimate: true, status: 'scheduled' },
+                { id: 'part-6-2', jobId: 'job-6', partNumber: 2, machineId: 6, startTime: new Date().setHours(8, 0, 0, 0), estimate: true, status: 'scheduled' },
+                { id: 'part-6-3', jobId: 'job-6', partNumber: 3, machineId: 6, startTime: new Date().setHours(9, 0, 0, 0), estimate: true, status: 'scheduled' },
             ]);
 
             const [newJob, setNewJob] = useState({ 
@@ -258,25 +302,34 @@
                     
                     // Create the job
                     const job = {
-                        id: jobId,
-                        name: newJob.name,
-                        totalParts: parseInt(newJob.totalParts),
-                        cycleTime: parseFloat(newJob.cycleTime),
-                        color: jobColor,
-                        createdAt: Date.now()
-                    };
+    id: jobId,
+    name: newJob.name,
+    totalParts: Number(newJob.totalParts),
+    cycleTime: Number(newJob.cycleTime),
+    color: jobColor,
+    createdAt: Date.now()
+};
                     
                     console.log('Creating job:', job);
                     console.log('Selected week starts:', new Date(selectedWeek));
                     
                     // Create parts for the job
                     const newParts = [];
-                    const startDateTime = new Date(newJob.startDate);
-                    startDateTime.setHours(newJob.startHour, newJob.startMinute, 0, 0);
+                    // Parse date string to avoid timezone issues
+                    const dateParts = newJob.startDate.split('-');
+                    const startDateTime = new Date(
+                        parseInt(dateParts[0]), // year
+                        parseInt(dateParts[1]) - 1, // month (0-indexed)
+                        parseInt(dateParts[2]), // day
+                        newJob.startHour,
+                        newJob.startMinute,
+                        0,
+                        0
+                    );
                     let currentTime = startDateTime.getTime();
                     
                     console.log('Start date/time for parts:', new Date(currentTime));
-                    console.log('Week days:', weekDays.map(d => d.toISOString()));
+                    console.log('Creating parts for job with start time:', new Date(currentTime));
                     
                     for (let i = 0; i < job.totalParts; i++) {
                         const part = {
@@ -367,17 +420,69 @@
                 e.dataTransfer.dropEffect = 'move';
             };
 
-            // Handle drop
+            // Handle drop with automatic conflict resolution
             const handleDrop = (e, machineId, hour, day) => {
                 e.preventDefault();
                 if (draggedPart) {
                     const dropTime = new Date(day);
                     dropTime.setHours(hour, 0, 0, 0);
+                    const dropStartTime = dropTime.getTime();
                     
-                    updatePart(draggedPart.id, { 
-                        machineId: machineId, 
-                        startTime: dropTime.getTime()
+                    const draggedJob = getJob(draggedPart.jobId);
+                    if (!draggedJob) return;
+                    
+                    const dropEndTime = dropStartTime + (draggedJob.cycleTime * 60 * 1000);
+                    
+                    // Find all parts on the same machine that would conflict with the dropped part
+                    const conflictingParts = parts.filter(part => {
+                        if (part.id === draggedPart.id) return false; // Don't include the dragged part itself
+                        if (part.machineId !== machineId) return false; // Only check same machine
+                        
+                        const partJob = getJob(part.jobId);
+                        if (!partJob) return false;
+                        
+                        const partEndTime = part.startTime + (partJob.cycleTime * 60 * 1000);
+                        
+                        // Check if there's any overlap
+                        return (part.startTime < dropEndTime && partEndTime > dropStartTime);
                     });
+                    
+                    // Sort conflicting parts by start time
+                    conflictingParts.sort((a, b) => a.startTime - b.startTime);
+                    
+                    // Move conflicting parts to start after the dropped part
+                    let newParts = [...parts];
+                    let nextAvailableTime = dropEndTime;
+                    
+                    conflictingParts.forEach(conflictingPart => {
+                        const conflictingJob = getJob(conflictingPart.jobId);
+                        if (!conflictingJob) return;
+                        
+                        // Update the conflicting part to start at the next available time
+                        const partIndex = newParts.findIndex(p => p.id === conflictingPart.id);
+                        if (partIndex !== -1) {
+                            newParts[partIndex] = {
+                                ...newParts[partIndex],
+                                startTime: nextAvailableTime
+                            };
+                            
+                            // Update next available time for potential cascading moves
+                            nextAvailableTime = nextAvailableTime + (conflictingJob.cycleTime * 60 * 1000);
+                        }
+                    });
+                    
+                    // Update the dragged part with its new position
+                    const draggedPartIndex = newParts.findIndex(p => p.id === draggedPart.id);
+                    if (draggedPartIndex !== -1) {
+                        newParts[draggedPartIndex] = {
+                            ...newParts[draggedPartIndex],
+                            machineId: machineId,
+                            startTime: dropStartTime
+                        };
+                    }
+                    
+                    // Apply all changes at once
+                    setParts(newParts);
                     setDraggedPart(null);
                 }
             };
@@ -654,22 +759,22 @@
                                         ))}
                                     </select>
                                     <input
-                                        type="number"
-                                        placeholder="Number of Parts"
-                                        min="1"
-                                        value={newJob.totalParts}
-                                        onChange={(e) => setNewJob({...newJob, totalParts: parseInt(e.target.value) || 1})}
-                                        className="border border-gray-300 rounded-md px-3 py-2"
-                                    />
-                                    <input
-                                        type="number"
-                                        placeholder="Cycle Time (min/part)"
-                                        min="0.1"
-                                        step="0.1"
-                                        value={newJob.cycleTime}
-                                        onChange={(e) => setNewJob({...newJob, cycleTime: parseFloat(e.target.value) || 1})}
-                                        className="border border-gray-300 rounded-md px-3 py-2"
-                                    />
+    type="number"
+    placeholder="Number of Parts"
+    min="1"
+    value={newJob.totalParts}
+    onChange={(e) => setNewJob({...newJob, totalParts: Number(e.target.value) || 1})}
+    className="border border-gray-300 rounded-md px-3 py-2"
+/>
+<input
+    type="number"
+    placeholder="Cycle Time (min/part)"
+    min="0.1"
+    step="0.1"
+    value={newJob.cycleTime}
+    onChange={(e) => setNewJob({...newJob, cycleTime: Number(e.target.value) || 1})}
+    className="border border-gray-300 rounded-md px-3 py-2"
+/>
                                     <input
                                         type="date"
                                         value={newJob.startDate}

@@ -1,0 +1,3 @@
+/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/build/CMakeFiles/step_viewer.dir
+/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/build/CMakeFiles/edit_cache.dir
+/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/build/CMakeFiles/rebuild_cache.dir
