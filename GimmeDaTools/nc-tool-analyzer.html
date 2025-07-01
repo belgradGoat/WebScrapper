@@ -636,15 +636,34 @@
 
         function analyzeMachineCompatibility(requiredTools) {
             const machineAnalysis = [];
+            
+            console.log('=== MACHINE COMPATIBILITY ANALYSIS ===');
+            console.log('Required tools from NC file:', requiredTools);
 
             for (const [machineId, machine] of Object.entries(machineDatabase)) {
+                console.log(`\n--- Analyzing Machine ${machineId} ---`);
+                
                 // Handle both old and new machine formats gracefully
                 const physicalTools = machine.physicalTools || machine.tools || [];
+                console.log(`Physical tools in ${machineId}:`, physicalTools);
+                
                 const physicallyPresentTools = physicalTools.map(tool => tool.toString());
-                const matchingTools = requiredTools.filter(tool => physicallyPresentTools.includes(tool.toString()));
+                console.log(`Physical tools as strings:`, physicallyPresentTools);
+                
+                const matchingTools = requiredTools.filter(tool => {
+                    const toolStr = tool.toString();
+                    const isMatch = physicallyPresentTools.includes(toolStr);
+                    console.log(`Tool ${toolStr}: ${isMatch ? 'FOUND' : 'MISSING'} in ${machineId}`);
+                    return isMatch;
+                });
+                
                 const missingTools = requiredTools.filter(tool => !physicallyPresentTools.includes(tool.toString()));
                 
+                console.log(`${machineId} - Matching: [${matchingTools.join(', ')}]`);
+                console.log(`${machineId} - Missing: [${missingTools.join(', ')}]`);
+                
                 const matchPercentage = requiredTools.length > 0 ? (matchingTools.length / requiredTools.length) * 100 : 0;
+                console.log(`${machineId} - Match percentage: ${matchPercentage}% (${matchingTools.length}/${requiredTools.length})`);
                 
                 let matchLevel = 'poor';
                 if (matchPercentage === 100) matchLevel = 'perfect';
@@ -669,6 +688,8 @@
                 });
             }
 
+            console.log('=== ANALYSIS COMPLETE ===\n');
+            
             // Sort by match percentage (best matches first)
             return machineAnalysis.sort((a, b) => b.matchPercentage - a.matchPercentage);
         }
@@ -880,24 +901,38 @@
                 const content = e.target.result;
                 const physicalTools = [];
                 
+                console.log('TOOL_P.TXT Content Preview:', content.substring(0, 500));
+                
                 // Parse TOOL_P.TXT exactly like Python script (lines 112-120)
                 const lines = content.split('\n');
-                for (let line of lines) {
-                    // Split the line into columns
-                    const columns = line.split();
-                    // Check if there are at least 5 columns
+                console.log(`Processing ${lines.length} lines from TOOL_P.TXT`);
+                
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue; // Skip empty lines
+                    
+                    // Split the line into columns using whitespace (like Python split())
+                    const columns = line.split(/\s+/);
+                    console.log(`Line ${i}: [${columns.join('], [')}] (${columns.length} columns)`);
+                    
+                    // Check if there are at least 5 columns (like Python script)
                     if (columns.length >= 5) {
-                        // Extract the number from column[1] (second column)
+                        // Extract the number from column[1] (second column, 0-indexed)
                         const toolNumber = columns[1];
-                        if (toolNumber && !isNaN(parseInt(toolNumber))) {
+                        if (toolNumber && toolNumber !== '' && !isNaN(parseInt(toolNumber))) {
                             physicalTools.push(toolNumber);
+                            console.log(`Found tool: ${toolNumber}`);
                         }
                     }
                 }
                 
+                console.log(`Extracted ${physicalTools.length} tools:`, physicalTools);
+                
                 // Update current tool list with physically present tools
                 currentToolList = [...new Set(physicalTools)].sort((a, b) => parseInt(a) - parseInt(b));
                 updateToolPocketPreview();
+                
+                alert(`Parsed ${currentToolList.length} unique tools from TOOL_P.TXT. Check console for details.`);
             };
             reader.readAsText(file);
         }
@@ -1092,17 +1127,30 @@
                     const content = event.target.result;
                     const physicalTools = [];
                     
+                    console.log(`Uploading TOOL_P.TXT for machine ${machineId}`);
+                    console.log('File content preview:', content.substring(0, 500));
+                    
                     // Parse TOOL_P.TXT exactly like Python script
                     const lines = content.split('\n');
-                    for (let line of lines) {
-                        const columns = line.split();
+                    console.log(`Processing ${lines.length} lines for machine ${machineId}`);
+                    
+                    for (let i = 0; i < lines.length; i++) {
+                        const line = lines[i].trim();
+                        if (!line) continue; // Skip empty lines
+                        
+                        // Split using whitespace (like Python split())
+                        const columns = line.split(/\s+/);
+                        
                         if (columns.length >= 5) {
-                            const toolNumber = columns[1];
-                            if (toolNumber && !isNaN(parseInt(toolNumber))) {
+                            const toolNumber = columns[1]; // Second column (0-indexed)
+                            if (toolNumber && toolNumber !== '' && !isNaN(parseInt(toolNumber))) {
                                 physicalTools.push(toolNumber);
+                                console.log(`Machine ${machineId} - Found tool: ${toolNumber}`);
                             }
                         }
                     }
+                    
+                    console.log(`Machine ${machineId} - Extracted ${physicalTools.length} tools:`, physicalTools);
                     
                     // Update machine database
                     if (machineDatabase[machineId]) {
@@ -1111,7 +1159,9 @@
                         machineDatabase[machineId].toolPocketFile = content;
                         saveMachineDatabase();
                         displayMachineList();
-                        alert(`Updated ${machineId} with ${physicalTools.length} physical tools from TOOL_P.TXT`);
+                        
+                        console.log(`Machine ${machineId} updated with tools:`, machineDatabase[machineId].physicalTools);
+                        alert(`Updated ${machineId} with ${machineDatabase[machineId].physicalTools.length} unique physical tools from TOOL_P.TXT`);
                     }
                 };
                 reader.readAsText(file);
