@@ -345,6 +345,7 @@
                     <div class="tab active" onclick="switchTab('overview')">📊 Overview</div>
                     <div class="tab" onclick="switchTab('machines')">🏭 Machine Matches</div>
                     <div class="tab" onclick="switchTab('tools')">🔧 Tool Details</div>
+                    <div class="tab" onclick="switchTab('manage')">⚙️ Manage Machines</div>
                 </div>
 
                 <!-- Overview Tab -->
@@ -372,42 +373,95 @@
                         <div id="toolDetails"></div>
                     </div>
                 </div>
+
+                <!-- Machine Management Tab -->
+                <div class="tab-content" id="manage-tab">
+                    <div class="section">
+                        <h2>⚙️ Machine Database Management</h2>
+                        
+                        <!-- Add New Machine -->
+                        <div class="machine-form" style="background: white; padding: 25px; border-radius: 10px; margin: 20px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                            <h3>Add New Machine</h3>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0;">
+                                <input type="text" id="machineId" placeholder="Machine ID (e.g., M5)" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                                <input type="text" id="machineName" placeholder="Machine Name" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                                <input type="text" id="machineType" placeholder="Machine Type" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                                <input type="text" id="machineLocation" placeholder="Location" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                                <input type="number" id="maxSlots" placeholder="Max Tool Slots" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                                <input type="text" id="machineNotes" placeholder="Notes" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                            </div>
+                            
+                            <div style="margin: 20px 0;">
+                                <h4>Tool List Setup</h4>
+                                <div style="display: flex; gap: 10px; margin: 10px 0;">
+                                    <input type="text" id="toolInput" placeholder="Enter tools (e.g., 1,2,3 or 1-50 or upload file)" style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                                    <button class="btn" onclick="parseToolInput()">Parse Tools</button>
+                                </div>
+                                <input type="file" id="toolFileInput" accept=".txt,.csv" style="margin: 10px 0;">
+                                <button class="btn" onclick="loadToolsFromFile()">Load from File</button>
+                                <div id="toolPreview" style="max-height: 100px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; margin: 10px 0; background: #f9f9f9;"></div>
+                            </div>
+                            
+                            <button class="btn btn-success" onclick="addMachine()">Add Machine</button>
+                        </div>
+
+                        <!-- Existing Machines -->
+                        <div style="margin-top: 40px;">
+                            <h3>Existing Machines</h3>
+                            <div id="machineList"></div>
+                        </div>
+
+                        <!-- Import/Export -->
+                        <div style="margin-top: 40px; padding: 20px; border: 2px dashed #ccc; border-radius: 10px; background: white;">
+                            <h3>Import/Export Machine Database</h3>
+                            <div style="display: flex; gap: 10px; margin: 15px 0;">
+                                <button class="btn" onclick="exportMachineDatabase()">📥 Export Database</button>
+                                <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importMachineDatabase()">
+                                <button class="btn" onclick="document.getElementById('importFile').click()">📤 Import Database</button>
+                                <button class="btn btn-warning" onclick="resetDatabase()">🔄 Reset to Default</button>
+                            </div>
+                            <p style="color: #666; font-size: 0.9rem;">Export your machine database as JSON for backup, or import from another system.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Machine database with available tools
-        const machineDatabase = {
+        // Helper function to generate tool ranges
+        function generateToolRange(start, end) {
+            const tools = [];
+            for (let i = start; i <= end; i++) {
+                tools.push(i);
+            }
+            return tools;
+        }
+
+        // Machine database with available tools - supports unlimited tools
+        let machineDatabase = JSON.parse(localStorage.getItem('machineDatabase')) || {
             'M5': {
                 name: 'Heidenhain 640 M5',
                 type: 'Machining Center',
-                tools: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25, 30, 35, 40],
-                maxTools: 40,
-                location: 'Shop Floor A'
+                tools: generateToolRange(1, 200), // Tools available in database
+                maxSlots: 130, // Physical tool slots in machine
+                location: 'Shop Floor A',
+                notes: 'Sample machine - edit to match your setup'
             },
             'M3': {
                 name: 'Heidenhain 640 M3',
                 type: 'Machining Center',
-                tools: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30],
-                maxTools: 30,
-                location: 'Shop Floor B'
-            },
-            'M7': {
-                name: 'Haas VF-4',
-                type: 'Vertical Mill',
-                tools: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 21, 22, 23, 24, 25],
-                maxTools: 25,
-                location: 'Shop Floor A'
-            },
-            'L1': {
-                name: 'Mazak Lathe',
-                type: 'Turning Center',
-                tools: [1, 2, 3, 4, 5, 11, 12, 13, 14, 15, 31, 32, 33, 34, 35],
-                maxTools: 15,
-                location: 'Shop Floor C'
+                tools: generateToolRange(1, 150),
+                maxSlots: 100,
+                location: 'Shop Floor B',
+                notes: 'Sample machine - edit to match your setup'
             }
         };
+
+        // Save machine database to localStorage
+        function saveMachineDatabase() {
+            localStorage.setItem('machineDatabase', JSON.stringify(machineDatabase));
+        }
 
         let currentFile = null;
         let analysisResults = null;
@@ -585,7 +639,8 @@
                     matchPercentage: Math.round(matchPercentage),
                     matchLevel,
                     totalAvailableTools: availableTools.length,
-                    maxTools: machine.maxTools
+                    maxSlots: machine.maxSlots,
+                    notes: machine.notes
                 });
             }
 
@@ -666,7 +721,8 @@
                         <h3>${machine.machineName} (${machine.machineId})</h3>
                         <p><strong>Type:</strong> ${machine.machineType}</p>
                         <p><strong>Location:</strong> ${machine.location}</p>
-                        <p><strong>Available Tools:</strong> ${machine.totalAvailableTools}/${machine.maxTools}</p>
+                        <p><strong>Available Tools:</strong> ${machine.totalAvailableTools} (Max Slots: ${machine.maxSlots})</p>
+                        <p><strong>Notes:</strong> ${machine.notes || 'None'}</p>
                         <p><strong>Matching Tools:</strong> ${machine.matchingTools.length}/${analysisResults.totalTools}</p>
                         
                         ${machine.missingTools.length > 0 ? `
@@ -737,6 +793,290 @@
             // Add active class to clicked tab and corresponding content
             event.target.classList.add('active');
             document.getElementById(tabName + '-tab').classList.add('active');
+        }
+
+        // Machine Management Functions
+        let currentToolList = [];
+
+        function parseToolInput() {
+            const input = document.getElementById('toolInput').value.trim();
+            const tools = [];
+            
+            if (!input) {
+                alert('Please enter tool numbers or ranges');
+                return;
+            }
+
+            // Split by commas and process each part
+            const parts = input.split(',');
+            
+            for (let part of parts) {
+                part = part.trim();
+                
+                // Check if it's a range (e.g., "1-50")
+                if (part.includes('-')) {
+                    const [start, end] = part.split('-').map(num => parseInt(num.trim()));
+                    if (start && end && start <= end) {
+                        for (let i = start; i <= end; i++) {
+                            tools.push(i);
+                        }
+                    }
+                } else {
+                    // Single number
+                    const num = parseInt(part);
+                    if (num) {
+                        tools.push(num);
+                    }
+                }
+            }
+
+            currentToolList = [...new Set(tools)].sort((a, b) => a - b); // Remove duplicates and sort
+            updateToolPreview();
+        }
+
+        function loadToolsFromFile() {
+            const fileInput = document.getElementById('toolFileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a file first');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                const tools = [];
+                
+                // Parse file content - assume one tool per line or comma-separated
+                const lines = content.split('\n');
+                for (let line of lines) {
+                    const nums = line.split(/[,\s]+/).map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+                    tools.push(...nums);
+                }
+                
+                currentToolList = [...new Set(tools)].sort((a, b) => a - b);
+                updateToolPreview();
+            };
+            reader.readAsText(file);
+        }
+
+        function updateToolPreview() {
+            const preview = document.getElementById('toolPreview');
+            if (currentToolList.length === 0) {
+                preview.innerHTML = 'No tools loaded';
+                return;
+            }
+            
+            const toolRanges = compressToolList(currentToolList);
+            preview.innerHTML = `<strong>${currentToolList.length} tools:</strong> ${toolRanges}`;
+        }
+
+        function compressToolList(tools) {
+            if (tools.length === 0) return '';
+            
+            const ranges = [];
+            let start = tools[0];
+            let end = tools[0];
+            
+            for (let i = 1; i < tools.length; i++) {
+                if (tools[i] === end + 1) {
+                    end = tools[i];
+                } else {
+                    if (start === end) {
+                        ranges.push(start.toString());
+                    } else if (end === start + 1) {
+                        ranges.push(`${start},${end}`);
+                    } else {
+                        ranges.push(`${start}-${end}`);
+                    }
+                    start = end = tools[i];
+                }
+            }
+            
+            // Add the last range
+            if (start === end) {
+                ranges.push(start.toString());
+            } else if (end === start + 1) {
+                ranges.push(`${start},${end}`);
+            } else {
+                ranges.push(`${start}-${end}`);
+            }
+            
+            return ranges.join(', ');
+        }
+
+        function addMachine() {
+            const machineId = document.getElementById('machineId').value.trim();
+            const machineName = document.getElementById('machineName').value.trim();
+            const machineType = document.getElementById('machineType').value.trim();
+            const machineLocation = document.getElementById('machineLocation').value.trim();
+            const maxSlots = parseInt(document.getElementById('maxSlots').value);
+            const machineNotes = document.getElementById('machineNotes').value.trim();
+
+            if (!machineId || !machineName || !machineType || !machineLocation || !maxSlots) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            if (machineDatabase[machineId]) {
+                if (!confirm(`Machine ${machineId} already exists. Overwrite?`)) {
+                    return;
+                }
+            }
+
+            machineDatabase[machineId] = {
+                name: machineName,
+                type: machineType,
+                location: machineLocation,
+                maxSlots: maxSlots,
+                notes: machineNotes,
+                tools: currentToolList.length > 0 ? [...currentToolList] : []
+            };
+
+            saveMachineDatabase();
+            displayMachineList();
+            
+            // Clear form
+            document.getElementById('machineId').value = '';
+            document.getElementById('machineName').value = '';
+            document.getElementById('machineType').value = '';
+            document.getElementById('machineLocation').value = '';
+            document.getElementById('maxSlots').value = '';
+            document.getElementById('machineNotes').value = '';
+            document.getElementById('toolInput').value = '';
+            currentToolList = [];
+            updateToolPreview();
+            
+            alert(`Machine ${machineId} added successfully!`);
+        }
+
+        function displayMachineList() {
+            const machineList = document.getElementById('machineList');
+            let html = '';
+
+            for (const [machineId, machine] of Object.entries(machineDatabase)) {
+                const toolRanges = compressToolList(machine.tools);
+                html += `
+                    <div class="machine-card" style="margin: 15px 0;">
+                        <h4>${machine.name} (${machineId})</h4>
+                        <p><strong>Type:</strong> ${machine.type}</p>
+                        <p><strong>Location:</strong> ${machine.location}</p>
+                        <p><strong>Max Slots:</strong> ${machine.maxSlots}</p>
+                        <p><strong>Notes:</strong> ${machine.notes || 'None'}</p>
+                        <p><strong>Tools (${machine.tools.length}):</strong> ${toolRanges || 'None'}</p>
+                        <div style="margin-top: 10px;">
+                            <button class="btn" onclick="editMachine('${machineId}')">✏️ Edit</button>
+                            <button class="btn btn-warning" onclick="deleteMachine('${machineId}')">🗑️ Delete</button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            machineList.innerHTML = html || '<p>No machines configured. Add one above.</p>';
+        }
+
+        function editMachine(machineId) {
+            const machine = machineDatabase[machineId];
+            if (!machine) return;
+
+            document.getElementById('machineId').value = machineId;
+            document.getElementById('machineName').value = machine.name;
+            document.getElementById('machineType').value = machine.type;
+            document.getElementById('machineLocation').value = machine.location;
+            document.getElementById('maxSlots').value = machine.maxSlots;
+            document.getElementById('machineNotes').value = machine.notes || '';
+            
+            currentToolList = [...machine.tools];
+            updateToolPreview();
+            
+            // Scroll to form
+            document.querySelector('.machine-form').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function deleteMachine(machineId) {
+            if (confirm(`Are you sure you want to delete machine ${machineId}?`)) {
+                delete machineDatabase[machineId];
+                saveMachineDatabase();
+                displayMachineList();
+                alert(`Machine ${machineId} deleted successfully!`);
+            }
+        }
+
+        function exportMachineDatabase() {
+            const dataStr = JSON.stringify(machineDatabase, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'machine-database.json';
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importMachineDatabase() {
+            const fileInput = document.getElementById('importFile');
+            const file = fileInput.files[0];
+            
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (confirm('This will replace your current machine database. Continue?')) {
+                        machineDatabase = imported;
+                        saveMachineDatabase();
+                        displayMachineList();
+                        alert('Machine database imported successfully!');
+                    }
+                } catch (error) {
+                    alert('Error importing file: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function resetDatabase() {
+            if (confirm('This will reset the machine database to default. Continue?')) {
+                machineDatabase = {
+                    'M5': {
+                        name: 'Heidenhain 640 M5',
+                        type: 'Machining Center',
+                        tools: generateToolRange(1, 200),
+                        maxSlots: 130,
+                        location: 'Shop Floor A',
+                        notes: 'Sample machine - edit to match your setup'
+                    },
+                    'M3': {
+                        name: 'Heidenhain 640 M3',
+                        type: 'Machining Center',
+                        tools: generateToolRange(1, 150),
+                        maxSlots: 100,
+                        location: 'Shop Floor B',
+                        notes: 'Sample machine - edit to match your setup'
+                    }
+                };
+                saveMachineDatabase();
+                displayMachineList();
+                alert('Database reset to default!');
+            }
+        }
+
+        // Initialize machine list display when manage tab is opened
+        function switchTab(tabName) {
+            // Remove active class from all tabs and content
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // Add active class to clicked tab and corresponding content
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            // Load machine list when manage tab is opened
+            if (tabName === 'manage') {
+                displayMachineList();
+            }
         }
 
         // Drag and drop styling
