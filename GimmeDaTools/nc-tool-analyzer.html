@@ -387,6 +387,8 @@
                                 <input type="text" id="machineName" placeholder="Machine Name" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
                                 <input type="text" id="machineType" placeholder="Machine Type" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
                                 <input type="text" id="machineLocation" placeholder="Location" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                                <input type="text" id="ipAddress" placeholder="IP Address (e.g., 10.164.181.22)" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                                <input type="text" id="tncFolder" placeholder="TNC Folder Path" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
                                 <input type="number" id="maxSlots" placeholder="Max Tool Slots" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
                                 <input type="text" id="machineNotes" placeholder="Notes" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
                             </div>
@@ -446,6 +448,8 @@
                 tools: generateToolRange(1, 200), // Tools available in database
                 maxSlots: 130, // Physical tool slots in machine
                 location: 'Shop Floor A',
+                ipAddress: '10.164.181.22', // IP address for machine connection
+                tncFolder: 'M5-C42-HERM-UR\\Seb', // TNC folder path
                 notes: 'Sample machine - edit to match your setup'
             },
             'M3': {
@@ -454,6 +458,8 @@
                 tools: generateToolRange(1, 150),
                 maxSlots: 100,
                 location: 'Shop Floor B',
+                ipAddress: '10.164.181.23',
+                tncFolder: 'M3-C42-HERM-UR\\Seb',
                 notes: 'Sample machine - edit to match your setup'
             }
         };
@@ -911,11 +917,13 @@
             const machineName = document.getElementById('machineName').value.trim();
             const machineType = document.getElementById('machineType').value.trim();
             const machineLocation = document.getElementById('machineLocation').value.trim();
+            const ipAddress = document.getElementById('ipAddress').value.trim();
+            const tncFolder = document.getElementById('tncFolder').value.trim();
             const maxSlots = parseInt(document.getElementById('maxSlots').value);
             const machineNotes = document.getElementById('machineNotes').value.trim();
 
-            if (!machineId || !machineName || !machineType || !machineLocation || !maxSlots) {
-                alert('Please fill in all required fields');
+            if (!machineId || !machineName || !machineType || !machineLocation || !ipAddress || !maxSlots) {
+                alert('Please fill in all required fields (Machine ID, Name, Type, Location, IP Address, Max Slots)');
                 return;
             }
 
@@ -929,6 +937,8 @@
                 name: machineName,
                 type: machineType,
                 location: machineLocation,
+                ipAddress: ipAddress,
+                tncFolder: tncFolder,
                 maxSlots: maxSlots,
                 notes: machineNotes,
                 tools: currentToolList.length > 0 ? [...currentToolList] : []
@@ -942,6 +952,8 @@
             document.getElementById('machineName').value = '';
             document.getElementById('machineType').value = '';
             document.getElementById('machineLocation').value = '';
+            document.getElementById('ipAddress').value = '';
+            document.getElementById('tncFolder').value = '';
             document.getElementById('maxSlots').value = '';
             document.getElementById('machineNotes').value = '';
             document.getElementById('toolInput').value = '';
@@ -962,6 +974,8 @@
                         <h4>${machine.name} (${machineId})</h4>
                         <p><strong>Type:</strong> ${machine.type}</p>
                         <p><strong>Location:</strong> ${machine.location}</p>
+                        <p><strong>IP Address:</strong> ${machine.ipAddress || 'Not set'}</p>
+                        <p><strong>TNC Folder:</strong> ${machine.tncFolder || 'Not set'}</p>
                         <p><strong>Max Slots:</strong> ${machine.maxSlots}</p>
                         <p><strong>Notes:</strong> ${machine.notes || 'None'}</p>
                         <p><strong>Tools (${machine.tools.length}):</strong> ${toolRanges || 'None'}</p>
@@ -984,6 +998,8 @@
             document.getElementById('machineName').value = machine.name;
             document.getElementById('machineType').value = machine.type;
             document.getElementById('machineLocation').value = machine.location;
+            document.getElementById('ipAddress').value = machine.ipAddress || '';
+            document.getElementById('tncFolder').value = machine.tncFolder || '';
             document.getElementById('maxSlots').value = machine.maxSlots;
             document.getElementById('machineNotes').value = machine.notes || '';
             
@@ -1046,6 +1062,8 @@
                         tools: generateToolRange(1, 200),
                         maxSlots: 130,
                         location: 'Shop Floor A',
+                        ipAddress: '10.164.181.22',
+                        tncFolder: 'M5-C42-HERM-UR\\Seb',
                         notes: 'Sample machine - edit to match your setup'
                     },
                     'M3': {
@@ -1054,6 +1072,8 @@
                         tools: generateToolRange(1, 150),
                         maxSlots: 100,
                         location: 'Shop Floor B',
+                        ipAddress: '10.164.181.23',
+                        tncFolder: 'M3-C42-HERM-UR\\Seb',
                         notes: 'Sample machine - edit to match your setup'
                     }
                 };
