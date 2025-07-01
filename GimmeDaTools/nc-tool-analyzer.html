@@ -539,23 +539,23 @@
                 const line = lines[i];
                 const lineNumber = i + 1;
 
-                // Check for TOOL CALL
+                // Check for TOOL CALL - match Python script exactly
                 const toolCallMatch = line.match(/TOOL CALL (\d+)/);
                 if (toolCallMatch) {
-                    currentToolNumber = parseInt(toolCallMatch[1]);
+                    currentToolNumber = toolCallMatch[1]; // Keep as string like Python script
                     if (!toolNumbers.includes(currentToolNumber)) {
                         toolNumbers.push(currentToolNumber);
                     }
                     
                     // Initialize cutter comp as off
-                    cutterCompInfo[currentToolNumber] = 'Off';
+                    cutterCompInfo[currentToolNumber] = 'Cutter Comp: Off';
                     
                     // Look for RR/RL in subsequent lines until next tool call
-                    for (let j = i + 1; j < lines.length; j++) {
+                    for (let j = i; j < lines.length; j++) {
                         const nextLine = lines[j];
-                        if (nextLine.match(/TOOL CALL (\d+)/)) break;
+                        if (j > i && nextLine.match(/TOOL CALL (\d+)/)) break;
                         if (nextLine.includes(' RR') || nextLine.includes(' RL')) {
-                            cutterCompInfo[currentToolNumber] = 'On';
+                            cutterCompInfo[currentToolNumber] = 'Cutter Comp: On';
                             break;
                         }
                     }
@@ -602,10 +602,10 @@
                 dimensions = { width, height, depth };
             }
 
-            // Store results
+            // Store results - sort tool numbers as integers but keep as strings
             analysisResults = {
                 fileName: currentFile.name,
-                toolNumbers: toolNumbers.sort((a, b) => a - b),
+                toolNumbers: toolNumbers.sort((a, b) => parseInt(a) - parseInt(b)),
                 cutterCompInfo,
                 presetValues,
                 fValueErrors,
@@ -625,11 +625,12 @@
             const machineAnalysis = [];
 
             for (const [machineId, machine] of Object.entries(machineDatabase)) {
-                const availableTools = machine.tools;
-                const matchingTools = requiredTools.filter(tool => availableTools.includes(tool));
-                const missingTools = requiredTools.filter(tool => !availableTools.includes(tool));
+                // Convert machine tools to strings for comparison (like Python script)
+                const availableTools = machine.tools.map(tool => tool.toString());
+                const matchingTools = requiredTools.filter(tool => availableTools.includes(tool.toString()));
+                const missingTools = requiredTools.filter(tool => !availableTools.includes(tool.toString()));
                 
-                const matchPercentage = (matchingTools.length / requiredTools.length) * 100;
+                const matchPercentage = requiredTools.length > 0 ? (matchingTools.length / requiredTools.length) * 100 : 0;
                 
                 let matchLevel = 'poor';
                 if (matchPercentage === 100) matchLevel = 'perfect';
@@ -640,6 +641,8 @@
                     machineName: machine.name,
                     machineType: machine.type,
                     location: machine.location,
+                    ipAddress: machine.ipAddress,
+                    tncFolder: machine.tncFolder,
                     matchingTools,
                     missingTools,
                     matchPercentage: Math.round(matchPercentage),
@@ -754,11 +757,11 @@
 
             analysisResults.toolNumbers.forEach(toolNum => {
                 const isAvailableOnBest = analysisResults.machineAnalysis[0].matchingTools.includes(toolNum);
-                const cutterComp = analysisResults.cutterCompInfo[toolNum] || 'Off';
+                const cutterComp = analysisResults.cutterCompInfo[toolNum] || 'Cutter Comp: Off';
                 
                 html += `
                     <div class="tool-item ${isAvailableOnBest ? 'tool-available' : 'tool-missing'}">
-                        T${toolNum} - Cutter Comp: ${cutterComp}
+                        T${toolNum} - ${cutterComp}
                         ${!isAvailableOnBest ? ' ⚠️ Missing from best match' : ' ✅'}
                     </div>
                 `;
