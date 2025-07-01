@@ -394,9 +394,18 @@
                             </div>
                             
                             <div style="margin: 20px 0;">
-                                <h4>Tool List Setup</h4>
+                                <h4>Physical Tool Setup (TOOL_P.TXT)</h4>
+                                <p style="color: #666; margin-bottom: 10px;">Upload TOOL_P.TXT file from machine to see physically present tools</p>
+                                <input type="file" id="toolPocketFileInput" accept=".txt" style="margin: 10px 0;">
+                                <button class="btn" onclick="loadToolPocketFile()">📄 Load TOOL_P.TXT</button>
+                                <div id="toolPocketPreview" style="max-height: 100px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; margin: 10px 0; background: #f0f8ff;"></div>
+                            </div>
+                            
+                            <div style="margin: 20px 0;">
+                                <h4>Manual Tool List (Optional)</h4>
+                                <p style="color: #666; margin-bottom: 10px;">Alternative: Manually enter tool numbers if TOOL_P.TXT not available</p>
                                 <div style="display: flex; gap: 10px; margin: 10px 0;">
-                                    <input type="text" id="toolInput" placeholder="Enter tools (e.g., 1,2,3 or 1-50 or upload file)" style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                                    <input type="text" id="toolInput" placeholder="Enter tools (e.g., 1,2,3 or 1-50)" style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
                                     <button class="btn" onclick="parseToolInput()">Parse Tools</button>
                                 </div>
                                 <input type="file" id="toolFileInput" accept=".txt,.csv" style="margin: 10px 0;">
@@ -440,27 +449,31 @@
             return tools;
         }
 
-        // Machine database with available tools - supports unlimited tools
+        // Machine database - now tracks physically present tools from TOOL_P.TXT files
         let machineDatabase = JSON.parse(localStorage.getItem('machineDatabase')) || {
             'M5': {
                 name: 'Heidenhain 640 M5',
                 type: 'Machining Center',
-                tools: generateToolRange(1, 10000), // Full range of tools 1-10000
+                physicalTools: [], // Actual tools physically present (from TOOL_P.TXT)
+                toolPocketFile: null, // Store TOOL_P.TXT content
                 maxSlots: 130, // Physical tool slots in machine
                 location: 'Shop Floor A',
                 ipAddress: '10.164.181.22', // IP address for machine connection
                 tncFolder: 'M5-C42-HERM-UR\\Seb', // TNC folder path
-                notes: 'Sample machine - supports all tools 1-10000'
+                notes: 'Upload TOOL_P.TXT to see physically present tools',
+                lastUpdated: null
             },
             'M3': {
                 name: 'Heidenhain 640 M3',
                 type: 'Machining Center',
-                tools: generateToolRange(1, 10000), // Full range of tools 1-10000
+                physicalTools: [], // Actual tools physically present (from TOOL_P.TXT)
+                toolPocketFile: null, // Store TOOL_P.TXT content
                 maxSlots: 100,
                 location: 'Shop Floor B',
                 ipAddress: '10.164.181.23',
                 tncFolder: 'M3-C42-HERM-UR\\Seb',
-                notes: 'Sample machine - supports all tools 1-10000'
+                notes: 'Upload TOOL_P.TXT to see physically present tools',
+                lastUpdated: null
             }
         };
 
@@ -625,10 +638,10 @@
             const machineAnalysis = [];
 
             for (const [machineId, machine] of Object.entries(machineDatabase)) {
-                // Convert machine tools to strings for comparison (like Python script)
-                const availableTools = machine.tools.map(tool => tool.toString());
-                const matchingTools = requiredTools.filter(tool => availableTools.includes(tool.toString()));
-                const missingTools = requiredTools.filter(tool => !availableTools.includes(tool.toString()));
+                // Use physically present tools (from TOOL_P.TXT) instead of full database
+                const physicallyPresentTools = machine.physicalTools.map(tool => tool.toString());
+                const matchingTools = requiredTools.filter(tool => physicallyPresentTools.includes(tool.toString()));
+                const missingTools = requiredTools.filter(tool => !physicallyPresentTools.includes(tool.toString()));
                 
                 const matchPercentage = requiredTools.length > 0 ? (matchingTools.length / requiredTools.length) * 100 : 0;
                 
@@ -647,9 +660,11 @@
                     missingTools,
                     matchPercentage: Math.round(matchPercentage),
                     matchLevel,
-                    totalAvailableTools: availableTools.length,
+                    totalPhysicalTools: physicallyPresentTools.length,
                     maxSlots: machine.maxSlots,
-                    notes: machine.notes
+                    notes: machine.notes,
+                    lastUpdated: machine.lastUpdated,
+                    hasToolData: physicallyPresentTools.length > 0
                 });
             }
 
@@ -725,24 +740,31 @@
                 html += `
                     <div class="machine-card ${machine.matchLevel}-match">
                         <div class="match-percentage match-${matchClass}">
-                            ${machine.matchPercentage}% Match
+                            ${machine.hasToolData ? machine.matchPercentage + '% Match' : 'No Tool Data'}
                         </div>
                         <h3>${machine.machineName} (${machine.machineId})</h3>
                         <p><strong>Type:</strong> ${machine.machineType}</p>
                         <p><strong>Location:</strong> ${machine.location}</p>
-                        <p><strong>Available Tools:</strong> ${machine.totalAvailableTools} (Max Slots: ${machine.maxSlots})</p>
+                        <p><strong>Physical Tools:</strong> ${machine.totalPhysicalTools} (Max Slots: ${machine.maxSlots})</p>
+                        <p><strong>Last Updated:</strong> ${machine.lastUpdated || 'Never'}</p>
                         <p><strong>Notes:</strong> ${machine.notes || 'None'}</p>
-                        <p><strong>Matching Tools:</strong> ${machine.matchingTools.length}/${analysisResults.totalTools}</p>
                         
-                        ${machine.missingTools.length > 0 ? `
-                            <div class="missing-tools">
-                                <strong>⚠️ Missing Tools:</strong> T${machine.missingTools.join(', T')}
-                                <br><small>Consider these tools for setup or use alternative machine</small>
+                        ${!machine.hasToolData ? `
+                            <div class="error-message">
+                                ⚠️ No TOOL_P.TXT data available for this machine. Upload tool pocket file to see actual tool availability.
                             </div>
                         ` : `
-                            <div class="success-message">
-                                ✅ All required tools are available on this machine!
-                            </div>
+                            <p><strong>Matching Tools:</strong> ${machine.matchingTools.length}/${analysisResults.totalTools}</p>
+                            ${machine.missingTools.length > 0 ? `
+                                <div class="missing-tools">
+                                    <strong>⚠️ Missing Tools:</strong> T${machine.missingTools.join(', T')}
+                                    <br><small>These tools need to be loaded into the machine</small>
+                                </div>
+                            ` : `
+                                <div class="success-message">
+                                    ✅ All required tools are physically present in this machine!
+                                </div>
+                            `}
                         `}
                     </div>
                 `;
@@ -841,6 +863,53 @@
 
             currentToolList = [...new Set(tools)].sort((a, b) => a - b); // Remove duplicates and sort
             updateToolPreview();
+        }
+
+        function loadToolPocketFile() {
+            const fileInput = document.getElementById('toolPocketFileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a TOOL_P.TXT file first');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                const physicalTools = [];
+                
+                // Parse TOOL_P.TXT exactly like Python script (lines 112-120)
+                const lines = content.split('\n');
+                for (let line of lines) {
+                    // Split the line into columns
+                    const columns = line.split();
+                    // Check if there are at least 5 columns
+                    if (columns.length >= 5) {
+                        // Extract the number from column[1] (second column)
+                        const toolNumber = columns[1];
+                        if (toolNumber && !isNaN(parseInt(toolNumber))) {
+                            physicalTools.push(toolNumber);
+                        }
+                    }
+                }
+                
+                // Update current tool list with physically present tools
+                currentToolList = [...new Set(physicalTools)].sort((a, b) => parseInt(a) - parseInt(b));
+                updateToolPocketPreview();
+            };
+            reader.readAsText(file);
+        }
+
+        function updateToolPocketPreview() {
+            const preview = document.getElementById('toolPocketPreview');
+            if (currentToolList.length === 0) {
+                preview.innerHTML = 'No tools found in TOOL_P.TXT';
+                return;
+            }
+            
+            const toolRanges = compressToolList(currentToolList.map(t => parseInt(t)));
+            preview.innerHTML = `<strong>${currentToolList.length} physical tools:</strong> ${toolRanges}`;
         }
 
         function loadToolsFromFile() {
@@ -944,7 +1013,9 @@
                 tncFolder: tncFolder,
                 maxSlots: maxSlots,
                 notes: machineNotes,
-                tools: currentToolList.length > 0 ? [...currentToolList] : []
+                physicalTools: currentToolList.length > 0 ? [...currentToolList] : [],
+                toolPocketFile: null,
+                lastUpdated: currentToolList.length > 0 ? new Date().toLocaleString() : null
             };
 
             saveMachineDatabase();
@@ -960,8 +1031,10 @@
             document.getElementById('maxSlots').value = '';
             document.getElementById('machineNotes').value = '';
             document.getElementById('toolInput').value = '';
+            document.getElementById('toolPocketFileInput').value = '';
             currentToolList = [];
             updateToolPreview();
+            updateToolPocketPreview();
             
             alert(`Machine ${machineId} added successfully!`);
         }
@@ -971,19 +1044,27 @@
             let html = '';
 
             for (const [machineId, machine] of Object.entries(machineDatabase)) {
-                const toolRanges = compressToolList(machine.tools);
+                const physicalTools = machine.physicalTools || [];
+                const toolRanges = physicalTools.length > 0 ? compressToolList(physicalTools.map(t => parseInt(t))) : 'None';
+                const hasToolData = physicalTools.length > 0;
+                
                 html += `
-                    <div class="machine-card" style="margin: 15px 0;">
-                        <h4>${machine.name} (${machineId})</h4>
+                    <div class="machine-card" style="margin: 15px 0; ${!hasToolData ? 'border-left-color: #e74c3c;' : ''}">
+                        <h4>${machine.name} (${machineId}) ${!hasToolData ? '⚠️' : '✅'}</h4>
                         <p><strong>Type:</strong> ${machine.type}</p>
                         <p><strong>Location:</strong> ${machine.location}</p>
                         <p><strong>IP Address:</strong> ${machine.ipAddress || 'Not set'}</p>
                         <p><strong>TNC Folder:</strong> ${machine.tncFolder || 'Not set'}</p>
                         <p><strong>Max Slots:</strong> ${machine.maxSlots}</p>
+                        <p><strong>Last Updated:</strong> ${machine.lastUpdated || 'Never'}</p>
                         <p><strong>Notes:</strong> ${machine.notes || 'None'}</p>
-                        <p><strong>Tools (${machine.tools.length}):</strong> ${toolRanges || 'None'}</p>
+                        ${hasToolData ?
+                          `<p><strong>Physical Tools (${physicalTools.length}):</strong> ${toolRanges}</p>` :
+                          `<p style="color: #e74c3c;"><strong>⚠️ No TOOL_P.TXT data:</strong> Upload tool pocket file to see physical tools</p>`
+                        }
                         <div style="margin-top: 10px;">
                             <button class="btn" onclick="editMachine('${machineId}')">✏️ Edit</button>
+                            <button class="btn" onclick="uploadToolPocket('${machineId}')">📄 Upload TOOL_P.TXT</button>
                             <button class="btn btn-warning" onclick="deleteMachine('${machineId}')">🗑️ Delete</button>
                         </div>
                     </div>
@@ -991,6 +1072,46 @@
             }
 
             machineList.innerHTML = html || '<p>No machines configured. Add one above.</p>';
+        }
+
+        function uploadToolPocket(machineId) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.txt';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const content = event.target.result;
+                    const physicalTools = [];
+                    
+                    // Parse TOOL_P.TXT exactly like Python script
+                    const lines = content.split('\n');
+                    for (let line of lines) {
+                        const columns = line.split();
+                        if (columns.length >= 5) {
+                            const toolNumber = columns[1];
+                            if (toolNumber && !isNaN(parseInt(toolNumber))) {
+                                physicalTools.push(toolNumber);
+                            }
+                        }
+                    }
+                    
+                    // Update machine database
+                    if (machineDatabase[machineId]) {
+                        machineDatabase[machineId].physicalTools = [...new Set(physicalTools)].sort((a, b) => parseInt(a) - parseInt(b));
+                        machineDatabase[machineId].lastUpdated = new Date().toLocaleString();
+                        machineDatabase[machineId].toolPocketFile = content;
+                        saveMachineDatabase();
+                        displayMachineList();
+                        alert(`Updated ${machineId} with ${physicalTools.length} physical tools from TOOL_P.TXT`);
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
         }
 
         function editMachine(machineId) {
@@ -1006,8 +1127,8 @@
             document.getElementById('maxSlots').value = machine.maxSlots;
             document.getElementById('machineNotes').value = machine.notes || '';
             
-            currentToolList = [...machine.tools];
-            updateToolPreview();
+            currentToolList = [...(machine.physicalTools || [])];
+            updateToolPocketPreview();
             
             // Scroll to form
             document.querySelector('.machine-form').scrollIntoView({ behavior: 'smooth' });
@@ -1062,22 +1183,26 @@
                     'M5': {
                         name: 'Heidenhain 640 M5',
                         type: 'Machining Center',
-                        tools: generateToolRange(1, 10000), // Full range 1-10000
+                        physicalTools: [], // Will be populated from TOOL_P.TXT
+                        toolPocketFile: null,
                         maxSlots: 130,
                         location: 'Shop Floor A',
                         ipAddress: '10.164.181.22',
                         tncFolder: 'M5-C42-HERM-UR\\Seb',
-                        notes: 'Sample machine - supports all tools 1-10000'
+                        notes: 'Upload TOOL_P.TXT to see physically present tools',
+                        lastUpdated: null
                     },
                     'M3': {
                         name: 'Heidenhain 640 M3',
                         type: 'Machining Center',
-                        tools: generateToolRange(1, 10000), // Full range 1-10000
+                        physicalTools: [], // Will be populated from TOOL_P.TXT
+                        toolPocketFile: null,
                         maxSlots: 100,
                         location: 'Shop Floor B',
                         ipAddress: '10.164.181.23',
                         tncFolder: 'M3-C42-HERM-UR\\Seb',
-                        notes: 'Sample machine - supports all tools 1-10000'
+                        notes: 'Upload TOOL_P.TXT to see physically present tools',
+                        lastUpdated: null
                     }
                 };
                 saveMachineDatabase();
