@@ -638,8 +638,9 @@
             const machineAnalysis = [];
 
             for (const [machineId, machine] of Object.entries(machineDatabase)) {
-                // Use physically present tools (from TOOL_P.TXT) instead of full database
-                const physicallyPresentTools = machine.physicalTools.map(tool => tool.toString());
+                // Handle both old and new machine formats gracefully
+                const physicalTools = machine.physicalTools || machine.tools || [];
+                const physicallyPresentTools = physicalTools.map(tool => tool.toString());
                 const matchingTools = requiredTools.filter(tool => physicallyPresentTools.includes(tool.toString()));
                 const missingTools = requiredTools.filter(tool => !physicallyPresentTools.includes(tool.toString()));
                 
@@ -651,19 +652,19 @@
                 
                 machineAnalysis.push({
                     machineId,
-                    machineName: machine.name,
-                    machineType: machine.type,
-                    location: machine.location,
-                    ipAddress: machine.ipAddress,
-                    tncFolder: machine.tncFolder,
+                    machineName: machine.name || 'Unknown',
+                    machineType: machine.type || 'Unknown',
+                    location: machine.location || 'Unknown',
+                    ipAddress: machine.ipAddress || 'Not set',
+                    tncFolder: machine.tncFolder || 'Not set',
                     matchingTools,
                     missingTools,
                     matchPercentage: Math.round(matchPercentage),
                     matchLevel,
                     totalPhysicalTools: physicallyPresentTools.length,
-                    maxSlots: machine.maxSlots,
-                    notes: machine.notes,
-                    lastUpdated: machine.lastUpdated,
+                    maxSlots: machine.maxSlots || 0,
+                    notes: machine.notes || 'None',
+                    lastUpdated: machine.lastUpdated || 'Never',
                     hasToolData: physicallyPresentTools.length > 0
                 });
             }
@@ -1044,23 +1045,27 @@
             let html = '';
 
             for (const [machineId, machine] of Object.entries(machineDatabase)) {
-                const physicalTools = machine.physicalTools || [];
+                // Handle both old and new machine formats
+                const physicalTools = machine.physicalTools || machine.tools || [];
                 const toolRanges = physicalTools.length > 0 ? compressToolList(physicalTools.map(t => parseInt(t))) : 'None';
                 const hasToolData = physicalTools.length > 0;
+                const isOldFormat = machine.tools && !machine.physicalTools;
                 
                 html += `
                     <div class="machine-card" style="margin: 15px 0; ${!hasToolData ? 'border-left-color: #e74c3c;' : ''}">
-                        <h4>${machine.name} (${machineId}) ${!hasToolData ? '⚠️' : '✅'}</h4>
-                        <p><strong>Type:</strong> ${machine.type}</p>
-                        <p><strong>Location:</strong> ${machine.location}</p>
+                        <h4>${machine.name || 'Unknown'} (${machineId}) ${!hasToolData ? '⚠️' : '✅'}</h4>
+                        <p><strong>Type:</strong> ${machine.type || 'Unknown'}</p>
+                        <p><strong>Location:</strong> ${machine.location || 'Unknown'}</p>
                         <p><strong>IP Address:</strong> ${machine.ipAddress || 'Not set'}</p>
                         <p><strong>TNC Folder:</strong> ${machine.tncFolder || 'Not set'}</p>
-                        <p><strong>Max Slots:</strong> ${machine.maxSlots}</p>
+                        <p><strong>Max Slots:</strong> ${machine.maxSlots || 0}</p>
                         <p><strong>Last Updated:</strong> ${machine.lastUpdated || 'Never'}</p>
                         <p><strong>Notes:</strong> ${machine.notes || 'None'}</p>
-                        ${hasToolData ?
-                          `<p><strong>Physical Tools (${physicalTools.length}):</strong> ${toolRanges}</p>` :
-                          `<p style="color: #e74c3c;"><strong>⚠️ No TOOL_P.TXT data:</strong> Upload tool pocket file to see physical tools</p>`
+                        ${isOldFormat ?
+                          `<p style="color: #f39c12;"><strong>⚠️ Old Format:</strong> This machine has ${physicalTools.length} tools but needs TOOL_P.TXT for accurate physical inventory</p>` :
+                          hasToolData ?
+                            `<p><strong>Physical Tools (${physicalTools.length}):</strong> ${toolRanges}</p>` :
+                            `<p style="color: #e74c3c;"><strong>⚠️ No TOOL_P.TXT data:</strong> Upload tool pocket file to see physical tools</p>`
                         }
                         <div style="margin-top: 10px;">
                             <button class="btn" onclick="editMachine('${machineId}')">✏️ Edit</button>
@@ -1119,16 +1124,22 @@
             if (!machine) return;
 
             document.getElementById('machineId').value = machineId;
-            document.getElementById('machineName').value = machine.name;
-            document.getElementById('machineType').value = machine.type;
-            document.getElementById('machineLocation').value = machine.location;
+            document.getElementById('machineName').value = machine.name || '';
+            document.getElementById('machineType').value = machine.type || '';
+            document.getElementById('machineLocation').value = machine.location || '';
             document.getElementById('ipAddress').value = machine.ipAddress || '';
             document.getElementById('tncFolder').value = machine.tncFolder || '';
-            document.getElementById('maxSlots').value = machine.maxSlots;
+            document.getElementById('maxSlots').value = machine.maxSlots || 0;
             document.getElementById('machineNotes').value = machine.notes || '';
             
-            currentToolList = [...(machine.physicalTools || [])];
-            updateToolPocketPreview();
+            // Handle both old and new formats
+            currentToolList = [...(machine.physicalTools || machine.tools || [])];
+            if (document.getElementById('toolPocketPreview')) {
+                updateToolPocketPreview();
+            }
+            if (document.getElementById('toolPreview')) {
+                updateToolPreview();
+            }
             
             // Scroll to form
             document.querySelector('.machine-form').scrollIntoView({ behavior: 'smooth' });
