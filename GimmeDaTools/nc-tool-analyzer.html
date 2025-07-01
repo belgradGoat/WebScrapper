@@ -643,12 +643,16 @@
             for (const [machineId, machine] of Object.entries(machineDatabase)) {
                 console.log(`\n--- Analyzing Machine ${machineId} ---`);
                 
-                // Handle both old and new machine formats gracefully
-                const physicalTools = machine.physicalTools || machine.tools || [];
+                // ONLY use physicalTools (from TOOL_P.TXT) - ignore old 'tools' array
+                const physicalTools = machine.physicalTools || [];
+                const hasRealToolData = machine.physicalTools && machine.physicalTools.length > 0;
+                
+                console.log(`Machine ${machineId} has TOOL_P.TXT data: ${hasRealToolData}`);
                 console.log(`Physical tools in ${machineId}:`, physicalTools);
                 
-                const physicallyPresentTools = physicalTools.map(tool => tool.toString());
-                console.log(`Physical tools as strings:`, physicallyPresentTools);
+                // If no TOOL_P.TXT data, treat as having NO tools available
+                const physicallyPresentTools = hasRealToolData ? physicalTools.map(tool => tool.toString()) : [];
+                console.log(`Available tools for comparison:`, physicallyPresentTools);
                 
                 const matchingTools = requiredTools.filter(tool => {
                     const toolStr = tool.toString();
@@ -684,7 +688,7 @@
                     maxSlots: machine.maxSlots || 0,
                     notes: machine.notes || 'None',
                     lastUpdated: machine.lastUpdated || 'Never',
-                    hasToolData: physicallyPresentTools.length > 0
+                    hasToolData: hasRealToolData // Only true if TOOL_P.TXT was uploaded
                 });
             }
 
@@ -1080,15 +1084,15 @@
             let html = '';
 
             for (const [machineId, machine] of Object.entries(machineDatabase)) {
-                // Handle both old and new machine formats
-                const physicalTools = machine.physicalTools || machine.tools || [];
-                const toolRanges = physicalTools.length > 0 ? compressToolList(physicalTools.map(t => parseInt(t))) : 'None';
-                const hasToolData = physicalTools.length > 0;
+                // ONLY use physicalTools from TOOL_P.TXT - ignore old 'tools' array
+                const physicalTools = machine.physicalTools || [];
+                const hasRealToolData = machine.physicalTools && machine.physicalTools.length > 0;
+                const toolRanges = hasRealToolData ? compressToolList(physicalTools.map(t => parseInt(t))) : 'None';
                 const isOldFormat = machine.tools && !machine.physicalTools;
                 
                 html += `
-                    <div class="machine-card" style="margin: 15px 0; ${!hasToolData ? 'border-left-color: #e74c3c;' : ''}">
-                        <h4>${machine.name || 'Unknown'} (${machineId}) ${!hasToolData ? '⚠️' : '✅'}</h4>
+                    <div class="machine-card" style="margin: 15px 0; ${!hasRealToolData ? 'border-left-color: #e74c3c;' : ''}">
+                        <h4>${machine.name || 'Unknown'} (${machineId}) ${!hasRealToolData ? '⚠️' : '✅'}</h4>
                         <p><strong>Type:</strong> ${machine.type || 'Unknown'}</p>
                         <p><strong>Location:</strong> ${machine.location || 'Unknown'}</p>
                         <p><strong>IP Address:</strong> ${machine.ipAddress || 'Not set'}</p>
@@ -1097,8 +1101,8 @@
                         <p><strong>Last Updated:</strong> ${machine.lastUpdated || 'Never'}</p>
                         <p><strong>Notes:</strong> ${machine.notes || 'None'}</p>
                         ${isOldFormat ?
-                          `<p style="color: #f39c12;"><strong>⚠️ Old Format:</strong> This machine has ${physicalTools.length} tools but needs TOOL_P.TXT for accurate physical inventory</p>` :
-                          hasToolData ?
+                          `<p style="color: #f39c12;"><strong>⚠️ Old Format:</strong> This machine needs TOOL_P.TXT upload for accurate physical inventory</p>` :
+                          hasRealToolData ?
                             `<p><strong>Physical Tools (${physicalTools.length}):</strong> ${toolRanges}</p>` :
                             `<p style="color: #e74c3c;"><strong>⚠️ No TOOL_P.TXT data:</strong> Upload tool pocket file to see physical tools</p>`
                         }
