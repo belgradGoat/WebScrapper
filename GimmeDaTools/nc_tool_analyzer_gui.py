@@ -279,7 +279,7 @@ class NCToolAnalyzer:
         temp_file = f"temp_{machine_id}_TOOL_P.TXT"
         
         try:
-            # Execute TNCCMD command
+            # Step 1: Download TOOL_P.TCH for tool availability
             cmd = [
                 r"C:\Program Files (x86)\HEIDENHAIN\TNCremo\TNCCMD.exe",
                 f"-I{ip_address}",
@@ -291,17 +291,33 @@ class NCToolAnalyzer:
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
             
             if result.returncode == 0 and os.path.exists(temp_file):
-                # Parse the downloaded file - now returns available tools, locked tools, and tool life data
-                available_tools, locked_tools, tool_life_data = self.parse_tool_p_file(temp_file)
+                # Parse the downloaded file for tool availability
+                available_tools, locked_tools, _ = self.parse_tool_p_file(temp_file)
+                os.remove(temp_file)  # Clean up temp file
+                
+                # Step 2: Download tool.t for tool life data
+                tool_t_file = f"temp_{machine_id}_tool.t"
+                cmd_tool_t = [
+                    r"C:\Program Files (x86)\HEIDENHAIN\TNCremo\TNCCMD.exe",
+                    f"-I{ip_address}",
+                    "Get",
+                    r"TNC:\TABLE\tool.t",
+                    tool_t_file
+                ]
+                
+                result_tool_t = subprocess.run(cmd_tool_t, capture_output=True, text=True, timeout=30)
+                tool_life_data = {}
+                
+                if result_tool_t.returncode == 0 and os.path.exists(tool_t_file):
+                    # Parse tool.t for tool life data using v3 script logic
+                    tool_life_data = self.parse_tool_t_file(tool_t_file, available_tools)
+                    os.remove(tool_t_file)  # Clean up temp file
                 
                 # Update machine database
                 machine['physical_tools'] = available_tools
-                machine['locked_tools'] = locked_tools  # Store locked tools for reporting
-                machine['tool_life_data'] = tool_life_data  # Store tool life information
+                machine['locked_tools'] = locked_tools
+                machine['tool_life_data'] = tool_life_data
                 machine['last_updated'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                
-                # Clean up temp file
-                os.remove(temp_file)
                 
                 message = f"Available: {len(available_tools)} tools"
                 if locked_tools:
@@ -319,10 +335,9 @@ class NCToolAnalyzer:
             return False, f"Error: {str(e)}"
     
     def parse_tool_p_file(self, filename):
-        """Parse TOOL_P.TXT file - extract tools and tool life data"""
+        """Parse TOOL_P.TXT file - extract tool availability only (tool life comes from tool.t)"""
         available_tools = []
         locked_tools = []
-        tool_life_data = {}  # Store tool life information
         
         try:
             print(f"\n=== Parsing TOOL_P.TXT file: {filename} ===")
@@ -332,35 +347,13 @@ class NCToolAnalyzer:
                     line_count += 1
                     columns = line.split()
                     
-                    # Enhanced debug output for first 10 lines to understand format
+                    # Debug output for first 10 lines
                     if line_count <= 10:
-                        print(f"Line {line_count}: {len(columns)} columns")
-                        for i, col in enumerate(columns):
-                            # Try to identify what type of data each column contains
-                            try:
-                                val = float(col)
-                                if val == 0:
-                                    print(f"  Col[{i}]: '{col}' (zero)")
-                                elif 0 < val < 1:
-                                    print(f"  Col[{i}]: '{col}' (decimal)")
-                                elif 1 <= val <= 100:
-                                    print(f"  Col[{i}]: '{col}' (small number - could be tool params)")
-                                elif 100 < val <= 10000:
-                                    print(f"  Col[{i}]: '{col}' (medium number - POSSIBLE TOOL LIFE)")
-                                else:
-                                    print(f"  Col[{i}]: '{col}' (large number)")
-                            except ValueError:
-                                print(f"  Col[{i}]: '{col}' (text)")
-                        print()
+                        print(f"Line {line_count}: {len(columns)} columns: {columns}")
                     
                     # Same logic as original script - just check for 5+ columns and take tool number
                     if len(columns) >= 5:
                         tool_number = columns[1]  # Tool number from column[1]
-                        
-                        # Extract tool life data from columns with enhanced debugging
-                        tool_life_info = self.extract_tool_life(columns, tool_number, line_count <= 10)
-                        if tool_life_info:
-                            tool_life_data[tool_number] = tool_life_info
                         
                         # Very conservative lock detection - only check for obvious text indicators
                         is_locked = self.check_tool_status_conservative(columns, line)
@@ -377,22 +370,20 @@ class NCToolAnalyzer:
             print(f"Total lines processed: {line_count}")
             print(f"Available tools: {len(available_tools)}")
             print(f"Locked/Broken tools: {len(locked_tools)}")
-            print(f"Tools with life data: {len(tool_life_data)}")
             
-            # Remove duplicates and sort available tools
+            # Remove duplicates and sort tools
             unique_available = list(set(available_tools))
             sorted_available = sorted(unique_available, key=lambda x: int(x) if x.isdigit() else 999999)
             
-            # Remove duplicates from locked tools too
             unique_locked = list(set(locked_tools))
             sorted_locked = sorted(unique_locked, key=lambda x: int(x) if x.isdigit() else 999999)
             
             print(f"Final available tools ({len(sorted_available)}): {sorted_available[:20]}...")
             if sorted_locked:
                 print(f"Final locked tools ({len(sorted_locked)}): {sorted_locked[:10]}...")
-            print("=== Parsing complete ===\n")
+            print("=== TOOL_P.TXT parsing complete ===\n")
             
-            return sorted_available, sorted_locked, tool_life_data
+            return sorted_available, sorted_locked, {}  # Empty dict for compatibility
             
         except Exception as e:
             print(f"ERROR parsing {filename}: {e}")
@@ -484,6 +475,67 @@ class NCToolAnalyzer:
                 print(f"    Tool life extraction error: {e}")
         
         return None
+    
+    def parse_tool_t_file(self, filename, available_tools):
+        """Parse tool.t file for tool life data using v3 script logic"""
+        tool_life_data = {}
+        
+        try:
+            print(f"\n=== Parsing tool.t file: {filename} ===")
+            with open(filename, 'r', encoding='utf-8', errors='ignore') as f:
+                lines = f.readlines()
+            
+            # Find CUR.TIME or CUR_TIME header (like v3 script)
+            cur_time_column = None
+            cur_time_index = None
+            
+            for idx, line in enumerate(lines):
+                if 'CUR.TIME' in line:
+                    cur_time_index = idx
+                    cur_time_column = line.index('CUR.TIME')
+                    print(f"Found CUR.TIME header at line {idx}, column position {cur_time_column}")
+                    break
+                elif 'CUR_TIME' in line:
+                    cur_time_index = idx
+                    cur_time_column = line.index('CUR_TIME')
+                    print(f"Found CUR_TIME header at line {idx}, column position {cur_time_column}")
+                    break
+            
+            if cur_time_column is None or cur_time_index is None:
+                print("CUR.TIME or CUR_TIME header not found in tool.t")
+                return {}
+            
+            # Parse tool life data (skip 2 lines after header like v3 script)
+            for i, cur_time_line in enumerate(lines[cur_time_index + 2:]):
+                tool_number = str(i + 1)  # Tool numbers start from 1
+                
+                # Only process tools that are available
+                if tool_number in available_tools:
+                    try:
+                        # Extract current time value from the column position
+                        cur_time_value_str = cur_time_line[cur_time_column:].strip().split()[0]
+                        cur_time_value = float(cur_time_value_str)
+                        
+                        if cur_time_value > 0:
+                            tool_life_data[tool_number] = {
+                                'current_time': cur_time_value,
+                                'max_time': None,  # tool.t doesn't contain max time
+                                'usage_percentage': None
+                            }
+                            print(f"Tool {tool_number}: Current time = {cur_time_value} minutes")
+                        
+                    except (ValueError, IndexError) as e:
+                        print(f"Error parsing tool {tool_number}: {e}")
+                        continue
+            
+            print(f"Extracted tool life data for {len(tool_life_data)} tools")
+            print("=== tool.t parsing complete ===\n")
+            
+            return tool_life_data
+            
+        except Exception as e:
+            print(f"ERROR parsing {filename}: {e}")
+            return {}
     
     def check_tool_status_conservative(self, columns, full_line):
         """Very conservative lock detection - only obvious indicators"""
