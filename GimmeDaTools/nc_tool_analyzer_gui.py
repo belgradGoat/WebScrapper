@@ -255,6 +255,7 @@ class NCToolAnalyzer:
     
     def download_from_machine(self, machine_id):
         """Download TOOL_P.TXT from a specific machine"""
+        machine_id = str(machine_id)  # Convert to string to match database keys
         machine = self.machine_database.get(machine_id)
         if not machine:
             return False, "Machine not found"
@@ -413,19 +414,7 @@ class NCToolAnalyzer:
             messagebox.showwarning("Warning", "Please select a machine first")
             return
         
-        machine_id = self.machine_tree.item(selection[0])['values'][0]
-        
-        # Debug information
-        machine_data = self.machine_database.get(machine_id)
-        debug_msg = f"Selected machine ID: {machine_id}\n"
-        debug_msg += f"Machine exists in database: {machine_data is not None}\n"
-        if machine_data:
-            debug_msg += f"Machine IP: {machine_data.get('ip_address', 'MISSING')}\n"
-            debug_msg += f"Machine name: {machine_data.get('name', 'MISSING')}"
-        else:
-            debug_msg += f"Available machine IDs: {list(self.machine_database.keys())}"
-        
-        messagebox.showinfo("Debug Info", debug_msg)
+        machine_id = str(self.machine_tree.item(selection[0])['values'][0])  # Convert to string
         
         self.status_var.set(f"Downloading from {machine_id}...")
         self.progress.start()
@@ -456,7 +445,7 @@ class NCToolAnalyzer:
             messagebox.showwarning("Warning", "Please select a machine first")
             return
         
-        machine_id = self.machine_tree.item(selection[0])['values'][0]
+        machine_id = str(self.machine_tree.item(selection[0])['values'][0])  # Convert to string
         machine = self.machine_database[machine_id]
         
         # Populate form with existing data
@@ -479,7 +468,7 @@ class NCToolAnalyzer:
             messagebox.showwarning("Warning", "Please select a machine first")
             return
         
-        machine_id = self.machine_tree.item(selection[0])['values'][0]
+        machine_id = str(self.machine_tree.item(selection[0])['values'][0])  # Convert to string
         
         if messagebox.askyesno("Confirm Delete", f"Delete machine {machine_id}?"):
             del self.machine_database[machine_id]
