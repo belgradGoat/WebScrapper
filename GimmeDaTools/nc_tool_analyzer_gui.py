@@ -178,7 +178,8 @@ class NCToolAnalyzer:
         filename = filedialog.askopenfilename(
             title="Select NC File",
             filetypes=[
-                ("NC files", "*.nc *.txt *.cnc *.prg"),
+                ("NC files", "*.nc *.txt *.cnc *.prg *.h"),
+                ("Heidenhain files", "*.h"),
                 ("All files", "*.*")
             ]
         )
