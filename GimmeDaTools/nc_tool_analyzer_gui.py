@@ -235,9 +235,18 @@ class NCToolAnalyzer:
         
         # Add machines
         for machine_id, machine in self.machine_database.items():
-            tool_count = len(machine.get('physical_tools', []))
+            available_count = len(machine.get('physical_tools', []))
+            locked_count = len(machine.get('locked_tools', []))
             last_updated = machine.get('last_updated', 'Never')
-            status = '✅ Ready' if tool_count > 0 else '⚠️ No Tools'
+            
+            # Enhanced status with locked tool info
+            if available_count > 0:
+                if locked_count > 0:
+                    status = f'⚠️ {available_count} OK, {locked_count} Locked'
+                else:
+                    status = f'✅ {available_count} Ready'
+            else:
+                status = '❌ No Tools'
             
             print(f"Adding machine {machine_id}: {machine.get('name', 'No Name')}")
             
@@ -245,7 +254,7 @@ class NCToolAnalyzer:
                 machine_id,
                 machine.get('name', 'Unknown'),
                 machine.get('ip_address', 'No IP'),
-                tool_count,
+                f"{available_count}+{locked_count}" if locked_count > 0 else str(available_count),
                 last_updated,
                 status
             ))
@@ -276,17 +285,22 @@ class NCToolAnalyzer:
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
             
             if result.returncode == 0 and os.path.exists(temp_file):
-                # Parse the downloaded file
-                physical_tools = self.parse_tool_p_file(temp_file)
+                # Parse the downloaded file - now returns available and locked tools
+                available_tools, locked_tools = self.parse_tool_p_file(temp_file)
                 
                 # Update machine database
-                machine['physical_tools'] = physical_tools
+                machine['physical_tools'] = available_tools
+                machine['locked_tools'] = locked_tools  # Store locked tools for reporting
                 machine['last_updated'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 
                 # Clean up temp file
                 os.remove(temp_file)
                 
-                return True, f"Downloaded {len(physical_tools)} tools"
+                message = f"Available: {len(available_tools)} tools"
+                if locked_tools:
+                    message += f", Locked/Broken: {len(locked_tools)} tools"
+                
+                return True, message
             else:
                 return False, f"TNCCMD failed: {result.stderr}"
                 
@@ -296,8 +310,10 @@ class NCToolAnalyzer:
             return False, f"Error: {str(e)}"
     
     def parse_tool_p_file(self, filename):
-        """Parse TOOL_P.TXT file to extract tool numbers - exactly like original Python script"""
-        tools = []
+        """Parse TOOL_P.TXT file and filter out locked/broken tools"""
+        available_tools = []
+        locked_tools = []
+        
         try:
             print(f"\n=== Parsing TOOL_P.TXT file: {filename} ===")
             with open(filename, 'r', encoding='utf-8', errors='ignore') as f:
@@ -310,30 +326,74 @@ class NCToolAnalyzer:
                     if line_count <= 10:
                         print(f"Line {line_count}: {len(columns)} columns: {columns}")
                     
-                    # Exact match to original script: check if >= 5 columns, then take columns[1]
                     if len(columns) >= 5:
-                        tool_number = columns[1]  # Second column (0-indexed)
-                        tools.append(tool_number)  # Don't validate digits - just like original
-                        if line_count <= 10:
-                            print(f"  -> Added tool: {tool_number}")
+                        tool_number = columns[1]  # Tool number from column[1]
+                        
+                        # Check tool status - common patterns for locked/broken tools
+                        # Different machines may use different status indicators
+                        tool_status = self.check_tool_status(columns)
+                        
+                        if tool_status == "available":
+                            available_tools.append(tool_number)
+                            if line_count <= 10:
+                                print(f"  -> Available tool: {tool_number}")
+                        else:
+                            locked_tools.append(tool_number)
+                            if line_count <= 10:
+                                print(f"  -> Locked/Broken tool: {tool_number} ({tool_status})")
             
             print(f"Total lines processed: {line_count}")
-            print(f"Raw tools extracted: {len(tools)} tools")
-            print(f"First 20 raw tools: {tools[:20]}")
+            print(f"Available tools: {len(available_tools)}")
+            print(f"Locked/Broken tools: {len(locked_tools)}")
             
-            # Remove duplicates and sort (like original script)
-            unique_tools = list(set(tools))
-            print(f"Unique tools: {len(unique_tools)}")
+            if locked_tools:
+                print(f"Locked tools: {locked_tools[:10]}{'...' if len(locked_tools) > 10 else ''}")
             
-            sorted_tools = sorted(unique_tools, key=lambda x: int(x) if x.isdigit() else 999999)
-            print(f"Final sorted tools ({len(sorted_tools)}): {sorted_tools[:20]}...")
+            # Remove duplicates and sort available tools only
+            unique_available = list(set(available_tools))
+            sorted_available = sorted(unique_available, key=lambda x: int(x) if x.isdigit() else 999999)
+            
+            print(f"Final available tools ({len(sorted_available)}): {sorted_available[:20]}...")
             print("=== Parsing complete ===\n")
             
-            return sorted_tools
+            return sorted_available, locked_tools
             
         except Exception as e:
             print(f"ERROR parsing {filename}: {e}")
-            return []
+            return [], []
+    
+    def check_tool_status(self, columns):
+        """Check if tool is available or locked based on TOOL_P.TXT columns"""
+        # Different CNC systems use different status indicators
+        # Common patterns to check:
+        
+        # Method 1: Look for status flags in later columns
+        for col in columns[2:]:  # Check columns after tool number
+            col_upper = str(col).upper()
+            if any(status in col_upper for status in ['LOCK', 'BROKEN', 'DISABLED', 'ERROR', 'FAULT']):
+                return f"locked ({col})"
+        
+        # Method 2: Check for specific status codes (machine-dependent)
+        # Some machines use numeric status codes
+        if len(columns) >= 6:
+            try:
+                status_code = int(columns[5])  # Example: column 5 might be status
+                if status_code != 0:  # 0 = OK, non-zero = problem
+                    return f"status_code_{status_code}"
+            except ValueError:
+                pass
+        
+        # Method 3: Check for tool life = 0 or negative (worn out)
+        if len(columns) >= 8:
+            try:
+                tool_life = float(columns[7])  # Example: tool life percentage
+                if tool_life <= 0:
+                    return "worn_out"
+            except (ValueError, IndexError):
+                pass
+        
+        # Default: assume available if no lock indicators found
+        return "available"
     
     def refresh_all_machines(self):
         """Download tool data from all machines"""
@@ -617,18 +677,24 @@ class NCToolAnalyzer:
         for machine_id, machine in self.machine_database.items():
             debug_info.append(f"--- Machine {machine_id} ---")
             physical_tools = machine.get('physical_tools', [])
+            locked_tools = machine.get('locked_tools', [])
             debug_info.append(f"Physical tools: {physical_tools[:10]}...")
             debug_info.append(f"Physical tools types: {[type(t).__name__ for t in physical_tools[:5]]}")
             debug_info.append(f"Total physical tools: {len(physical_tools)}")
+            debug_info.append(f"Total locked tools: {len(locked_tools)}")
             
             # Check each required tool individually
             matching_tools = []
             missing_tools = []
+            locked_required_tools = []
             
             for tool in tool_numbers:
                 if tool in physical_tools:
                     matching_tools.append(tool)
                     debug_info.append(f"  ✅ Tool {tool}: FOUND")
+                elif tool in locked_tools:
+                    locked_required_tools.append(tool)
+                    debug_info.append(f"  🔒 Tool {tool}: LOCKED/BROKEN")
                 else:
                     missing_tools.append(tool)
                     debug_info.append(f"  ❌ Tool {tool}: MISSING")
@@ -646,9 +712,19 @@ class NCToolAnalyzer:
                         # Fix the mismatch by adding to matching
                         matching_tools.append(tool)
                         missing_tools.remove(tool)
+                    elif str_tool in locked_tools:
+                        debug_info.append(f"    🔒 But '{str_tool}' (str) is locked!")
+                        locked_required_tools.append(tool)
+                        missing_tools.remove(tool)
+                    elif int_tool and int_tool in locked_tools:
+                        debug_info.append(f"    🔒 But {int_tool} (int) is locked!")
+                        locked_required_tools.append(tool)
+                        missing_tools.remove(tool)
             
             match_percentage = (len(matching_tools) / len(tool_numbers) * 100) if tool_numbers else 0
             debug_info.append(f"Result: {len(matching_tools)}/{len(tool_numbers)} = {match_percentage:.1f}%")
+            if locked_required_tools:
+                debug_info.append(f"Locked required tools: {len(locked_required_tools)}")
             debug_info.append("")
             
             machine_analysis.append({
@@ -658,8 +734,10 @@ class NCToolAnalyzer:
                 'location': machine['location'],
                 'matching_tools': matching_tools,
                 'missing_tools': missing_tools,
+                'locked_required_tools': locked_required_tools,
                 'match_percentage': round(match_percentage),
                 'total_physical_tools': len(physical_tools),
+                'total_locked_tools': len(locked_tools),
                 'last_updated': machine.get('last_updated', 'Never')
             })
         
@@ -756,13 +834,30 @@ class NCToolAnalyzer:
             output.append(f"Type: {machine['machine_type']}")
             output.append(f"Location: {machine['location']}")
             output.append(f"Match: {machine['match_percentage']}% ({len(machine['matching_tools'])}/{analysis['total_tools']} tools)")
-            output.append(f"Physical Tools Available: {machine['total_physical_tools']}")
+            
+            # Enhanced tool status display
+            available_count = machine['total_physical_tools']
+            locked_count = machine.get('total_locked_tools', 0)
+            if locked_count > 0:
+                output.append(f"Tool Status: {available_count} Available, {locked_count} Locked/Broken")
+            else:
+                output.append(f"Physical Tools Available: {available_count}")
+            
             output.append(f"Last Updated: {machine['last_updated']}")
             
+            # Show tool status for required tools
             if machine['missing_tools']:
-                output.append(f"Missing Tools: T{', T'.join(machine['missing_tools'])}")
-            else:
-                output.append("✅ All required tools are physically present!")
+                output.append(f"❌ Missing Tools: T{', T'.join(machine['missing_tools'])}")
+            
+            locked_required = machine.get('locked_required_tools', [])
+            if locked_required:
+                output.append(f"🔒 Required Tools Locked/Broken: T{', T'.join(locked_required)}")
+            
+            if not machine['missing_tools'] and not locked_required:
+                output.append("✅ All required tools are available!")
+            elif not machine['missing_tools'] and locked_required:
+                output.append("⚠️ All tools physically present but some are locked/broken!")
+            
             output.append("-" * 40)
         
         # F-value errors
