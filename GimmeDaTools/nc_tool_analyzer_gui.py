@@ -287,20 +287,44 @@ class NCToolAnalyzer:
             return False, f"Error: {str(e)}"
     
     def parse_tool_p_file(self, filename):
-        """Parse TOOL_P.TXT file to extract tool numbers"""
+        """Parse TOOL_P.TXT file to extract tool numbers - exactly like original Python script"""
         tools = []
         try:
+            print(f"\n=== Parsing TOOL_P.TXT file: {filename} ===")
             with open(filename, 'r', encoding='utf-8', errors='ignore') as f:
+                line_count = 0
                 for line in f:
+                    line_count += 1
                     columns = line.split()
+                    
+                    # Debug output for first 10 lines
+                    if line_count <= 10:
+                        print(f"Line {line_count}: {len(columns)} columns: {columns}")
+                    
+                    # Exact match to original script: check if >= 5 columns, then take columns[1]
                     if len(columns) >= 5:
-                        tool_number = columns[1]
-                        if tool_number and tool_number.isdigit():
-                            tools.append(tool_number)
+                        tool_number = columns[1]  # Second column (0-indexed)
+                        tools.append(tool_number)  # Don't validate digits - just like original
+                        if line_count <= 10:
+                            print(f"  -> Added tool: {tool_number}")
+            
+            print(f"Total lines processed: {line_count}")
+            print(f"Raw tools extracted: {len(tools)} tools")
+            print(f"First 20 raw tools: {tools[:20]}")
+            
+            # Remove duplicates and sort (like original script)
+            unique_tools = list(set(tools))
+            print(f"Unique tools: {len(unique_tools)}")
+            
+            sorted_tools = sorted(unique_tools, key=lambda x: int(x) if x.isdigit() else 999999)
+            print(f"Final sorted tools ({len(sorted_tools)}): {sorted_tools[:20]}...")
+            print("=== Parsing complete ===\n")
+            
+            return sorted_tools
+            
         except Exception as e:
-            print(f"Error parsing {filename}: {e}")
-        
-        return sorted(list(set(tools)), key=int)
+            print(f"ERROR parsing {filename}: {e}")
+            return []
     
     def refresh_all_machines(self):
         """Download tool data from all machines"""
