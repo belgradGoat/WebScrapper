@@ -336,7 +336,21 @@ class NCToolAnalyzer:
                     if line_count <= 10:
                         print(f"Line {line_count}: {len(columns)} columns")
                         for i, col in enumerate(columns):
-                            print(f"  Col[{i}]: '{col}'")
+                            # Try to identify what type of data each column contains
+                            try:
+                                val = float(col)
+                                if val == 0:
+                                    print(f"  Col[{i}]: '{col}' (zero)")
+                                elif 0 < val < 1:
+                                    print(f"  Col[{i}]: '{col}' (decimal)")
+                                elif 1 <= val <= 100:
+                                    print(f"  Col[{i}]: '{col}' (small number - could be tool params)")
+                                elif 100 < val <= 10000:
+                                    print(f"  Col[{i}]: '{col}' (medium number - POSSIBLE TOOL LIFE)")
+                                else:
+                                    print(f"  Col[{i}]: '{col}' (large number)")
+                            except ValueError:
+                                print(f"  Col[{i}]: '{col}' (text)")
                         print()
                     
                     # Same logic as original script - just check for 5+ columns and take tool number
@@ -391,98 +405,79 @@ class NCToolAnalyzer:
         try:
             if debug:
                 print(f"  Analyzing tool life for T{tool_number}:")
-                print(f"    All columns: {columns}")
-            
-            # Based on typical Heidenhain TOOL_P.TXT format:
-            # Common column positions (may vary by machine configuration):
-            # Col 0: Tool slot/pocket
-            # Col 1: Tool number
-            # Col 2: Tool length
-            # Col 3: Tool radius
-            # Col 4: Tool type or other parameter
-            # Col 5-8: Various tool parameters
-            # Col 9-12: Often tool life related data
+                # Show all numeric values with their positions
+                numeric_candidates = []
+                for i, col in enumerate(columns):
+                    try:
+                        val = float(col)
+                        numeric_candidates.append((i, val))
+                    except ValueError:
+                        pass
+                print(f"    All numeric values: {numeric_candidates}")
             
             current_time = None
             max_time = None
+            current_col = None
+            max_col = None
             
-            # Method 1: Check common tool life positions
-            # Many Heidenhain systems store tool life in later columns
-            if len(columns) >= 10:
+            # Strategy: Find all reasonable tool life candidates and pick the best pair
+            candidates = []
+            for i in range(2, len(columns)):  # Skip slot and tool number
                 try:
-                    # Try columns 8-12 for tool life data
-                    # Look for two numeric values where one could be current, other max
-                    for i in range(8, min(len(columns), 13)):
-                        try:
-                            val = float(columns[i])
-                            if 0 <= val <= 50000:  # Reasonable tool life range in minutes
-                                if current_time is None:
-                                    current_time = val
-                                elif max_time is None and val != current_time:
-                                    # If this value is larger, it's likely the max time
-                                    if val > current_time:
-                                        max_time = val
-                                    else:
-                                        # Current value might be max, swap them
-                                        max_time = current_time
-                                        current_time = val
-                                    break
-                        except (ValueError, IndexError):
-                            continue
-                except Exception:
-                    pass
+                    val = float(columns[i])
+                    # Tool life is typically 0-50000 minutes, but could be higher
+                    # Exclude obvious non-tool-life values like 0, very small decimals, etc.
+                    if 0.1 <= val <= 100000:  # Broader range, exclude exact zeros
+                        candidates.append((i, val))
+                except (ValueError, IndexError):
+                    continue
             
-            # Method 2: If not found, try other common positions
-            if current_time is None and len(columns) >= 6:
-                try:
-                    # Try columns 5-8
-                    for i in range(5, min(len(columns), 9)):
-                        try:
-                            val = float(columns[i])
-                            if 0 <= val <= 50000:
-                                if current_time is None:
-                                    current_time = val
-                                elif max_time is None and val > current_time:
-                                    max_time = val
-                                    break
-                        except (ValueError, IndexError):
-                            continue
-                except Exception:
-                    pass
+            if debug:
+                print(f"    Tool life candidates (0.1-100000): {candidates}")
             
-            # Method 3: Look for any reasonable tool life values
-            if current_time is None:
-                for i in range(2, len(columns)):
-                    try:
-                        val = float(columns[i])
-                        # Tool life typically 0-50000 minutes, but could be in other units
-                        if 0 <= val <= 100000:
-                            if current_time is None:
-                                current_time = val
-                            elif max_time is None and val > current_time:
-                                max_time = val
+            # Find current and max tool life
+            if len(candidates) >= 2:
+                # Look for pairs where one is smaller (current) and one is larger (max)
+                candidates.sort(key=lambda x: x[1])  # Sort by value
+                
+                # Take first non-zero value as current, find a larger one as max
+                for i, (col_idx, val) in enumerate(candidates):
+                    if current_time is None and val > 0:
+                        current_time = val
+                        current_col = col_idx
+                        # Look for a larger value as max time
+                        for j in range(i+1, len(candidates)):
+                            max_col_idx, max_val = candidates[j]
+                            if max_val > current_time:
+                                max_time = max_val
+                                max_col = max_col_idx
                                 break
-                    except (ValueError, IndexError):
-                        continue
+                        break
+            elif len(candidates) == 1:
+                # Only one candidate - use as current time
+                current_col, current_time = candidates[0]
             
             # Store results if we found anything
             if current_time is not None:
                 tool_life_info['current_time'] = current_time
+                tool_life_info['current_col'] = current_col
                 
                 if max_time is not None and max_time > 0:
                     tool_life_info['max_time'] = max_time
+                    tool_life_info['max_col'] = max_col
                     tool_life_info['usage_percentage'] = (current_time / max_time) * 100
                 else:
                     tool_life_info['max_time'] = None
+                    tool_life_info['max_col'] = None
                     tool_life_info['usage_percentage'] = None
                 
                 if debug:
                     percentage_str = f"{tool_life_info.get('usage_percentage', 0):.1f}%" if tool_life_info.get('usage_percentage') is not None else "N/A"
-                    print(f"    -> Tool life found: {current_time:.1f}/{max_time or 'N/A'} min ({percentage_str})")
+                    print(f"    -> SELECTED: Current={current_time:.1f} (col[{current_col}]), Max={max_time or 'N/A'} (col[{max_col}]), Usage={percentage_str}")
                 
                 return tool_life_info
             elif debug:
-                print(f"    -> No tool life data detected")
+                print(f"    -> No suitable tool life values found")
         
         except Exception as e:
             if debug:
