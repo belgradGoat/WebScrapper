@@ -332,16 +332,19 @@ class NCToolAnalyzer:
                     line_count += 1
                     columns = line.split()
                     
-                    # Debug output for first 10 lines
+                    # Enhanced debug output for first 10 lines to understand format
                     if line_count <= 10:
-                        print(f"Line {line_count}: {len(columns)} columns: {columns}")
+                        print(f"Line {line_count}: {len(columns)} columns")
+                        for i, col in enumerate(columns):
+                            print(f"  Col[{i}]: '{col}'")
+                        print()
                     
                     # Same logic as original script - just check for 5+ columns and take tool number
                     if len(columns) >= 5:
                         tool_number = columns[1]  # Tool number from column[1]
                         
-                        # Extract tool life data from columns
-                        tool_life_info = self.extract_tool_life(columns, line_count <= 10)
+                        # Extract tool life data from columns with enhanced debugging
+                        tool_life_info = self.extract_tool_life(columns, tool_number, line_count <= 10)
                         if tool_life_info:
                             tool_life_data[tool_number] = tool_life_info
                         
@@ -381,36 +384,88 @@ class NCToolAnalyzer:
             print(f"ERROR parsing {filename}: {e}")
             return [], [], {}
     
-    def extract_tool_life(self, columns, debug=False):
-        """Extract tool life data from TOOL_P.TXT columns"""
+    def extract_tool_life(self, columns, tool_number, debug=False):
+        """Extract tool life data from TOOL_P.TXT columns based on typical Heidenhain format"""
         tool_life_info = {}
         
         try:
-            # TOOL_P.TXT format varies by machine, but common patterns:
-            # Column positions for tool life data (these may need adjustment based on your machine format)
-            # Typical format might have: current_time, max_time in different columns
+            if debug:
+                print(f"  Analyzing tool life for T{tool_number}:")
+                print(f"    All columns: {columns}")
             
-            # Try to extract current tool life (used time in minutes)
-            # Common positions: column 6, 7, 8, or 9
+            # Based on typical Heidenhain TOOL_P.TXT format:
+            # Common column positions (may vary by machine configuration):
+            # Col 0: Tool slot/pocket
+            # Col 1: Tool number
+            # Col 2: Tool length
+            # Col 3: Tool radius
+            # Col 4: Tool type or other parameter
+            # Col 5-8: Various tool parameters
+            # Col 9-12: Often tool life related data
+            
             current_time = None
             max_time = None
             
-            # Method 1: Look for time values in likely columns
-            for i in range(2, min(len(columns), 12)):  # Check columns 2-11
+            # Method 1: Check common tool life positions
+            # Many Heidenhain systems store tool life in later columns
+            if len(columns) >= 10:
                 try:
-                    value = float(columns[i])
-                    # Tool life times are typically positive numbers, often in minutes
-                    # Current time is usually smaller than max time
-                    if 0 <= value <= 10000:  # Reasonable range for tool life in minutes
-                        if current_time is None:
-                            current_time = value
-                        elif max_time is None and value > current_time:
-                            max_time = value
-                            break
-                except (ValueError, IndexError):
-                    continue
+                    # Try columns 8-12 for tool life data
+                    # Look for two numeric values where one could be current, other max
+                    for i in range(8, min(len(columns), 13)):
+                        try:
+                            val = float(columns[i])
+                            if 0 <= val <= 50000:  # Reasonable tool life range in minutes
+                                if current_time is None:
+                                    current_time = val
+                                elif max_time is None and val != current_time:
+                                    # If this value is larger, it's likely the max time
+                                    if val > current_time:
+                                        max_time = val
+                                    else:
+                                        # Current value might be max, swap them
+                                        max_time = current_time
+                                        current_time = val
+                                    break
+                        except (ValueError, IndexError):
+                            continue
+                except Exception:
+                    pass
             
-            # If we found both values, calculate percentage
+            # Method 2: If not found, try other common positions
+            if current_time is None and len(columns) >= 6:
+                try:
+                    # Try columns 5-8
+                    for i in range(5, min(len(columns), 9)):
+                        try:
+                            val = float(columns[i])
+                            if 0 <= val <= 50000:
+                                if current_time is None:
+                                    current_time = val
+                                elif max_time is None and val > current_time:
+                                    max_time = val
+                                    break
+                        except (ValueError, IndexError):
+                            continue
+                except Exception:
+                    pass
+            
+            # Method 3: Look for any reasonable tool life values
+            if current_time is None:
+                for i in range(2, len(columns)):
+                    try:
+                        val = float(columns[i])
+                        # Tool life typically 0-50000 minutes, but could be in other units
+                        if 0 <= val <= 100000:
+                            if current_time is None:
+                                current_time = val
+                            elif max_time is None and val > current_time:
+                                max_time = val
+                                break
+                    except (ValueError, IndexError):
+                        continue
+            
+            # Store results if we found anything
             if current_time is not None:
                 tool_life_info['current_time'] = current_time
                 
@@ -418,14 +473,16 @@ class NCToolAnalyzer:
                     tool_life_info['max_time'] = max_time
                     tool_life_info['usage_percentage'] = (current_time / max_time) * 100
                 else:
-                    # If no max time found, try to find it in other common positions
                     tool_life_info['max_time'] = None
                     tool_life_info['usage_percentage'] = None
                 
                 if debug:
-                    print(f"    Tool life: {current_time:.1f}/{max_time or 'N/A'} min ({tool_life_info.get('usage_percentage', 'N/A'):.1f}%)")
+                    percentage_str = f"{tool_life_info.get('usage_percentage', 0):.1f}%" if tool_life_info.get('usage_percentage') is not None else "N/A"
+                    print(f"    -> Tool life found: {current_time:.1f}/{max_time or 'N/A'} min ({percentage_str})")
                 
                 return tool_life_info
+            elif debug:
+                print(f"    -> No tool life data detected")
         
         except Exception as e:
             if debug:
