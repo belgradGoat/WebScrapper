@@ -291,12 +291,13 @@ class NCToolAnalyzer:
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
             
             if result.returncode == 0 and os.path.exists(temp_file):
-                # Parse the downloaded file - now returns available and locked tools
-                available_tools, locked_tools = self.parse_tool_p_file(temp_file)
+                # Parse the downloaded file - now returns available tools, locked tools, and tool life data
+                available_tools, locked_tools, tool_life_data = self.parse_tool_p_file(temp_file)
                 
                 # Update machine database
                 machine['physical_tools'] = available_tools
                 machine['locked_tools'] = locked_tools  # Store locked tools for reporting
+                machine['tool_life_data'] = tool_life_data  # Store tool life information
                 machine['last_updated'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 
                 # Clean up temp file
@@ -305,6 +306,8 @@ class NCToolAnalyzer:
                 message = f"Available: {len(available_tools)} tools"
                 if locked_tools:
                     message += f", Locked/Broken: {len(locked_tools)} tools"
+                if tool_life_data:
+                    message += f", Life data: {len(tool_life_data)} tools"
                 
                 return True, message
             else:
@@ -316,9 +319,10 @@ class NCToolAnalyzer:
             return False, f"Error: {str(e)}"
     
     def parse_tool_p_file(self, filename):
-        """Parse TOOL_P.TXT file - simplified approach like original script"""
+        """Parse TOOL_P.TXT file - extract tools and tool life data"""
         available_tools = []
-        locked_tools = []  # Keep this for future use but start with conservative approach
+        locked_tools = []
+        tool_life_data = {}  # Store tool life information
         
         try:
             print(f"\n=== Parsing TOOL_P.TXT file: {filename} ===")
@@ -336,6 +340,11 @@ class NCToolAnalyzer:
                     if len(columns) >= 5:
                         tool_number = columns[1]  # Tool number from column[1]
                         
+                        # Extract tool life data from columns
+                        tool_life_info = self.extract_tool_life(columns, line_count <= 10)
+                        if tool_life_info:
+                            tool_life_data[tool_number] = tool_life_info
+                        
                         # Very conservative lock detection - only check for obvious text indicators
                         is_locked = self.check_tool_status_conservative(columns, line)
                         
@@ -351,6 +360,7 @@ class NCToolAnalyzer:
             print(f"Total lines processed: {line_count}")
             print(f"Available tools: {len(available_tools)}")
             print(f"Locked/Broken tools: {len(locked_tools)}")
+            print(f"Tools with life data: {len(tool_life_data)}")
             
             # Remove duplicates and sort available tools
             unique_available = list(set(available_tools))
@@ -365,11 +375,63 @@ class NCToolAnalyzer:
                 print(f"Final locked tools ({len(sorted_locked)}): {sorted_locked[:10]}...")
             print("=== Parsing complete ===\n")
             
-            return sorted_available, sorted_locked
+            return sorted_available, sorted_locked, tool_life_data
             
         except Exception as e:
             print(f"ERROR parsing {filename}: {e}")
-            return [], []
+            return [], [], {}
+    
+    def extract_tool_life(self, columns, debug=False):
+        """Extract tool life data from TOOL_P.TXT columns"""
+        tool_life_info = {}
+        
+        try:
+            # TOOL_P.TXT format varies by machine, but common patterns:
+            # Column positions for tool life data (these may need adjustment based on your machine format)
+            # Typical format might have: current_time, max_time in different columns
+            
+            # Try to extract current tool life (used time in minutes)
+            # Common positions: column 6, 7, 8, or 9
+            current_time = None
+            max_time = None
+            
+            # Method 1: Look for time values in likely columns
+            for i in range(2, min(len(columns), 12)):  # Check columns 2-11
+                try:
+                    value = float(columns[i])
+                    # Tool life times are typically positive numbers, often in minutes
+                    # Current time is usually smaller than max time
+                    if 0 <= value <= 10000:  # Reasonable range for tool life in minutes
+                        if current_time is None:
+                            current_time = value
+                        elif max_time is None and value > current_time:
+                            max_time = value
+                            break
+                except (ValueError, IndexError):
+                    continue
+            
+            # If we found both values, calculate percentage
+            if current_time is not None:
+                tool_life_info['current_time'] = current_time
+                
+                if max_time is not None and max_time > 0:
+                    tool_life_info['max_time'] = max_time
+                    tool_life_info['usage_percentage'] = (current_time / max_time) * 100
+                else:
+                    # If no max time found, try to find it in other common positions
+                    tool_life_info['max_time'] = None
+                    tool_life_info['usage_percentage'] = None
+                
+                if debug:
+                    print(f"    Tool life: {current_time:.1f}/{max_time or 'N/A'} min ({tool_life_info.get('usage_percentage', 'N/A'):.1f}%)")
+                
+                return tool_life_info
+        
+        except Exception as e:
+            if debug:
+                print(f"    Tool life extraction error: {e}")
+        
+        return None
     
     def check_tool_status_conservative(self, columns, full_line):
         """Very conservative lock detection - only obvious indicators"""
@@ -806,13 +868,35 @@ class NCToolAnalyzer:
                 output.append(f"Preset: {preset}")
             output.append("")
         
-        # Tools needed
+        # Tools needed with life information
         output.append("TOOLS NEEDED IN SEQUENCE ORDER:")
         output.append("-" * 40)
         for tool in analysis['tool_numbers']:
             comp_info = analysis['cutter_comp_info'].get(tool, 'Cutter Comp: Off')
             output.append(f"T{tool}")
             output.append(f"{comp_info}")
+            
+            # Add tool life information if available from any machine
+            tool_life_found = False
+            for machine in analysis['machine_analysis']:
+                machine_data = self.machine_database.get(machine['machine_id'], {})
+                tool_life_data = machine_data.get('tool_life_data', {})
+                if tool in tool_life_data:
+                    life_info = tool_life_data[tool]
+                    current = life_info.get('current_time', 0)
+                    max_time = life_info.get('max_time')
+                    percentage = life_info.get('usage_percentage')
+                    
+                    if max_time is not None and percentage is not None:
+                        output.append(f"Tool Life: {current:.1f}/{max_time:.1f} min ({percentage:.1f}% used) - {machine['machine_id']}")
+                    else:
+                        output.append(f"Tool Life: {current:.1f} min used - {machine['machine_id']}")
+                    tool_life_found = True
+                    break
+            
+            if not tool_life_found:
+                output.append("Tool Life: No data available")
+            
             output.append("-" * 20)
         output.append("")
         
@@ -848,6 +932,34 @@ class NCToolAnalyzer:
                 output.append("✅ All required tools are available!")
             elif not machine['missing_tools'] and locked_required:
                 output.append("⚠️ All tools physically present but some are locked/broken!")
+            
+            # Show tool life information for available required tools
+            machine_data = self.machine_database.get(machine['machine_id'], {})
+            tool_life_data = machine_data.get('tool_life_data', {})
+            available_required_tools = [t for t in analysis['tool_numbers']
+                                     if t in machine['matching_tools'] and t in tool_life_data]
+            
+            if available_required_tools:
+                output.append("📊 Tool Life Status for Required Tools:")
+                for tool in available_required_tools:
+                    life_info = tool_life_data[tool]
+                    current = life_info.get('current_time', 0)
+                    max_time = life_info.get('max_time')
+                    percentage = life_info.get('usage_percentage')
+                    
+                    if max_time is not None and percentage is not None:
+                        # Color coding based on usage percentage
+                        if percentage >= 90:
+                            status = "🔴 Critical"
+                        elif percentage >= 75:
+                            status = "🟡 High"
+                        elif percentage >= 50:
+                            status = "🟢 Medium"
+                        else:
+                            status = "🟢 Low"
+                        output.append(f"  T{tool}: {current:.1f}/{max_time:.1f} min ({percentage:.1f}% used) {status}")
+                    else:
+                        output.append(f"  T{tool}: {current:.1f} min used")
             
             output.append("-" * 40)
         
