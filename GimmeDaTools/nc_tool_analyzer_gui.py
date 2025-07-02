@@ -80,20 +80,36 @@ class NCToolAnalyzer:
         self.progress = ttk.Progressbar(file_frame, mode='indeterminate')
         self.progress.pack(fill=tk.X, pady=5)
         
-        # Quick Results Summary
-        summary_frame = ttk.LabelFrame(self.analysis_frame, text="Quick Results Summary", padding=10)
+        # Quick Results Summary with Machine Cards
+        summary_frame = ttk.LabelFrame(self.analysis_frame, text="Machine Compatibility Summary", padding=10)
         summary_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
         
-        self.summary_text = scrolledtext.ScrolledText(summary_frame, wrap=tk.WORD, font=('Arial', 10), height=12)
-        self.summary_text.pack(fill=tk.BOTH, expand=True)
+        # Scrollable frame for machine cards
+        summary_canvas = tk.Canvas(summary_frame)
+        summary_scrollbar = ttk.Scrollbar(summary_frame, orient="vertical", command=summary_canvas.yview)
+        self.summary_scrollable_frame = ttk.Frame(summary_canvas)
+        
+        self.summary_scrollable_frame.bind(
+            "<Configure>",
+            lambda e: summary_canvas.configure(scrollregion=summary_canvas.bbox("all"))
+        )
+        
+        summary_canvas.create_window((0, 0), window=self.summary_scrollable_frame, anchor="nw")
+        summary_canvas.configure(yscrollcommand=summary_scrollbar.set)
+        
+        summary_canvas.pack(side="left", fill="both", expand=True)
+        summary_scrollbar.pack(side="right", fill="y")
         
         # Initial message
-        self.summary_text.insert(tk.END, "Upload an NC file and click 'Analyze NC File' to see machine compatibility summary here.\n\n" +
-                                 "This will show:\n" +
-                                 "• Machines ranked by tool availability\n" +
-                                 "• Tool count (available/required)\n" +
-                                 "• Tool life status for critical tools\n" +
-                                 "• Quick compatibility overview")
+        initial_msg = ttk.Label(self.summary_scrollable_frame,
+                               text="Upload an NC file and click 'Analyze NC File' to see machine compatibility cards here.\n\n" +
+                                    "Each machine will show:\n" +
+                                    "• Tool availability status and count\n" +
+                                    "• Send to Machine button for direct file transfer\n" +
+                                    "• Tool life warnings for critical tools\n" +
+                                    "• Missing/locked tool information",
+                               font=('Arial', 10), justify=tk.LEFT)
+        initial_msg.pack(padx=20, pady=20)
         
     def setup_machine_tab(self):
         self.machine_frame = ttk.Frame(self.notebook)
@@ -950,85 +966,246 @@ class NCToolAnalyzer:
         messagebox.showerror("Analysis Error", f"Failed to analyze NC file:\n{error_msg}")
     
     def display_summary(self, analysis):
-        """Display quick summary results in Analysis tab"""
-        self.summary_text.delete(1.0, tk.END)
+        """Display machine cards in Analysis tab"""
+        # Clear existing widgets
+        for widget in self.summary_scrollable_frame.winfo_children():
+            widget.destroy()
         
-        output = []
-        output.append("=" * 50)
-        output.append(f"QUICK ANALYSIS SUMMARY")
-        output.append("=" * 50)
-        output.append(f"File: {analysis['file_name']}")
-        output.append(f"Tools Required: {analysis['total_tools']}")
+        # File info header
+        header_frame = ttk.Frame(self.summary_scrollable_frame)
+        header_frame.pack(fill=tk.X, padx=10, pady=10)
         
-        # Add download info if available
+        ttk.Label(header_frame, text=f"📄 File: {analysis['file_name']}", font=('Arial', 12, 'bold')).pack(anchor=tk.W)
+        ttk.Label(header_frame, text=f"🔧 Tools Required: {analysis['total_tools']}", font=('Arial', 10)).pack(anchor=tk.W)
+        
         if 'download_info' in analysis:
-            output.append(f"Tool Data: {analysis['download_info']}")
+            ttk.Label(header_frame, text=f"📊 {analysis['download_info']}", font=('Arial', 10)).pack(anchor=tk.W)
         
-        output.append("")
-        output.append("MACHINE COMPATIBILITY (Best to Worst):")
-        output.append("-" * 45)
+        ttk.Separator(self.summary_scrollable_frame, orient='horizontal').pack(fill=tk.X, padx=10, pady=10)
         
-        # Show machines ranked by compatibility
+        # Create machine cards (ranked by compatibility)
         for i, machine in enumerate(analysis['machine_analysis'], 1):
-            available_tools = len(machine['matching_tools'])
-            total_required = analysis['total_tools']
-            missing_count = len(machine['missing_tools'])
-            locked_count = len(machine.get('locked_required_tools', []))
-            
-            # Status indicator
-            if missing_count == 0 and locked_count == 0:
-                status = "✅ READY"
-            elif missing_count == 0 and locked_count > 0:
-                status = "⚠️ TOOLS LOCKED"
-            elif missing_count > 0:
-                status = "❌ MISSING TOOLS"
-            else:
-                status = "❓ CHECK NEEDED"
-            
-            output.append(f"{i}. {machine['machine_name']} ({machine['machine_id']})")
-            output.append(f"   Tools: {available_tools}/{total_required} available ({machine['match_percentage']}%)")
-            output.append(f"   Status: {status}")
-            
-            # Show tool life for critical tools (>75% usage)
-            machine_data = self.machine_database.get(machine['machine_id'], {})
-            tool_life_data = machine_data.get('tool_life_data', {})
-            critical_tools = []
-            
-            for tool in machine['matching_tools']:
-                if tool in tool_life_data:
-                    life_info = tool_life_data[tool]
-                    current_time = life_info.get('current_time', 0)
-                    
-                    # Show tools with significant usage (>60 minutes as example threshold)
-                    if current_time > 60:
-                        critical_tools.append(f"T{tool}({current_time:.0f}min)")
-            
-            if critical_tools:
-                output.append(f"   High Usage Tools: {', '.join(critical_tools[:3])}")
-                if len(critical_tools) > 3:
-                    output.append(f"   ... and {len(critical_tools) - 3} more")
-            
-            if missing_count > 0:
-                missing_tools = machine['missing_tools'][:3]  # Show first 3
-                output.append(f"   Missing: T{', T'.join(missing_tools)}")
-                if len(machine['missing_tools']) > 3:
-                    output.append(f"   ... and {len(machine['missing_tools']) - 3} more")
-            
-            if locked_count > 0:
-                locked_tools = machine.get('locked_required_tools', [])[:3]
-                output.append(f"   Locked: T{', T'.join(locked_tools)}")
-                if len(machine.get('locked_required_tools', [])) > 3:
-                    output.append(f"   ... and {len(machine.get('locked_required_tools', [])) - 3} more")
-            
-            output.append("")
+            self.create_machine_card(machine, analysis, i)
         
-        # Add note about detailed results
-        output.append("=" * 50)
-        output.append("💡 Switch to 'Results' tab for detailed analysis")
-        output.append("   including tool sequences, dimensions, and debug info")
+        # Footer note
+        footer_frame = ttk.Frame(self.summary_scrollable_frame)
+        footer_frame.pack(fill=tk.X, padx=10, pady=20)
         
-        self.summary_text.insert(tk.END, "\n".join(output))
+        footer_text = ttk.Label(footer_frame,
+                               text="💡 Switch to 'Results' tab for detailed analysis including tool sequences, dimensions, and debug info",
+                               font=('Arial', 9), foreground='blue')
+        footer_text.pack(anchor=tk.W)
     
+    def create_machine_card(self, machine, analysis, rank):
+        """Create individual machine card like HTML version"""
+        available_tools = len(machine['matching_tools'])
+        total_required = analysis['total_tools']
+        missing_count = len(machine['missing_tools'])
+        locked_count = len(machine.get('locked_required_tools', []))
+        
+        # Determine card color based on match level
+        if machine['match_percentage'] == 100:
+            card_color = '#d4edda'  # Green
+            border_color = '#28a745'
+        elif machine['match_percentage'] >= 80:
+            card_color = '#fff3cd'  # Yellow
+            border_color = '#ffc107'
+        else:
+            card_color = '#f8d7da'  # Red
+            border_color = '#dc3545'
+        
+        # Main card frame
+        card_frame = tk.Frame(self.summary_scrollable_frame, bg=card_color, relief=tk.RAISED, bd=2)
+        card_frame.pack(fill=tk.X, padx=10, pady=5)
+        
+        # Configure border color (using a thin frame)
+        border_frame = tk.Frame(card_frame, bg=border_color, height=4)
+        border_frame.pack(fill=tk.X)
+        
+        # Card content
+        content_frame = tk.Frame(card_frame, bg=card_color)
+        content_frame.pack(fill=tk.X, padx=15, pady=10)
+        
+        # Header with rank and match percentage
+        header_frame = tk.Frame(content_frame, bg=card_color)
+        header_frame.pack(fill=tk.X, pady=(0, 5))
+        
+        rank_label = tk.Label(header_frame, text=f"#{rank}", font=('Arial', 16, 'bold'), bg=card_color)
+        rank_label.pack(side=tk.LEFT)
+        
+        match_text = f"{machine['match_percentage']}% Match" if machine['match_percentage'] > 0 else "No Tools Available"
+        match_label = tk.Label(header_frame, text=match_text, font=('Arial', 14, 'bold'), bg=card_color)
+        match_label.pack(side=tk.LEFT, padx=(10, 0))
+        
+        # Machine info
+        info_frame = tk.Frame(content_frame, bg=card_color)
+        info_frame.pack(fill=tk.X, pady=5)
+        
+        machine_name = tk.Label(info_frame, text=f"🏭 {machine['machine_name']} ({machine['machine_id']})",
+                               font=('Arial', 12, 'bold'), bg=card_color)
+        machine_name.pack(anchor=tk.W)
+        
+        location_label = tk.Label(info_frame, text=f"📍 {machine['location']}", font=('Arial', 10), bg=card_color)
+        location_label.pack(anchor=tk.W)
+        
+        tools_label = tk.Label(info_frame, text=f"🔧 Tools: {available_tools}/{total_required} available",
+                              font=('Arial', 10), bg=card_color)
+        tools_label.pack(anchor=tk.W)
+        
+        # Status and issues
+        status_frame = tk.Frame(content_frame, bg=card_color)
+        status_frame.pack(fill=tk.X, pady=5)
+        
+        # Show missing tools if any
+        if missing_count > 0:
+            missing_tools = machine['missing_tools'][:3]
+            missing_text = f"❌ Missing: T{', T'.join(missing_tools)}"
+            if len(machine['missing_tools']) > 3:
+                missing_text += f" (+{len(machine['missing_tools']) - 3} more)"
+            missing_label = tk.Label(status_frame, text=missing_text, font=('Arial', 9), bg=card_color, fg='red')
+            missing_label.pack(anchor=tk.W)
+        
+        # Show locked tools if any
+        if locked_count > 0:
+            locked_tools = machine.get('locked_required_tools', [])[:3]
+            locked_text = f"🔒 Locked: T{', T'.join(locked_tools)}"
+            if len(machine.get('locked_required_tools', [])) > 3:
+                locked_text += f" (+{len(machine.get('locked_required_tools', [])) - 3} more)"
+            locked_label = tk.Label(status_frame, text=locked_text, font=('Arial', 9), bg=card_color, fg='orange')
+            locked_label.pack(anchor=tk.W)
+        
+        # Tool life warnings
+        machine_data = self.machine_database.get(machine['machine_id'], {})
+        tool_life_data = machine_data.get('tool_life_data', {})
+        critical_tools = []
+        
+        for tool in machine['matching_tools']:
+            if tool in tool_life_data:
+                life_info = tool_life_data[tool]
+                current_time = life_info.get('current_time', 0)
+                if current_time > 60:  # High usage threshold
+                    critical_tools.append(f"T{tool}({current_time:.0f}min)")
+        
+        if critical_tools:
+            life_text = f"⏰ High Usage: {', '.join(critical_tools[:3])}"
+            if len(critical_tools) > 3:
+                life_text += f" (+{len(critical_tools) - 3} more)"
+            life_label = tk.Label(status_frame, text=life_text, font=('Arial', 9), bg=card_color, fg='purple')
+            life_label.pack(anchor=tk.W)
+        
+        # Action buttons
+        button_frame = tk.Frame(content_frame, bg=card_color)
+        button_frame.pack(fill=tk.X, pady=(10, 0))
+        
+        # Send to Machine button
+        send_btn = ttk.Button(button_frame, text="📤 Send to Machine",
+                             command=lambda m=machine: self.send_to_machine(m, analysis['file_name']))
+        send_btn.pack(side=tk.LEFT, padx=(0, 10))
+        
+        # View Details button
+        details_btn = ttk.Button(button_frame, text="📋 View Details",
+                                command=lambda: self.notebook.select(2))  # Switch to Results tab
+        details_btn.pack(side=tk.LEFT)
+        
+        # Ready indicator
+        if missing_count == 0 and locked_count == 0:
+            ready_label = tk.Label(button_frame, text="✅ READY TO RUN", font=('Arial', 10, 'bold'),
+                                  bg=card_color, fg='green')
+            ready_label.pack(side=tk.RIGHT)
+        elif missing_count == 0:
+            warning_label = tk.Label(button_frame, text="⚠️ CHECK LOCKED TOOLS", font=('Arial', 10, 'bold'),
+                                   bg=card_color, fg='orange')
+            warning_label.pack(side=tk.RIGHT)
+    
+    def send_to_machine(self, machine, filename):
+        """Send NC file to machine using TNCCMD"""
+        if not hasattr(self, 'current_nc_analysis') or not self.current_nc_analysis:
+            messagebox.showerror("Error", "No NC file analysis available")
+            return
+        
+        # Get the original NC file path
+        nc_file_path = self.file_path_var.get()
+        if not nc_file_path or not os.path.exists(nc_file_path):
+            messagebox.showerror("Error", "Original NC file not found. Please select the NC file again.")
+            return
+        
+        machine_data = self.machine_database.get(machine['machine_id'])
+        if not machine_data:
+            messagebox.showerror("Error", "Machine data not found")
+            return
+        
+        ip_address = machine_data.get('ip_address')
+        tnc_folder = machine_data.get('tnc_folder', '')
+        
+        if not ip_address:
+            messagebox.showerror("Error", f"IP address not configured for {machine['machine_name']}")
+            return
+        
+        # Confirm the transfer
+        result = messagebox.askyesno(
+            "Send File to Machine",
+            f"Send '{filename}' to {machine['machine_name']}?\n\n" +
+            f"Machine: {machine['machine_name']} ({machine['machine_id']})\n" +
+            f"IP Address: {ip_address}\n" +
+            f"TNC Folder: {tnc_folder or 'Root'}\n" +
+            f"Match: {machine['match_percentage']}% ({len(machine['matching_tools'])}/{self.current_nc_analysis['total_tools']} tools)\n\n" +
+            "The file will be uploaded to the machine's TNC folder."
+        )
+        
+        if not result:
+            return
+        
+        # Show progress
+        self.status_var.set(f"Sending {filename} to {machine['machine_name']}...")
+        self.progress.start()
+        
+        def send_file_thread():
+            try:
+                # Construct remote path
+                remote_path = f"TNC:\\{tnc_folder}\\{filename}" if tnc_folder else f"TNC:\\{filename}"
+                
+                # TNCCMD Put command
+                cmd = [
+                    r"C:\Program Files (x86)\HEIDENHAIN\TNCremo\TNCCMD.exe",
+                    f"-I{ip_address}",
+                    "Put",
+                    nc_file_path,
+                    remote_path
+                ]
+                
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+                
+                if result.returncode == 0:
+                    self.root.after(0, lambda: self.send_complete(True, machine['machine_name'], filename, None))
+                else:
+                    error_message = result.stderr or "Unknown error"
+                    self.root.after(0, lambda: self.send_complete(False, machine['machine_name'], filename, error_message))
+                    
+            except subprocess.TimeoutExpired:
+                self.root.after(0, lambda: self.send_complete(False, machine['machine_name'], filename, "Connection timeout"))
+            except Exception as e:
+                self.root.after(0, lambda: self.send_complete(False, machine['machine_name'], filename, str(e)))
+        
+        threading.Thread(target=send_file_thread, daemon=True).start()
+    
+    def send_complete(self, success, machine_name, filename, error_message):
+        """Called when file send is complete"""
+        self.progress.stop()
+        
+        if success:
+            self.status_var.set(f"✅ {filename} sent to {machine_name}")
+            messagebox.showinfo("Success", f"File '{filename}' successfully sent to {machine_name}!")
+        else:
+            self.status_var.set(f"❌ Failed to send to {machine_name}")
+            messagebox.showerror("Send Failed",
+                               f"Failed to send '{filename}' to {machine_name}.\n\n" +
+                               f"Error: {error_message}\n\n" +
+                               "Please check:\n" +
+                               "• Machine IP address is correct\n" +
+                               "• Machine is powered on and connected\n" +
+                               "• TNCremo is installed correctly\n" +
+                               "• TNC folder path is valid")
+
     def display_results(self, analysis):
         """Display analysis results"""
         self.results_text.delete(1.0, tk.END)
