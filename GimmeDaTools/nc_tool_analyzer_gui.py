@@ -141,6 +141,7 @@ class NCToolAnalyzer:
         machine_buttons = ttk.Frame(list_frame)
         machine_buttons.pack(fill=tk.X, pady=5)
         
+        ttk.Button(machine_buttons, text="🧪 Test", command=self.test_button).pack(side=tk.LEFT, padx=(0,5))
         ttk.Button(machine_buttons, text="📥 Download Tools", command=self.download_selected_machine).pack(side=tk.LEFT, padx=(0,5))
         ttk.Button(machine_buttons, text="✏️ Edit", command=self.edit_selected_machine).pack(side=tk.LEFT, padx=(0,5))
         ttk.Button(machine_buttons, text="🗑️ Delete", command=self.delete_selected_machine).pack(side=tk.LEFT, padx=(0,5))
@@ -230,20 +231,27 @@ class NCToolAnalyzer:
         for item in self.machine_tree.get_children():
             self.machine_tree.delete(item)
         
+        print(f"Refreshing machine list. Database has {len(self.machine_database)} machines:")
+        
         # Add machines
         for machine_id, machine in self.machine_database.items():
             tool_count = len(machine.get('physical_tools', []))
             last_updated = machine.get('last_updated', 'Never')
             status = '✅ Ready' if tool_count > 0 else '⚠️ No Tools'
             
-            self.machine_tree.insert('', tk.END, values=(
+            print(f"Adding machine {machine_id}: {machine.get('name', 'No Name')}")
+            
+            item_id = self.machine_tree.insert('', tk.END, values=(
                 machine_id,
-                machine['name'],
-                machine['ip_address'],
+                machine.get('name', 'Unknown'),
+                machine.get('ip_address', 'No IP'),
                 tool_count,
                 last_updated,
                 status
             ))
+            print(f"Inserted tree item with ID: {item_id}")
+        
+        print(f"Tree now has {len(self.machine_tree.get_children())} items")
     
     def download_from_machine(self, machine_id):
         """Download TOOL_P.TXT from a specific machine"""
@@ -368,6 +376,24 @@ class NCToolAnalyzer:
         self.status_var.set(f"Complete: {success_count}/{total_count} machines updated")
         messagebox.showinfo("Download Complete", result_text)
     
+    def test_button(self):
+        """Test tree selection functionality"""
+        selection = self.machine_tree.selection()
+        if not selection:
+            messagebox.showinfo("Test", "No machine selected in tree. Please click on a machine first.")
+        else:
+            try:
+                machine_id = self.machine_tree.item(selection[0])['values'][0]
+                machine_data = self.machine_database.get(machine_id)
+                msg = f"Selected machine: {machine_id}\n"
+                msg += f"Exists in database: {machine_data is not None}\n"
+                if machine_data:
+                    msg += f"Name: {machine_data.get('name')}\n"
+                    msg += f"IP: {machine_data.get('ip_address')}"
+                messagebox.showinfo("Test Results", msg)
+            except Exception as e:
+                messagebox.showerror("Test Error", f"Error reading selection: {str(e)}")
+        
     def download_selected_machine(self):
         """Download tools from selected machine"""
         selection = self.machine_tree.selection()
