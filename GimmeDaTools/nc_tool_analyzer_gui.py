@@ -477,7 +477,7 @@ class NCToolAnalyzer:
             messagebox.showinfo("Success", f"Machine {machine_id} deleted")
     
     def analyze_nc_file(self):
-        """Analyze the uploaded NC file"""
+        """Analyze the uploaded NC file with automatic tool data refresh"""
         nc_file = self.file_path_var.get()
         if not nc_file or not os.path.exists(nc_file):
             messagebox.showerror("Error", "Please select a valid NC file")
@@ -487,17 +487,53 @@ class NCToolAnalyzer:
             messagebox.showwarning("Warning", "No machines configured")
             return
         
-        self.status_var.set("Analyzing NC file...")
+        # Ask user if they want to refresh tool data first
+        refresh_tools = messagebox.askyesno(
+            "Refresh Tool Data",
+            "Download fresh tool data from all machines before analysis?\n\n" +
+            "This ensures the most current tool availability.\n\n" +
+            "Click 'Yes' for fresh data (recommended)\n" +
+            "Click 'No' to use existing data"
+        )
+        
         self.progress.start()
         
-        def analyze_thread():
+        def analyze_with_refresh_thread():
             try:
+                success_count = 0
+                total_machines = len(self.machine_database)
+                
+                if refresh_tools:
+                    # Step 1: Download tool data from all machines
+                    self.status_var.set("Downloading fresh tool data from all machines...")
+                    
+                    for i, machine_id in enumerate(self.machine_database.keys(), 1):
+                        self.status_var.set(f"Downloading from {machine_id} ({i}/{total_machines})...")
+                        success, message = self.download_from_machine(machine_id)
+                        if success:
+                            success_count += 1
+                    
+                    self.save_machine_database()
+                    self.root.after(0, self.refresh_machine_list)
+                    
+                    print(f"Tool download complete: {success_count}/{total_machines} machines updated")
+                
+                # Step 2: Analyze NC file
+                self.status_var.set("Analyzing NC file with current tool data...")
                 analysis = self.perform_nc_analysis(nc_file)
+                
+                # Add download info to analysis
+                if refresh_tools:
+                    analysis['download_info'] = f"Tool data refreshed from {success_count}/{total_machines} machines"
+                else:
+                    analysis['download_info'] = "Using existing tool data (not refreshed)"
+                
                 self.root.after(0, lambda: self.analysis_complete(analysis))
+                
             except Exception as e:
                 self.root.after(0, lambda: self.analysis_error(str(e)))
         
-        threading.Thread(target=analyze_thread, daemon=True).start()
+        threading.Thread(target=analyze_with_refresh_thread, daemon=True).start()
     
     def perform_nc_analysis(self, nc_file):
         """Perform the actual NC file analysis"""
@@ -671,6 +707,11 @@ class NCToolAnalyzer:
         output.append(f"File: {analysis['file_name']}")
         output.append(f"Tools Required: {analysis['total_tools']}")
         output.append(f"F-Value Errors: {len(analysis['f_value_errors'])}")
+        
+        # Add download info if available
+        if 'download_info' in analysis:
+            output.append(f"Tool Data: {analysis['download_info']}")
+        
         output.append("")
         
         # Add debug information at the top
