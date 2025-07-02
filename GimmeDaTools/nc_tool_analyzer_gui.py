@@ -377,6 +377,18 @@ class NCToolAnalyzer:
         
         machine_id = self.machine_tree.item(selection[0])['values'][0]
         
+        # Debug information
+        machine_data = self.machine_database.get(machine_id)
+        debug_msg = f"Selected machine ID: {machine_id}\n"
+        debug_msg += f"Machine exists in database: {machine_data is not None}\n"
+        if machine_data:
+            debug_msg += f"Machine IP: {machine_data.get('ip_address', 'MISSING')}\n"
+            debug_msg += f"Machine name: {machine_data.get('name', 'MISSING')}"
+        else:
+            debug_msg += f"Available machine IDs: {list(self.machine_database.keys())}"
+        
+        messagebox.showinfo("Debug Info", debug_msg)
+        
         self.status_var.set(f"Downloading from {machine_id}...")
         self.progress.start()
         
