@@ -481,6 +481,7 @@ class NCToolAnalyzer:
                 current_tool_number = tool_call_match.group(1)
                 if current_tool_number not in tool_numbers:
                     tool_numbers.append(current_tool_number)
+                    print(f"NC File - Found tool call: {current_tool_number} (type: {type(current_tool_number)})")
                 
                 # Initialize cutter comp as off
                 cutter_comp_info[current_tool_number] = 'Cutter Comp: Off'
@@ -529,14 +530,40 @@ class NCToolAnalyzer:
             depth = abs(blk_form_data[1]['z'] - blk_form_data[0]['z'])
             dimensions = {'width': width, 'height': height, 'depth': depth}
         
-        # Analyze machine compatibility
+        # Analyze machine compatibility with detailed debugging
         machine_analysis = []
+        print(f"\n=== MACHINE COMPATIBILITY ANALYSIS ===")
+        print(f"Required tools from NC file: {tool_numbers}")
+        print(f"Required tools types: {[type(t) for t in tool_numbers[:5]]}")
+        
         for machine_id, machine in self.machine_database.items():
+            print(f"\n--- Analyzing Machine {machine_id} ---")
             physical_tools = machine.get('physical_tools', [])
-            matching_tools = [tool for tool in tool_numbers if tool in physical_tools]
-            missing_tools = [tool for tool in tool_numbers if tool not in physical_tools]
+            print(f"Physical tools in {machine_id}: {physical_tools[:10]}...")
+            print(f"Physical tools types: {[type(t) for t in physical_tools[:5]]}")
+            print(f"Total physical tools: {len(physical_tools)}")
+            
+            # Check each required tool individually with detailed logging
+            matching_tools = []
+            missing_tools = []
+            
+            for tool in tool_numbers:
+                if tool in physical_tools:
+                    matching_tools.append(tool)
+                    print(f"  Tool {tool}: FOUND in {machine_id}")
+                else:
+                    missing_tools.append(tool)
+                    print(f"  Tool {tool}: MISSING from {machine_id}")
+                    # Check if it exists as different type
+                    str_tool = str(tool)
+                    int_tool = int(tool) if str(tool).isdigit() else None
+                    if str_tool in physical_tools:
+                        print(f"    But '{str_tool}' (str) exists in physical_tools")
+                    elif int_tool and int_tool in physical_tools:
+                        print(f"    But {int_tool} (int) exists in physical_tools")
             
             match_percentage = (len(matching_tools) / len(tool_numbers) * 100) if tool_numbers else 0
+            print(f"{machine_id} - Final result: {len(matching_tools)}/{len(tool_numbers)} tools match ({match_percentage:.1f}%)")
             
             machine_analysis.append({
                 'machine_id': machine_id,
