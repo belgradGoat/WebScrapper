@@ -1,0 +1,77 @@
+NC TOOL ANALYSIS RESULTS
+============================================================
+File: SS_499091_Su3.H
+Tools Required: 8
+F-Value Errors: 0
+
+=== DEBUGGING TOOL COMPARISON ===
+Required tools from NC file: ['7', '999', '9', '13', '12', '2034', '2038', '2050']
+Required tools types: ['str', 'str', 'str', 'str', 'str']
+
+--- Machine 1 ---
+Physical tools: []...
+Physical tools types: []
+Total physical tools: 0
+  ❌ Tool 7: MISSING
+  ❌ Tool 999: MISSING
+  ❌ Tool 9: MISSING
+  ❌ Tool 13: MISSING
+  ❌ Tool 12: MISSING
+  ❌ Tool 2034: MISSING
+  ❌ Tool 2038: MISSING
+  ❌ Tool 2050: MISSING
+Result: 0/8 = 0.0%
+
+
+============================================================
+
+STOCK DIMENSIONS:
+Width: 51.00 mm
+Height: 127.00 mm
+Depth: 36.50 mm
+
+PRESET VALUES:
+Preset: 15.0
+Preset: 15.0
+Preset: 15.0
+Preset: 15.0
+Preset: 15.0
+
+TOOLS NEEDED IN SEQUENCE ORDER:
+----------------------------------------
+T7
+Cutter Comp: Off
+--------------------
+T9
+Cutter Comp: Off
+--------------------
+T12
+Cutter Comp: Off
+--------------------
+T13
+Cutter Comp: Off
+--------------------
+T999
+Cutter Comp: Off
+--------------------
+T2034
+Cutter Comp: Off
+--------------------
+T2038
+Cutter Comp: Off
+--------------------
+T2050
+Cutter Comp: Off
+--------------------
+
+MACHINE COMPATIBILITY ANALYSIS:
+========================================
+
+m1 (1)
+Type: Machining Center
+Location: ur1
+Match: 0% (0/8 tools)
+Physical Tools Available: 0
+Last Updated: None
+Missing Tools: T7, T999, T9, T13, T12, T2034, T2038, T2050
+----------------------------------------
