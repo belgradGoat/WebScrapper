@@ -385,12 +385,24 @@ class NCToolAnalyzer:
             try:
                 machine_id = self.machine_tree.item(selection[0])['values'][0]
                 machine_data = self.machine_database.get(machine_id)
-                msg = f"Selected machine: {machine_id}\n"
-                msg += f"Exists in database: {machine_data is not None}\n"
-                if machine_data:
-                    msg += f"Name: {machine_data.get('name')}\n"
-                    msg += f"IP: {machine_data.get('ip_address')}"
-                messagebox.showinfo("Test Results", msg)
+                
+                msg = f"Selected machine: {machine_id} (type: {type(machine_id)})\n"
+                msg += f"Exists in database: {machine_data is not None}\n\n"
+                msg += f"Database contents:\n"
+                msg += f"Available keys: {list(self.machine_database.keys())}\n"
+                msg += f"Key types: {[type(k) for k in self.machine_database.keys()]}\n\n"
+                
+                # Try different key formats
+                str_key = str(machine_id)
+                int_key = int(machine_id) if str(machine_id).isdigit() else None
+                
+                msg += f"Lookup attempts:\n"
+                msg += f"  '{machine_id}': {machine_id in self.machine_database}\n"
+                msg += f"  '{str_key}': {str_key in self.machine_database}\n"
+                if int_key:
+                    msg += f"  {int_key}: {int_key in self.machine_database}\n"
+                
+                messagebox.showinfo("Debug Results", msg)
             except Exception as e:
                 messagebox.showerror("Test Error", f"Error reading selection: {str(e)}")
         
