@@ -250,11 +250,16 @@ class NCToolAnalyzer:
             
             print(f"Adding machine {machine_id}: {machine.get('name', 'No Name')}")
             
+            # Only show locked count if there are actually locked tools
+            tool_count_display = str(available_count)
+            if locked_count > 0:
+                tool_count_display = f"{available_count}+{locked_count}"
+            
             item_id = self.machine_tree.insert('', tk.END, values=(
                 machine_id,
                 machine.get('name', 'Unknown'),
                 machine.get('ip_address', 'No IP'),
-                f"{available_count}+{locked_count}" if locked_count > 0 else str(available_count),
+                tool_count_display,
                 last_updated,
                 status
             ))
@@ -310,9 +315,9 @@ class NCToolAnalyzer:
             return False, f"Error: {str(e)}"
     
     def parse_tool_p_file(self, filename):
-        """Parse TOOL_P.TXT file and filter out locked/broken tools"""
+        """Parse TOOL_P.TXT file - simplified approach like original script"""
         available_tools = []
-        locked_tools = []
+        locked_tools = []  # Keep this for future use but start with conservative approach
         
         try:
             print(f"\n=== Parsing TOOL_P.TXT file: {filename} ===")
@@ -326,74 +331,59 @@ class NCToolAnalyzer:
                     if line_count <= 10:
                         print(f"Line {line_count}: {len(columns)} columns: {columns}")
                     
+                    # Same logic as original script - just check for 5+ columns and take tool number
                     if len(columns) >= 5:
                         tool_number = columns[1]  # Tool number from column[1]
                         
-                        # Check tool status - common patterns for locked/broken tools
-                        # Different machines may use different status indicators
-                        tool_status = self.check_tool_status(columns)
+                        # Very conservative lock detection - only check for obvious text indicators
+                        is_locked = self.check_tool_status_conservative(columns, line)
                         
-                        if tool_status == "available":
+                        if is_locked:
+                            locked_tools.append(tool_number)
+                            if line_count <= 10:
+                                print(f"  -> Locked tool: {tool_number} ({is_locked})")
+                        else:
                             available_tools.append(tool_number)
                             if line_count <= 10:
                                 print(f"  -> Available tool: {tool_number}")
-                        else:
-                            locked_tools.append(tool_number)
-                            if line_count <= 10:
-                                print(f"  -> Locked/Broken tool: {tool_number} ({tool_status})")
             
             print(f"Total lines processed: {line_count}")
             print(f"Available tools: {len(available_tools)}")
             print(f"Locked/Broken tools: {len(locked_tools)}")
             
-            if locked_tools:
-                print(f"Locked tools: {locked_tools[:10]}{'...' if len(locked_tools) > 10 else ''}")
-            
-            # Remove duplicates and sort available tools only
+            # Remove duplicates and sort available tools
             unique_available = list(set(available_tools))
             sorted_available = sorted(unique_available, key=lambda x: int(x) if x.isdigit() else 999999)
             
+            # Remove duplicates from locked tools too
+            unique_locked = list(set(locked_tools))
+            sorted_locked = sorted(unique_locked, key=lambda x: int(x) if x.isdigit() else 999999)
+            
             print(f"Final available tools ({len(sorted_available)}): {sorted_available[:20]}...")
+            if sorted_locked:
+                print(f"Final locked tools ({len(sorted_locked)}): {sorted_locked[:10]}...")
             print("=== Parsing complete ===\n")
             
-            return sorted_available, locked_tools
+            return sorted_available, sorted_locked
             
         except Exception as e:
             print(f"ERROR parsing {filename}: {e}")
             return [], []
     
-    def check_tool_status(self, columns):
-        """Check if tool is available or locked based on TOOL_P.TXT columns"""
-        # Different CNC systems use different status indicators
-        # Common patterns to check:
+    def check_tool_status_conservative(self, columns, full_line):
+        """Very conservative lock detection - only obvious indicators"""
+        # Only check for very explicit lock/broken text in the entire line
+        line_upper = full_line.upper()
         
-        # Method 1: Look for status flags in later columns
-        for col in columns[2:]:  # Check columns after tool number
-            col_upper = str(col).upper()
-            if any(status in col_upper for status in ['LOCK', 'BROKEN', 'DISABLED', 'ERROR', 'FAULT']):
-                return f"locked ({col})"
+        # Only flag as locked if there are very clear text indicators
+        obvious_lock_indicators = ['LOCKED', 'BROKEN', 'DISABLED', 'OUT_OF_SERVICE', 'FAULT']
         
-        # Method 2: Check for specific status codes (machine-dependent)
-        # Some machines use numeric status codes
-        if len(columns) >= 6:
-            try:
-                status_code = int(columns[5])  # Example: column 5 might be status
-                if status_code != 0:  # 0 = OK, non-zero = problem
-                    return f"status_code_{status_code}"
-            except ValueError:
-                pass
+        for indicator in obvious_lock_indicators:
+            if indicator in line_upper:
+                return f"text_indicator_{indicator}"
         
-        # Method 3: Check for tool life = 0 or negative (worn out)
-        if len(columns) >= 8:
-            try:
-                tool_life = float(columns[7])  # Example: tool life percentage
-                if tool_life <= 0:
-                    return "worn_out"
-            except (ValueError, IndexError):
-                pass
-        
-        # Default: assume available if no lock indicators found
-        return "available"
+        # Default: assume available (like original script)
+        return None
     
     def refresh_all_machines(self):
         """Download tool data from all machines"""
