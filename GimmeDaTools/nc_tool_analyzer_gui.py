@@ -80,6 +80,21 @@ class NCToolAnalyzer:
         self.progress = ttk.Progressbar(file_frame, mode='indeterminate')
         self.progress.pack(fill=tk.X, pady=5)
         
+        # Quick Results Summary
+        summary_frame = ttk.LabelFrame(self.analysis_frame, text="Quick Results Summary", padding=10)
+        summary_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        
+        self.summary_text = scrolledtext.ScrolledText(summary_frame, wrap=tk.WORD, font=('Arial', 10), height=12)
+        self.summary_text.pack(fill=tk.BOTH, expand=True)
+        
+        # Initial message
+        self.summary_text.insert(tk.END, "Upload an NC file and click 'Analyze NC File' to see machine compatibility summary here.\n\n" +
+                                 "This will show:\n" +
+                                 "• Machines ranked by tool availability\n" +
+                                 "• Tool count (available/required)\n" +
+                                 "• Tool life status for critical tools\n" +
+                                 "• Quick compatibility overview")
+        
     def setup_machine_tab(self):
         self.machine_frame = ttk.Frame(self.notebook)
         self.notebook.add(self.machine_frame, text="🏭 Machine Management")
@@ -919,17 +934,100 @@ class NCToolAnalyzer:
         self.current_nc_analysis = analysis
         self.status_var.set(f"Analysis complete: {analysis['total_tools']} tools required")
         
-        # Display results
+        # Display summary in Analysis tab
+        self.display_summary(analysis)
+        
+        # Display detailed results in Results tab
         self.display_results(analysis)
         
-        # Switch to results tab
-        self.notebook.select(2)
+        # Keep user on Analysis tab to see summary
+        # They can switch to Results tab for detailed info
     
     def analysis_error(self, error_msg):
         """Called when NC analysis fails"""
         self.progress.stop()
         self.status_var.set("Analysis failed")
         messagebox.showerror("Analysis Error", f"Failed to analyze NC file:\n{error_msg}")
+    
+    def display_summary(self, analysis):
+        """Display quick summary results in Analysis tab"""
+        self.summary_text.delete(1.0, tk.END)
+        
+        output = []
+        output.append("=" * 50)
+        output.append(f"QUICK ANALYSIS SUMMARY")
+        output.append("=" * 50)
+        output.append(f"File: {analysis['file_name']}")
+        output.append(f"Tools Required: {analysis['total_tools']}")
+        
+        # Add download info if available
+        if 'download_info' in analysis:
+            output.append(f"Tool Data: {analysis['download_info']}")
+        
+        output.append("")
+        output.append("MACHINE COMPATIBILITY (Best to Worst):")
+        output.append("-" * 45)
+        
+        # Show machines ranked by compatibility
+        for i, machine in enumerate(analysis['machine_analysis'], 1):
+            available_tools = len(machine['matching_tools'])
+            total_required = analysis['total_tools']
+            missing_count = len(machine['missing_tools'])
+            locked_count = len(machine.get('locked_required_tools', []))
+            
+            # Status indicator
+            if missing_count == 0 and locked_count == 0:
+                status = "✅ READY"
+            elif missing_count == 0 and locked_count > 0:
+                status = "⚠️ TOOLS LOCKED"
+            elif missing_count > 0:
+                status = "❌ MISSING TOOLS"
+            else:
+                status = "❓ CHECK NEEDED"
+            
+            output.append(f"{i}. {machine['machine_name']} ({machine['machine_id']})")
+            output.append(f"   Tools: {available_tools}/{total_required} available ({machine['match_percentage']}%)")
+            output.append(f"   Status: {status}")
+            
+            # Show tool life for critical tools (>75% usage)
+            machine_data = self.machine_database.get(machine['machine_id'], {})
+            tool_life_data = machine_data.get('tool_life_data', {})
+            critical_tools = []
+            
+            for tool in machine['matching_tools']:
+                if tool in tool_life_data:
+                    life_info = tool_life_data[tool]
+                    current_time = life_info.get('current_time', 0)
+                    
+                    # Show tools with significant usage (>60 minutes as example threshold)
+                    if current_time > 60:
+                        critical_tools.append(f"T{tool}({current_time:.0f}min)")
+            
+            if critical_tools:
+                output.append(f"   High Usage Tools: {', '.join(critical_tools[:3])}")
+                if len(critical_tools) > 3:
+                    output.append(f"   ... and {len(critical_tools) - 3} more")
+            
+            if missing_count > 0:
+                missing_tools = machine['missing_tools'][:3]  # Show first 3
+                output.append(f"   Missing: T{', T'.join(missing_tools)}")
+                if len(machine['missing_tools']) > 3:
+                    output.append(f"   ... and {len(machine['missing_tools']) - 3} more")
+            
+            if locked_count > 0:
+                locked_tools = machine.get('locked_required_tools', [])[:3]
+                output.append(f"   Locked: T{', T'.join(locked_tools)}")
+                if len(machine.get('locked_required_tools', [])) > 3:
+                    output.append(f"   ... and {len(machine.get('locked_required_tools', [])) - 3} more")
+            
+            output.append("")
+        
+        # Add note about detailed results
+        output.append("=" * 50)
+        output.append("💡 Switch to 'Results' tab for detailed analysis")
+        output.append("   including tool sequences, dimensions, and debug info")
+        
+        self.summary_text.insert(tk.END, "\n".join(output))
     
     def display_results(self, analysis):
         """Display analysis results"""
