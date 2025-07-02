@@ -530,40 +530,51 @@ class NCToolAnalyzer:
             depth = abs(blk_form_data[1]['z'] - blk_form_data[0]['z'])
             dimensions = {'width': width, 'height': height, 'depth': depth}
         
-        # Analyze machine compatibility with detailed debugging
+        # Analyze machine compatibility with GUI debugging
         machine_analysis = []
-        print(f"\n=== MACHINE COMPATIBILITY ANALYSIS ===")
-        print(f"Required tools from NC file: {tool_numbers}")
-        print(f"Required tools types: {[type(t) for t in tool_numbers[:5]]}")
+        debug_info = []
+        
+        debug_info.append("=== DEBUGGING TOOL COMPARISON ===")
+        debug_info.append(f"Required tools from NC file: {tool_numbers}")
+        debug_info.append(f"Required tools types: {[type(t).__name__ for t in tool_numbers[:5]]}")
+        debug_info.append("")
         
         for machine_id, machine in self.machine_database.items():
-            print(f"\n--- Analyzing Machine {machine_id} ---")
+            debug_info.append(f"--- Machine {machine_id} ---")
             physical_tools = machine.get('physical_tools', [])
-            print(f"Physical tools in {machine_id}: {physical_tools[:10]}...")
-            print(f"Physical tools types: {[type(t) for t in physical_tools[:5]]}")
-            print(f"Total physical tools: {len(physical_tools)}")
+            debug_info.append(f"Physical tools: {physical_tools[:10]}...")
+            debug_info.append(f"Physical tools types: {[type(t).__name__ for t in physical_tools[:5]]}")
+            debug_info.append(f"Total physical tools: {len(physical_tools)}")
             
-            # Check each required tool individually with detailed logging
+            # Check each required tool individually
             matching_tools = []
             missing_tools = []
             
             for tool in tool_numbers:
                 if tool in physical_tools:
                     matching_tools.append(tool)
-                    print(f"  Tool {tool}: FOUND in {machine_id}")
+                    debug_info.append(f"  ✅ Tool {tool}: FOUND")
                 else:
                     missing_tools.append(tool)
-                    print(f"  Tool {tool}: MISSING from {machine_id}")
+                    debug_info.append(f"  ❌ Tool {tool}: MISSING")
+                    
                     # Check if it exists as different type
                     str_tool = str(tool)
                     int_tool = int(tool) if str(tool).isdigit() else None
                     if str_tool in physical_tools:
-                        print(f"    But '{str_tool}' (str) exists in physical_tools")
+                        debug_info.append(f"    🔍 But '{str_tool}' (str) exists!")
+                        # Fix the mismatch by adding to matching
+                        matching_tools.append(tool)
+                        missing_tools.remove(tool)
                     elif int_tool and int_tool in physical_tools:
-                        print(f"    But {int_tool} (int) exists in physical_tools")
+                        debug_info.append(f"    🔍 But {int_tool} (int) exists!")
+                        # Fix the mismatch by adding to matching
+                        matching_tools.append(tool)
+                        missing_tools.remove(tool)
             
             match_percentage = (len(matching_tools) / len(tool_numbers) * 100) if tool_numbers else 0
-            print(f"{machine_id} - Final result: {len(matching_tools)}/{len(tool_numbers)} tools match ({match_percentage:.1f}%)")
+            debug_info.append(f"Result: {len(matching_tools)}/{len(tool_numbers)} = {match_percentage:.1f}%")
+            debug_info.append("")
             
             machine_analysis.append({
                 'machine_id': machine_id,
@@ -588,7 +599,8 @@ class NCToolAnalyzer:
             'f_value_errors': f_value_errors,
             'dimensions': dimensions,
             'total_tools': len(tool_numbers),
-            'machine_analysis': machine_analysis
+            'machine_analysis': machine_analysis,
+            'debug_info': debug_info  # Add debug info to results
         }
     
     def analysis_complete(self, analysis):
@@ -621,6 +633,13 @@ class NCToolAnalyzer:
         output.append(f"Tools Required: {analysis['total_tools']}")
         output.append(f"F-Value Errors: {len(analysis['f_value_errors'])}")
         output.append("")
+        
+        # Add debug information at the top
+        if 'debug_info' in analysis:
+            output.extend(analysis['debug_info'])
+            output.append("")
+            output.append("=" * 60)
+            output.append("")
         
         # Stock dimensions
         if analysis['dimensions']:
