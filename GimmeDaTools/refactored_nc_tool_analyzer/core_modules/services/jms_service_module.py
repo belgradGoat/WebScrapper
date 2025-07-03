@@ -49,6 +49,10 @@ class JMSServiceModule(ServiceModuleInterface):
         """Initialize the module"""
         self.jms_service = None
         self.jms_enabled = False
+        self.username = None
+        self.password = None
+        self.client_id = "EsbusciClient"
+        self.client_secret = "DefaultEsbusciClientSecret"
     
     def get_name(self) -> str:
         """Return the name of the module"""
@@ -87,7 +91,13 @@ class JMSServiceModule(ServiceModuleInterface):
             
             # Create the JMS service (disabled by default)
             logger.info("Creating JMS service instance")
-            self.jms_service = JMSService(scheduler_service)
+            self.jms_service = JMSService(
+                scheduler_service,
+                username=self.username,
+                password=self.password,
+                client_id=self.client_id,
+                client_secret=self.client_secret
+            )
             logger.info("JMS service created successfully")
             
         except Exception as e:
@@ -107,12 +117,14 @@ class JMSServiceModule(ServiceModuleInterface):
         logger.warning("No JMS service available to provide")
         return {}
     
-    def enable_jms(self, base_url: str = "http://localhost:8080") -> bool:
+    def enable_jms(self, base_url: str = "http://localhost:8080", username: str = None, password: str = None) -> bool:
         """
         Enable JMS integration
         
         Args:
             base_url: Base URL of the JMS API
+            username: Username for authentication (optional)
+            password: Password for authentication (optional)
             
         Returns:
             True if successful, False otherwise
@@ -124,10 +136,21 @@ class JMSServiceModule(ServiceModuleInterface):
         if not self.jms_enabled:
             try:
                 logger.info(f"Enabling JMS integration with URL: {base_url}")
+                if username and password:
+                    logger.info("Using username/password authentication")
+                    self.username = username
+                    self.password = password
                 
-                # Create new JMS service with provided URL
+                # Create new JMS service with provided URL and credentials
                 scheduler_service = self.jms_service.scheduler_service
-                self.jms_service = JMSService(scheduler_service, base_url)
+                self.jms_service = JMSService(
+                    scheduler_service,
+                    base_url,
+                    username=self.username,
+                    password=self.password,
+                    client_id=self.client_id,
+                    client_secret=self.client_secret
+                )
                 
                 # Test connection
                 logger.info("Testing JMS connection")

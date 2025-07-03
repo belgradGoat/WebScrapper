@@ -26,11 +26,15 @@ class JMSService:
     """Service for integrating JMS API with the scheduler"""
     
     def __init__(
-        self, 
+        self,
         scheduler_service,
         base_url: str = "http://localhost:8080",
         polling_interval: int = 30,
-        mapping_file: str = "jms_mapping.json"
+        mapping_file: str = "jms_mapping.json",
+        username: str = None,
+        password: str = None,
+        client_id: str = "EsbusciClient",
+        client_secret: str = "DefaultEsbusciClientSecret"
     ):
         """
         Initialize the JMS service
@@ -40,10 +44,19 @@ class JMSService:
             base_url: Base URL of the JMS API
             polling_interval: Interval for polling production updates (seconds)
             mapping_file: Path to the file storing job-order mappings
+            username: Username for authentication (optional)
+            password: Password for authentication (optional)
+            client_id: OAuth2 client ID (default: EsbusciClient)
+            client_secret: OAuth2 client secret (default: DefaultEsbusciClientSecret)
         """
         self.scheduler_service = scheduler_service
         self.polling_interval = polling_interval
         self.mapping_file = mapping_file
+        self.base_url = base_url
+        self.username = username
+        self.password = password
+        self.client_id = client_id
+        self.client_secret = client_secret
         
         # Thread for background polling
         self.polling_thread = None
@@ -53,9 +66,19 @@ class JMSService:
         self.client = None
         if JMS_AVAILABLE:
             try:
-                self.client = JMSClient(base_url)
+                print(f"Initializing JMS client with URL: {base_url}")
+                if username and password:
+                    print(f"Using username authentication for JMS client")
+                    self.client = JMSClient(base_url, client_id, client_secret, username, password)
+                else:
+                    print(f"Using client credentials authentication for JMS client")
+                    self.client = JMSClient(base_url, client_id, client_secret)
             except Exception as e:
-                event_system.publish("error", f"Failed to initialize JMS client: {str(e)}")
+                error_msg = f"Failed to initialize JMS client: {str(e)}"
+                print(error_msg)
+                import traceback
+                print(f"Traceback: {traceback.format_exc()}")
+                event_system.publish("error", error_msg)
         
         # Load job-order mappings
         self.job_order_mappings = self._load_mappings()
@@ -380,6 +403,7 @@ class JMSService:
             True if connection is successful, False otherwise
         """
         if not JMS_AVAILABLE or not self.client:
+            print("JMS client not available for connection test")
             return False
             
         # If requests is not available, return True for mock functionality
@@ -388,7 +412,15 @@ class JMSService:
             return True
             
         try:
-            return self.client.test_connection()
+            print(f"Testing connection to JMS API at {self.base_url}")
+            result = self.client.test_connection()
+            if result:
+                print("Connection test successful")
+            else:
+                print("Connection test failed")
+            return result
         except Exception as e:
-            print(f"Connection test failed: {str(e)}")
+            print(f"Connection test failed with exception: {str(e)}")
+            import traceback
+            print(f"Traceback: {traceback.format_exc()}")
             return False

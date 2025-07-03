@@ -137,8 +137,9 @@ except Exception as e:
 class JMSAuthClient:
     """Handles OAuth2 authentication with JMS API"""
     
-    def __init__(self, base_url: str, client_id: str = "EsbusciClient", 
-                 client_secret: str = "DefaultEsbusciClientSecret"):
+    def __init__(self, base_url: str, client_id: str = "EsbusciClient",
+                 client_secret: str = "DefaultEsbusciClientSecret",
+                 username: str = None, password: str = None):
         """
         Initialize the JMS authentication client
         
@@ -146,12 +147,20 @@ class JMSAuthClient:
             base_url: Base URL of the JMS API
             client_id: OAuth2 client ID (default: EsbusciClient)
             client_secret: OAuth2 client secret (default: DefaultEsbusciClientSecret)
+            username: Username for authentication (optional)
+            password: Password for authentication (optional)
         """
         self.base_url = base_url
         self.client_id = client_id
         self.client_secret = client_secret
+        self.username = username
+        self.password = password
         self.token = None
         self.token_expiry = 0
+        
+        print(f"JMS Auth Client initialized with URL: {base_url}")
+        print(f"Using client_id: {client_id}")
+        print(f"Username provided: {username is not None}")
         
     def get_auth_header(self) -> Dict[str, str]:
         """
@@ -177,13 +186,30 @@ class JMSAuthClient:
             raise Exception(error_msg)
             
         auth_url = f"{self.base_url}/IAM/Authorization/token"
-        payload = {
-            "client_id": self.client_id,
-            "client_secret": self.client_secret,
-            "grant_type": "client_credentials",
-            "response_type": "token",
-            "scope": "esbusci"
-        }
+        
+        # Prepare payload based on authentication method
+        if self.username and self.password:
+            # Use password grant type if username/password provided
+            payload = {
+                "client_id": self.client_id,
+                "client_secret": self.client_secret,
+                "grant_type": "password",
+                "username": self.username,
+                "password": self.password,
+                "response_type": "token",
+                "scope": "esbusci"
+            }
+            print(f"Using password grant type with username: {self.username}")
+        else:
+            # Use client credentials grant type
+            payload = {
+                "client_id": self.client_id,
+                "client_secret": self.client_secret,
+                "grant_type": "client_credentials",
+                "response_type": "token",
+                "scope": "esbusci"
+            }
+            print("Using client credentials grant type")
         
         try:
             # If using mock requests, generate a fake token
@@ -196,21 +222,50 @@ class JMSAuthClient:
                 
             # Real authentication
             print(f"Sending authentication request to {auth_url}")
-            response = requests.post(auth_url, data=payload)
-            response.raise_for_status()
-            
-            data = response.json()
-            print(f"Authentication response: {data}")
-            self.token = data["access_token"]
-            # Set expiry to 55 minutes (5 minutes before actual expiry)
-            self.token_expiry = time.time() + (55 * 60)
-            
-            event_system.publish("jms_auth_success", "Successfully authenticated with JMS API")
+            try:
+                response = requests.post(auth_url, data=payload)
+                print(f"Authentication response status code: {response.status_code}")
+                
+                # Log response content for debugging
+                try:
+                    response_text = response.text
+                    print(f"Authentication response text: {response_text[:200]}...")
+                except Exception as e:
+                    print(f"Could not get response text: {str(e)}")
+                
+                response.raise_for_status()
+                
+                data = response.json()
+                print(f"Authentication response parsed successfully")
+                
+                if "access_token" not in data:
+                    print(f"No access_token in response. Keys: {list(data.keys())}")
+                    raise KeyError("No access_token in response")
+                    
+                self.token = data["access_token"]
+                # Set expiry to 55 minutes (5 minutes before actual expiry)
+                self.token_expiry = time.time() + (55 * 60)
+                
+                event_system.publish("jms_auth_success", "Successfully authenticated with JMS API")
+            except requests.exceptions.ConnectionError as e:
+                print(f"Connection error: {str(e)}")
+                error_msg = f"Connection error: Could not connect to {auth_url}. Please check the URL and network connection."
+                event_system.publish("error", error_msg)
+                raise Exception(error_msg)
         except requests.exceptions.RequestException as e:
             error_msg = f"Authentication failed: {str(e)}"
+            print(error_msg)
             event_system.publish("error", error_msg)
             raise Exception(error_msg)
         except (KeyError, ValueError) as e:
             error_msg = f"Invalid authentication response: {str(e)}"
+            print(error_msg)
+            event_system.publish("error", error_msg)
+            raise Exception(error_msg)
+        except Exception as e:
+            error_msg = f"Unexpected error during authentication: {str(e)}"
+            print(error_msg)
+            import traceback
+            print(f"Traceback: {traceback.format_exc()}")
             event_system.publish("error", error_msg)
             raise Exception(error_msg)

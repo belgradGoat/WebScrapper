@@ -56,6 +56,8 @@ class JMSConfigDialog:
         # Create variables
         self.jms_url = tk.StringVar(value="http://localhost:8080")
         self.jms_enabled = tk.BooleanVar(value=hasattr(self.jms_service, 'jms_enabled') and self.jms_service.jms_enabled)
+        self.jms_username = tk.StringVar(value="")
+        self.jms_password = tk.StringVar(value="")
         
         # Create UI
         self._create_ui()
@@ -68,7 +70,7 @@ class JMSConfigDialog:
         
         # Title
         title_label = ttk.Label(
-            main_frame, 
+            main_frame,
             text="JMS Integration Configuration",
             font=("Arial", 14, "bold")
         )
@@ -80,6 +82,25 @@ class JMSConfigDialog:
         
         ttk.Label(url_frame, text="JMS API URL:").pack(side=tk.LEFT)
         ttk.Entry(url_frame, textvariable=self.jms_url, width=40).pack(side=tk.LEFT, padx=5)
+        
+        # JMS Authentication
+        auth_frame = ttk.LabelFrame(main_frame, text="Authentication", padding=10)
+        auth_frame.pack(fill=tk.X, pady=10)
+        
+        # Username
+        username_frame = ttk.Frame(auth_frame)
+        username_frame.pack(fill=tk.X, pady=5)
+        
+        ttk.Label(username_frame, text="Username:").pack(side=tk.LEFT)
+        ttk.Entry(username_frame, textvariable=self.jms_username, width=30).pack(side=tk.LEFT, padx=5)
+        
+        # Password
+        password_frame = ttk.Frame(auth_frame)
+        password_frame.pack(fill=tk.X, pady=5)
+        
+        ttk.Label(password_frame, text="Password:").pack(side=tk.LEFT)
+        password_entry = ttk.Entry(password_frame, textvariable=self.jms_password, width=30, show="*")
+        password_entry.pack(side=tk.LEFT, padx=5)
         
         # Enable/Disable JMS
         enable_frame = ttk.Frame(main_frame)
@@ -127,7 +148,18 @@ class JMSConfigDialog:
             # Enable JMS
             if hasattr(self.jms_service, 'enable_jms'):
                 logger.info(f"Enabling JMS with URL: {self.jms_url.get()}")
-                success = self.jms_service.enable_jms(self.jms_url.get())
+                
+                # Get username and password if provided
+                username = self.jms_username.get() if self.jms_username.get() else None
+                password = self.jms_password.get() if self.jms_password.get() else None
+                
+                if username and password:
+                    logger.info(f"Using username authentication: {username}")
+                    success = self.jms_service.enable_jms(self.jms_url.get(), username, password)
+                else:
+                    logger.info("Using client credentials authentication")
+                    success = self.jms_service.enable_jms(self.jms_url.get())
+                    
                 logger.info(f"JMS enable result: {success}")
             else:
                 # Fallback for direct JMSService instance
@@ -190,12 +222,42 @@ class JMSConfigDialog:
             if hasattr(self.jms_service, 'test_connection'):
                 # For JMSServiceModule
                 logger.info(f"Testing connection to {self.jms_url.get()}")
-                if self.jms_service.test_connection():
-                    logger.info("Connection test successful")
-                    messagebox.showinfo("Connection Test", "Successfully connected to JMS API!")
+                
+                # Get username and password if provided
+                username = self.jms_username.get() if self.jms_username.get() else None
+                password = self.jms_password.get() if self.jms_password.get() else None
+                
+                # Create a new JMS service with the provided credentials for testing
+                if hasattr(self.jms_service, 'username') and hasattr(self.jms_service, 'password'):
+                    # Store original credentials
+                    orig_username = self.jms_service.username
+                    orig_password = self.jms_service.password
+                    
+                    # Set new credentials for testing
+                    if username and password:
+                        self.jms_service.username = username
+                        self.jms_service.password = password
+                        logger.info(f"Using username authentication for test: {username}")
+                    
+                    # Test connection
+                    if self.jms_service.test_connection():
+                        logger.info("Connection test successful")
+                        messagebox.showinfo("Connection Test", "Successfully connected to JMS API!")
+                    else:
+                        logger.warning("Connection test failed")
+                        messagebox.showerror("Connection Test", "Failed to connect to JMS API!")
+                    
+                    # Restore original credentials
+                    self.jms_service.username = orig_username
+                    self.jms_service.password = orig_password
                 else:
-                    logger.warning("Connection test failed")
-                    messagebox.showerror("Connection Test", "Failed to connect to JMS API!")
+                    # Fall back to simple test
+                    if self.jms_service.test_connection():
+                        logger.info("Connection test successful")
+                        messagebox.showinfo("Connection Test", "Successfully connected to JMS API!")
+                    else:
+                        logger.warning("Connection test failed")
+                        messagebox.showerror("Connection Test", "Failed to connect to JMS API!")
             else:
                 # Create temporary JMS service for testing
                 logger.info("Creating temporary JMS service for testing")
@@ -213,9 +275,18 @@ class JMSConfigDialog:
                     machine_service = MachineService()
                     scheduler_service = SchedulerService(machine_service)
                 
+                # Get username and password if provided
+                username = self.jms_username.get() if self.jms_username.get() else None
+                password = self.jms_password.get() if self.jms_password.get() else None
+                
                 # Create temporary JMS service
                 logger.info(f"Creating temporary JMS service with URL: {self.jms_url.get()}")
-                temp_jms_service = JMSService(scheduler_service, self.jms_url.get())
+                if username and password:
+                    logger.info(f"Using username authentication for test: {username}")
+                    temp_jms_service = JMSService(scheduler_service, self.jms_url.get(), username=username, password=password)
+                else:
+                    logger.info("Using client credentials authentication for test")
+                    temp_jms_service = JMSService(scheduler_service, self.jms_url.get())
                 
                 # Test connection
                 logger.info("Testing connection with temporary JMS service")

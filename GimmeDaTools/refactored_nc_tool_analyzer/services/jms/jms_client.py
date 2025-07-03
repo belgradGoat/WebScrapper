@@ -16,7 +16,8 @@ class JMSClient:
     """Factory for JMS API clients"""
     
     def __init__(self, base_url: str, client_id: str = "EsbusciClient",
-                 client_secret: str = "DefaultEsbusciClientSecret"):
+                 client_secret: str = "DefaultEsbusciClientSecret",
+                 username: str = None, password: str = None):
         """
         Initialize the JMS client factory
         
@@ -24,9 +25,11 @@ class JMSClient:
             base_url: Base URL of the JMS API
             client_id: OAuth2 client ID (default: EsbusciClient)
             client_secret: OAuth2 client secret (default: DefaultEsbusciClientSecret)
+            username: Username for authentication (optional)
+            password: Password for authentication (optional)
         """
         self.base_url = base_url
-        self.auth_client = JMSAuthClient(base_url, client_id, client_secret)
+        self.auth_client = JMSAuthClient(base_url, client_id, client_secret, username, password)
         
         # Initialize client instances
         self._cell = None
@@ -108,4 +111,6 @@ class JMSClient:
             return True
         except Exception as e:
             print(f"Connection test failed: {str(e)}")
+            import traceback
+            print(f"Traceback: {traceback.format_exc()}")
             return False
