@@ -1,0 +1,3040 @@
+{
+  "1": {
+    "id": "1",
+    "name": "H2-M1",
+    "type": "Machining Center",
+    "location": "",
+    "ip_address": "10.164.181.18",
+    "tnc_folder": "",
+    "max_slots": 130,
+    "notes": "",
+    "physical_tools": [
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "11",
+      "13",
+      "19",
+      "21",
+      "24",
+      "25",
+      "28",
+      "30",
+      "31",
+      "32",
+      "33",
+      "34",
+      "35",
+      "36",
+      "37",
+      "41",
+      "42",
+      "321",
+      "322",
+      "323",
+      "324",
+      "325",
+      "326",
+      "327",
+      "328",
+      "329",
+      "330",
+      "331",
+      "332",
+      "396",
+      "421",
+      "428",
+      "429",
+      "430",
+      "443",
+      "468",
+      "470",
+      "471",
+      "472",
+      "473",
+      "474",
+      "475",
+      "476",
+      "478",
+      "479",
+      "483",
+      "486",
+      "487",
+      "489",
+      "490",
+      "491",
+      "492",
+      "536",
+      "590",
+      "593",
+      "599",
+      "602",
+      "610",
+      "620",
+      "997",
+      "998",
+      "999",
+      "1000",
+      "2005",
+      "2009",
+      "2010",
+      "2011",
+      "2012",
+      "2013",
+      "2014",
+      "2016",
+      "2017",
+      "2019",
+      "2020",
+      "2021",
+      "2034",
+      "2035",
+      "2036",
+      "2037",
+      "2038",
+      "2039",
+      "2041",
+      "2042",
+      "2044",
+      "2046",
+      "2048",
+      "2050",
+      "2051",
+      "2052",
+      "2053",
+      "2054",
+      "2060",
+      "2061",
+      "2068",
+      "2071",
+      "2072",
+      "2075",
+      "2076",
+      "2077",
+      "2078",
+      "2081",
+      "2082",
+      "2084",
+      "2089",
+      "2090",
+      "2091",
+      "2093",
+      "2094",
+      "2096",
+      "2099",
+      "2101",
+      "2102",
+      "2103",
+      "2104",
+      "2105",
+      "2106",
+      "2107",
+      "2116",
+      "TOOL_P.TCH",
+      "%00000000"
+    ],
+    "locked_tools": [
+      "T"
+    ],
+    "tool_life_data": {
+      "1": {
+        "current_time": 46.58,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "2": {
+        "current_time": 5.25,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "3": {
+        "current_time": 98.82,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "4": {
+        "current_time": 13.38,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "5": {
+        "current_time": 117.25,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "6": {
+        "current_time": 948.62,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "7": {
+        "current_time": 173.35,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "8": {
+        "current_time": 891.48,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "9": {
+        "current_time": 14.93,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "11": {
+        "current_time": 358.55,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "13": {
+        "current_time": 140.52,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "19": {
+        "current_time": 1.6,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "21": {
+        "current_time": 92.25,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "24": {
+        "current_time": 59.07,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "25": {
+        "current_time": 62.05,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "28": {
+        "current_time": 218.83,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "30": {
+        "current_time": 200.12,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "31": {
+        "current_time": 12.47,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "32": {
+        "current_time": 286.05,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "33": {
+        "current_time": 236.68,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "34": {
+        "current_time": 305.3,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "35": {
+        "current_time": 22.55,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "36": {
+        "current_time": 549.42,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "37": {
+        "current_time": 98.73,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "41": {
+        "current_time": 325.62,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "42": {
+        "current_time": 305.28,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "322": {
+        "current_time": 28.0,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "323": {
+        "current_time": 39.92,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "324": {
+        "current_time": 224.18,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "325": {
+        "current_time": 201.48,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "326": {
+        "current_time": 3.55,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "327": {
+        "current_time": 63.37,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "328": {
+        "current_time": 115.17,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "329": {
+        "current_time": 1031.2,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "330": {
+        "current_time": 314.1,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "331": {
+        "current_time": 379.32,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "332": {
+        "current_time": 114.28,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "396": {
+        "current_time": 50.93,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "421": {
+        "current_time": 2.85,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "428": {
+        "current_time": 622.72,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "429": {
+        "current_time": 250.5,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "430": {
+        "current_time": 249.9,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "471": {
+        "current_time": 165.85,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "472": {
+        "current_time": 360.95,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "473": {
+        "current_time": 1390.53,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "474": {
+        "current_time": 897.9,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "475": {
+        "current_time": 573.72,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "476": {
+        "current_time": 225.23,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "479": {
+        "current_time": 1219.87,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "487": {
+        "current_time": 131.38,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "490": {
+        "current_time": 70.9,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "491": {
+        "current_time": 441.85,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "492": {
+        "current_time": 420.52,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "536": {
+        "current_time": 41.52,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "602": {
+        "current_time": 26.75,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "998": {
+        "current_time": 7584.4,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "999": {
+        "current_time": 61.58,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "1000": {
+        "current_time": 0.4,
+        "max_time": null,
+        "usage_percentage": null
+      }
+    },
+    "last_updated": "2025-07-02 20:35:36"
+  },
+  "2": {
+    "id": "2",
+    "name": "H2-M2",
+    "type": "Machining Center",
+    "location": "H2",
+    "ip_address": "10.164.181.19",
+    "tnc_folder": "M2-C42-HERM-UR\\Seb",
+    "max_slots": 130,
+    "notes": "",
+    "physical_tools": [
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "11",
+      "12",
+      "13",
+      "19",
+      "21",
+      "24",
+      "25",
+      "27",
+      "28",
+      "30",
+      "31",
+      "32",
+      "33",
+      "34",
+      "42",
+      "125",
+      "247",
+      "281",
+      "313",
+      "318",
+      "321",
+      "323",
+      "324",
+      "325",
+      "326",
+      "327",
+      "328",
+      "329",
+      "330",
+      "331",
+      "332",
+      "335",
+      "352",
+      "353",
+      "381",
+      "396",
+      "397",
+      "419",
+      "421",
+      "428",
+      "429",
+      "430",
+      "434",
+      "443",
+      "451",
+      "468",
+      "470",
+      "471",
+      "472",
+      "473",
+      "474",
+      "475",
+      "476",
+      "478",
+      "483",
+      "486",
+      "487",
+      "489",
+      "490",
+      "491",
+      "492",
+      "519",
+      "529",
+      "536",
+      "590",
+      "660",
+      "661",
+      "812",
+      "997",
+      "998",
+      "999",
+      "1000",
+      "1207",
+      "2001",
+      "2003",
+      "2004",
+      "2005",
+      "2006",
+      "2009",
+      "2011",
+      "2012",
+      "2013",
+      "2014",
+      "2015",
+      "2016",
+      "2017",
+      "2018",
+      "2019",
+      "2020",
+      "2021",
+      "2026",
+      "2028",
+      "2030",
+      "2033",
+      "2034",
+      "2035",
+      "2036",
+      "2038",
+      "2039",
+      "2041",
+      "2042",
+      "2044",
+      "2048",
+      "2050",
+      "2051",
+      "2052",
+      "2054",
+      "2060",
+      "2074",
+      "2075",
+      "2082",
+      "2089",
+      "2090",
+      "2093",
+      "2094",
+      "2101",
+      "2105",
+      "2107",
+      "TOOL_P.TCH",
+      "%00000000"
+    ],
+    "locked_tools": [
+      "T"
+    ],
+    "tool_life_data": {
+      "1": {
+        "current_time": 446.73,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "2": {
+        "current_time": 283.15,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "3": {
+        "current_time": 926.77,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "4": {
+        "current_time": 175.65,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "5": {
+        "current_time": 990.05,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "6": {
+        "current_time": 489.73,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "7": {
+        "current_time": 579.18,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "8": {
+        "current_time": 1207.9,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "9": {
+        "current_time": 1740.53,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "11": {
+        "current_time": 154.85,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "12": {
+        "current_time": 1206.57,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "13": {
+        "current_time": 301.08,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "19": {
+        "current_time": 137.37,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "21": {
+        "current_time": 9.95,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "24": {
+        "current_time": 23.07,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "25": {
+        "current_time": 106.38,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "27": {
+        "current_time": 147.67,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "28": {
+        "current_time": 411.38,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "30": {
+        "current_time": 387.62,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "31": {
+        "current_time": 24.82,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "32": {
+        "current_time": 33.97,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "33": {
+        "current_time": 90.6,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "34": {
+        "current_time": 493.35,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "42": {
+        "current_time": 519.58,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "125": {
+        "current_time": 127.87,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "247": {
+        "current_time": 109.58,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "281": {
+        "current_time": 186.55,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "313": {
+        "current_time": 3.05,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "318": {
+        "current_time": 45.15,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "321": {
+        "current_time": 19.52,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "323": {
+        "current_time": 16.53,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "324": {
+        "current_time": 42.68,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "325": {
+        "current_time": 28.08,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "326": {
+        "current_time": 55.12,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "327": {
+        "current_time": 380.2,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "328": {
+        "current_time": 194.57,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "329": {
+        "current_time": 58.9,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "330": {
+        "current_time": 217.62,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "331": {
+        "current_time": 99.57,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "332": {
+        "current_time": 23.23,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "335": {
+        "current_time": 41.52,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "352": {
+        "current_time": 136.75,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "353": {
+        "current_time": 1560.05,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "381": {
+        "current_time": 69.03,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "396": {
+        "current_time": 696.3,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "397": {
+        "current_time": 10.73,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "419": {
+        "current_time": 3.93,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "421": {
+        "current_time": 231.08,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "428": {
+        "current_time": 567.55,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "429": {
+        "current_time": 0.75,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "434": {
+        "current_time": 420.97,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "443": {
+        "current_time": 575.42,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "451": {
+        "current_time": 579.98,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "468": {
+        "current_time": 24.78,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "470": {
+        "current_time": 264.78,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "471": {
+        "current_time": 1273.5,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "472": {
+        "current_time": 473.27,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "473": {
+        "current_time": 50.02,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "474": {
+        "current_time": 507.53,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "475": {
+        "current_time": 116.93,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "476": {
+        "current_time": 140.33,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "478": {
+        "current_time": 29.48,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "483": {
+        "current_time": 24.4,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "487": {
+        "current_time": 385.1,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "489": {
+        "current_time": 633.38,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "490": {
+        "current_time": 555.48,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "519": {
+        "current_time": 21.15,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "529": {
+        "current_time": 135.98,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "536": {
+        "current_time": 587.12,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "590": {
+        "current_time": 705.62,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "660": {
+        "current_time": 184.15,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "661": {
+        "current_time": 372.87,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "812": {
+        "current_time": 4.02,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "997": {
+        "current_time": 5216.55,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "998": {
+        "current_time": 16.6,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "999": {
+        "current_time": 0.23,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "1000": {
+        "current_time": 8.75,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "1207": {
+        "current_time": 243.83,
+        "max_time": null,
+        "usage_percentage": null
+      }
+    },
+    "last_updated": "2025-07-02 20:35:38"
+  },
+  "3": {
+    "id": "3",
+    "name": "H2-M3",
+    "type": "Machining Center",
+    "location": "",
+    "ip_address": "10.164.181.20",
+    "tnc_folder": "M3-C42-HERM-UR\\Seb",
+    "max_slots": 130,
+    "notes": "",
+    "physical_tools": [
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "11",
+      "12",
+      "13",
+      "14",
+      "18",
+      "19",
+      "20",
+      "22",
+      "24",
+      "25",
+      "26",
+      "27",
+      "28",
+      "30",
+      "31",
+      "32",
+      "33",
+      "34",
+      "35",
+      "36",
+      "37",
+      "39",
+      "41",
+      "42",
+      "44",
+      "45",
+      "48",
+      "71",
+      "81",
+      "139",
+      "143",
+      "273",
+      "296",
+      "321",
+      "322",
+      "323",
+      "324",
+      "325",
+      "326",
+      "327",
+      "328",
+      "329",
+      "330",
+      "331",
+      "332",
+      "333",
+      "335",
+      "371",
+      "374",
+      "387",
+      "392",
+      "395",
+      "396",
+      "421",
+      "428",
+      "429",
+      "430",
+      "451",
+      "458",
+      "470",
+      "471",
+      "472",
+      "473",
+      "474",
+      "475",
+      "476",
+      "478",
+      "479",
+      "483",
+      "487",
+      "489",
+      "490",
+      "524",
+      "529",
+      "536",
+      "543",
+      "590",
+      "997",
+      "998",
+      "999",
+      "1328",
+      "2001",
+      "2004",
+      "2005",
+      "2006",
+      "2007",
+      "2008",
+      "2009",
+      "2010",
+      "2011",
+      "2012",
+      "2013",
+      "2014",
+      "2016",
+      "2017",
+      "2018",
+      "2019",
+      "2034",
+      "2035",
+      "2036",
+      "2037",
+      "2038",
+      "2040",
+      "2042",
+      "2048",
+      "2050",
+      "2051",
+      "2052",
+      "2055",
+      "2064",
+      "2075",
+      "2076",
+      "2077",
+      "2081",
+      "2101",
+      "2103",
+      "2105",
+      "2107",
+      "TOOL_P.TCH",
+      "%00000000"
+    ],
+    "locked_tools": [
+      "T"
+    ],
+    "tool_life_data": {
+      "1": {
+        "current_time": 492.2,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "2": {
+        "current_time": 368.5,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "3": {
+        "current_time": 1060.75,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "4": {
+        "current_time": 398.78,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "5": {
+        "current_time": 1599.1,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "6": {
+        "current_time": 610.62,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "7": {
+        "current_time": 227.42,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "8": {
+        "current_time": 659.08,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "9": {
+        "current_time": 1360.8,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "11": {
+        "current_time": 857.17,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "12": {
+        "current_time": 10.1,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "13": {
+        "current_time": 225.23,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "14": {
+        "current_time": 10.52,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "18": {
+        "current_time": 251.93,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "19": {
+        "current_time": 17.57,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "20": {
+        "current_time": 2.77,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "22": {
+        "current_time": 0.72,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "24": {
+        "current_time": 21.73,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "25": {
+        "current_time": 479.58,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "26": {
+        "current_time": 34.4,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "27": {
+        "current_time": 174.98,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "28": {
+        "current_time": 249.43,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "30": {
+        "current_time": 484.2,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "31": {
+        "current_time": 119.2,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "32": {
+        "current_time": 211.5,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "33": {
+        "current_time": 100.98,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "34": {
+        "current_time": 162.57,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "35": {
+        "current_time": 105.87,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "36": {
+        "current_time": 789.53,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "37": {
+        "current_time": 646.82,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "39": {
+        "current_time": 262.43,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "41": {
+        "current_time": 56.75,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "42": {
+        "current_time": 60.23,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "45": {
+        "current_time": 2090.6,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "48": {
+        "current_time": 251.82,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "71": {
+        "current_time": 10.53,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "81": {
+        "current_time": 87.05,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "139": {
+        "current_time": 259.15,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "143": {
+        "current_time": 1.5,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "273": {
+        "current_time": 21.28,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "296": {
+        "current_time": 139.03,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "321": {
+        "current_time": 19.57,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "322": {
+        "current_time": 127.22,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "323": {
+        "current_time": 282.23,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "324": {
+        "current_time": 58.8,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "325": {
+        "current_time": 93.23,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "326": {
+        "current_time": 148.77,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "327": {
+        "current_time": 183.3,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "328": {
+        "current_time": 19.25,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "329": {
+        "current_time": 139.4,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "330": {
+        "current_time": 332.53,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "331": {
+        "current_time": 38.18,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "332": {
+        "current_time": 70.65,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "333": {
+        "current_time": 789.55,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "335": {
+        "current_time": 29.35,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "371": {
+        "current_time": 0.33,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "374": {
+        "current_time": 2.27,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "387": {
+        "current_time": 63.15,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "392": {
+        "current_time": 21.57,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "395": {
+        "current_time": 149.92,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "396": {
+        "current_time": 369.62,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "421": {
+        "current_time": 199.07,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "428": {
+        "current_time": 656.58,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "429": {
+        "current_time": 7.92,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "430": {
+        "current_time": 12.58,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "458": {
+        "current_time": 248.75,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "470": {
+        "current_time": 891.78,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "471": {
+        "current_time": 287.53,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "472": {
+        "current_time": 306.17,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "473": {
+        "current_time": 693.25,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "474": {
+        "current_time": 51.98,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "475": {
+        "current_time": 105.93,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "476": {
+        "current_time": 29.87,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "478": {
+        "current_time": 1143.5,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "479": {
+        "current_time": 510.43,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "483": {
+        "current_time": 430.73,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "487": {
+        "current_time": 854.47,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "489": {
+        "current_time": 811.18,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "524": {
+        "current_time": 498.22,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "529": {
+        "current_time": 6.7,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "536": {
+        "current_time": 563.4,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "543": {
+        "current_time": 11.65,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "590": {
+        "current_time": 13.57,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "997": {
+        "current_time": 6218.23,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "998": {
+        "current_time": 4.63,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "999": {
+        "current_time": 0.08,
+        "max_time": null,
+        "usage_percentage": null
+      }
+    },
+    "last_updated": "2025-07-02 20:35:39"
+  },
+  "4": {
+    "id": "4",
+    "name": "H2-M4",
+    "type": "Machining Center",
+    "location": "",
+    "ip_address": "10.164.181.21",
+    "tnc_folder": "M4-C42-HERM-UR\\Seb",
+    "max_slots": 130,
+    "notes": "",
+    "physical_tools": [
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "12",
+      "13",
+      "14",
+      "15",
+      "19",
+      "21",
+      "23",
+      "24",
+      "25",
+      "28",
+      "30",
+      "31",
+      "32",
+      "33",
+      "34",
+      "36",
+      "37",
+      "47",
+      "95",
+      "238",
+      "247",
+      "315",
+      "321",
+      "322",
+      "323",
+      "325",
+      "326",
+      "327",
+      "328",
+      "329",
+      "330",
+      "331",
+      "332",
+      "333",
+      "352",
+      "353",
+      "396",
+      "421",
+      "427",
+      "428",
+      "429",
+      "430",
+      "434",
+      "441",
+      "443",
+      "451",
+      "457",
+      "460",
+      "466",
+      "468",
+      "470",
+      "471",
+      "472",
+      "473",
+      "474",
+      "475",
+      "476",
+      "478",
+      "483",
+      "487",
+      "489",
+      "490",
+      "491",
+      "492",
+      "529",
+      "536",
+      "590",
+      "900",
+      "997",
+      "998",
+      "999",
+      "1202",
+      "1203",
+      "1204",
+      "1205",
+      "1206",
+      "2005",
+      "2006",
+      "2009",
+      "2010",
+      "2011",
+      "2012",
+      "2013",
+      "2014",
+      "2015",
+      "2016",
+      "2017",
+      "2018",
+      "2019",
+      "2020",
+      "2021",
+      "2026",
+      "2030",
+      "2034",
+      "2035",
+      "2036",
+      "2037",
+      "2038",
+      "2039",
+      "2041",
+      "2042",
+      "2044",
+      "2046",
+      "2048",
+      "2050",
+      "2052",
+      "2068",
+      "2071",
+      "2075",
+      "2076",
+      "2077",
+      "2078",
+      "2089",
+      "2093",
+      "2094",
+      "2099",
+      "2101",
+      "2103",
+      "2105",
+      "2110",
+      "2117",
+      "TOOL_P.TCH",
+      "%00000000"
+    ],
+    "locked_tools": [
+      "T"
+    ],
+    "tool_life_data": {
+      "1": {
+        "current_time": 918.48,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "2": {
+        "current_time": 10.78,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "3": {
+        "current_time": 381.03,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "4": {
+        "current_time": 39.5,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "5": {
+        "current_time": 297.88,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "6": {
+        "current_time": 675.17,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "7": {
+        "current_time": 241.12,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "8": {
+        "current_time": 154.2,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "9": {
+        "current_time": 628.58,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "12": {
+        "current_time": 52.28,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "13": {
+        "current_time": 67.67,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "14": {
+        "current_time": 1.33,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "15": {
+        "current_time": 112.93,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "19": {
+        "current_time": 26.92,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "21": {
+        "current_time": 0.13,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "23": {
+        "current_time": 3.43,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "24": {
+        "current_time": 10.65,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "25": {
+        "current_time": 106.87,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "28": {
+        "current_time": 193.67,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "30": {
+        "current_time": 185.15,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "32": {
+        "current_time": 90.62,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "33": {
+        "current_time": 468.32,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "34": {
+        "current_time": 455.02,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "36": {
+        "current_time": 0.25,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "37": {
+        "current_time": 159.08,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "47": {
+        "current_time": 395.67,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "95": {
+        "current_time": 230.05,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "238": {
+        "current_time": 4.97,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "247": {
+        "current_time": 433.03,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "315": {
+        "current_time": 13.03,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "321": {
+        "current_time": 1.27,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "322": {
+        "current_time": 158.45,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "323": {
+        "current_time": 117.37,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "325": {
+        "current_time": 95.07,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "326": {
+        "current_time": 21.28,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "327": {
+        "current_time": 217.42,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "328": {
+        "current_time": 244.9,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "329": {
+        "current_time": 905.45,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "330": {
+        "current_time": 68.9,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "331": {
+        "current_time": 25.12,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "332": {
+        "current_time": 144.48,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "333": {
+        "current_time": 18.25,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "352": {
+        "current_time": 42.88,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "396": {
+        "current_time": 568.73,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "421": {
+        "current_time": 105.15,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "427": {
+        "current_time": 123.13,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "428": {
+        "current_time": 156.33,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "429": {
+        "current_time": 597.93,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "430": {
+        "current_time": 91.28,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "434": {
+        "current_time": 61.03,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "441": {
+        "current_time": 118.03,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "443": {
+        "current_time": 242.88,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "451": {
+        "current_time": 172.65,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "457": {
+        "current_time": 356.03,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "460": {
+        "current_time": 219.48,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "466": {
+        "current_time": 112.55,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "468": {
+        "current_time": 409.68,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "470": {
+        "current_time": 112.8,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "472": {
+        "current_time": 49.03,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "473": {
+        "current_time": 599.23,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "474": {
+        "current_time": 403.0,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "475": {
+        "current_time": 30.97,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "476": {
+        "current_time": 175.95,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "478": {
+        "current_time": 8.45,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "483": {
+        "current_time": 471.03,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "487": {
+        "current_time": 112.5,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "489": {
+        "current_time": 1378.38,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "490": {
+        "current_time": 576.78,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "491": {
+        "current_time": 538.7,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "529": {
+        "current_time": 112.58,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "536": {
+        "current_time": 221.02,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "590": {
+        "current_time": 21.82,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "900": {
+        "current_time": 0.62,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "997": {
+        "current_time": 6129.75,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "998": {
+        "current_time": 45.67,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "999": {
+        "current_time": 0.13,
+        "max_time": null,
+        "usage_percentage": null
+      }
+    },
+    "last_updated": "2025-07-02 20:35:41"
+  },
+  "5": {
+    "id": "5",
+    "name": "H2-M5",
+    "type": "Machining Center",
+    "location": "",
+    "ip_address": "10.164.181.22",
+    "tnc_folder": "M5-C42-HERM-UR\\Seb",
+    "max_slots": 130,
+    "notes": "",
+    "physical_tools": [
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "11",
+      "12",
+      "13",
+      "15",
+      "19",
+      "21",
+      "24",
+      "25",
+      "27",
+      "28",
+      "30",
+      "31",
+      "32",
+      "33",
+      "34",
+      "36",
+      "41",
+      "42",
+      "43",
+      "66",
+      "197",
+      "321",
+      "322",
+      "323",
+      "324",
+      "325",
+      "326",
+      "327",
+      "328",
+      "329",
+      "330",
+      "331",
+      "332",
+      "335",
+      "363",
+      "396",
+      "428",
+      "429",
+      "430",
+      "443",
+      "451",
+      "463",
+      "470",
+      "471",
+      "472",
+      "474",
+      "476",
+      "478",
+      "479",
+      "483",
+      "486",
+      "487",
+      "489",
+      "490",
+      "506",
+      "524",
+      "529",
+      "536",
+      "590",
+      "593",
+      "594",
+      "660",
+      "757",
+      "773",
+      "997",
+      "998",
+      "999",
+      "1213",
+      "1214",
+      "1215",
+      "1230",
+      "1231",
+      "2001",
+      "2005",
+      "2009",
+      "2011",
+      "2013",
+      "2014",
+      "2015",
+      "2016",
+      "2017",
+      "2019",
+      "2021",
+      "2034",
+      "2036",
+      "2037",
+      "2038",
+      "2039",
+      "2041",
+      "2042",
+      "2046",
+      "2048",
+      "2050",
+      "2051",
+      "2052",
+      "2054",
+      "2056",
+      "2057",
+      "2058",
+      "2061",
+      "2062",
+      "2068",
+      "2069",
+      "2070",
+      "2071",
+      "2073",
+      "2075",
+      "2076",
+      "2077",
+      "2081",
+      "2089",
+      "2093",
+      "2099",
+      "2100",
+      "2101",
+      "2103",
+      "2105",
+      "2108",
+      "2109",
+      "2117",
+      "TOOL_P.TCH",
+      "BLUM",
+      "%00000000"
+    ],
+    "locked_tools": [
+      "T"
+    ],
+    "tool_life_data": {
+      "1": {
+        "current_time": 583.38,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "2": {
+        "current_time": 63.77,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "3": {
+        "current_time": 430.77,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "4": {
+        "current_time": 1250.15,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "5": {
+        "current_time": 1842.27,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "6": {
+        "current_time": 1062.97,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "7": {
+        "current_time": 596.05,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "8": {
+        "current_time": 678.55,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "9": {
+        "current_time": 1761.08,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "11": {
+        "current_time": 144.13,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "12": {
+        "current_time": 2382.92,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "13": {
+        "current_time": 512.05,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "15": {
+        "current_time": 346.67,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "19": {
+        "current_time": 50.95,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "21": {
+        "current_time": 0.38,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "25": {
+        "current_time": 769.12,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "27": {
+        "current_time": 25.58,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "28": {
+        "current_time": 50.47,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "30": {
+        "current_time": 596.25,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "31": {
+        "current_time": 58.55,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "32": {
+        "current_time": 217.15,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "34": {
+        "current_time": 327.33,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "36": {
+        "current_time": 34.55,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "41": {
+        "current_time": 144.38,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "42": {
+        "current_time": 240.93,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "43": {
+        "current_time": 112.23,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "66": {
+        "current_time": 11.62,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "197": {
+        "current_time": 229.08,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "322": {
+        "current_time": 48.72,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "323": {
+        "current_time": 54.38,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "324": {
+        "current_time": 43.43,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "325": {
+        "current_time": 69.13,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "326": {
+        "current_time": 218.58,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "327": {
+        "current_time": 295.68,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "328": {
+        "current_time": 591.85,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "329": {
+        "current_time": 326.27,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "330": {
+        "current_time": 286.3,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "331": {
+        "current_time": 479.4,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "332": {
+        "current_time": 7.97,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "335": {
+        "current_time": 66.32,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "363": {
+        "current_time": 1227.7,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "396": {
+        "current_time": 2737.58,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "428": {
+        "current_time": 202.25,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "430": {
+        "current_time": 285.87,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "463": {
+        "current_time": 13.32,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "470": {
+        "current_time": 1715.57,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "471": {
+        "current_time": 3894.92,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "474": {
+        "current_time": 1347.47,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "478": {
+        "current_time": 2622.25,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "479": {
+        "current_time": 1.78,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "483": {
+        "current_time": 1503.13,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "486": {
+        "current_time": 147.95,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "489": {
+        "current_time": 2341.77,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "490": {
+        "current_time": 976.82,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "506": {
+        "current_time": 0.38,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "524": {
+        "current_time": 30.3,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "529": {
+        "current_time": 30.82,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "536": {
+        "current_time": 134.7,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "590": {
+        "current_time": 370.08,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "593": {
+        "current_time": 35.22,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "594": {
+        "current_time": 7.07,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "660": {
+        "current_time": 10.3,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "757": {
+        "current_time": 3.17,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "773": {
+        "current_time": 1.72,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "997": {
+        "current_time": 7274.9,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "998": {
+        "current_time": 67.57,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "999": {
+        "current_time": 0.33,
+        "max_time": null,
+        "usage_percentage": null
+      }
+    },
+    "last_updated": "2025-07-02 20:35:42"
+  },
+  "6": {
+    "id": "6",
+    "name": "H2-M6",
+    "type": "Machining Center",
+    "location": "",
+    "ip_address": "10.164.181.23",
+    "tnc_folder": "M5-C42-HERM-UR\\Seb",
+    "max_slots": 130,
+    "notes": "",
+    "physical_tools": [
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "11",
+      "12",
+      "13",
+      "14",
+      "15",
+      "19",
+      "21",
+      "24",
+      "25",
+      "27",
+      "28",
+      "29",
+      "30",
+      "31",
+      "32",
+      "33",
+      "34",
+      "42",
+      "43",
+      "321",
+      "322",
+      "323",
+      "324",
+      "325",
+      "326",
+      "327",
+      "328",
+      "329",
+      "330",
+      "331",
+      "332",
+      "396",
+      "421",
+      "427",
+      "428",
+      "429",
+      "430",
+      "443",
+      "451",
+      "468",
+      "470",
+      "471",
+      "472",
+      "474",
+      "475",
+      "476",
+      "478",
+      "479",
+      "483",
+      "486",
+      "487",
+      "489",
+      "490",
+      "491",
+      "492",
+      "536",
+      "590",
+      "757",
+      "997",
+      "998",
+      "999",
+      "1200",
+      "1202",
+      "2003",
+      "2004",
+      "2005",
+      "2006",
+      "2008",
+      "2009",
+      "2010",
+      "2011",
+      "2012",
+      "2013",
+      "2014",
+      "2016",
+      "2017",
+      "2019",
+      "2020",
+      "2021",
+      "2034",
+      "2035",
+      "2036",
+      "2038",
+      "2039",
+      "2040",
+      "2041",
+      "2042",
+      "2044",
+      "2046",
+      "2048",
+      "2050",
+      "2051",
+      "2052",
+      "2053",
+      "2054",
+      "2055",
+      "2056",
+      "2057",
+      "2075",
+      "2076",
+      "2077",
+      "2078",
+      "2079",
+      "2087",
+      "2090",
+      "2099",
+      "2100",
+      "2101",
+      "2103",
+      "2104",
+      "2106",
+      "2107",
+      "2109",
+      "TOOL_P.TCH",
+      "%00000000"
+    ],
+    "locked_tools": [
+      "T"
+    ],
+    "tool_life_data": {
+      "1": {
+        "current_time": 313.37,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "2": {
+        "current_time": 1216.45,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "3": {
+        "current_time": 1007.53,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "4": {
+        "current_time": 693.83,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "5": {
+        "current_time": 1044.38,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "6": {
+        "current_time": 1095.85,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "7": {
+        "current_time": 763.23,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "8": {
+        "current_time": 1652.88,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "9": {
+        "current_time": 2201.05,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "11": {
+        "current_time": 196.47,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "12": {
+        "current_time": 366.93,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "13": {
+        "current_time": 0.03,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "15": {
+        "current_time": 1481.25,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "19": {
+        "current_time": 47.62,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "21": {
+        "current_time": 2.48,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "24": {
+        "current_time": 30.23,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "25": {
+        "current_time": 597.0,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "27": {
+        "current_time": 18.93,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "28": {
+        "current_time": 125.87,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "29": {
+        "current_time": 18.38,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "30": {
+        "current_time": 504.22,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "31": {
+        "current_time": 327.72,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "32": {
+        "current_time": 26.85,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "33": {
+        "current_time": 605.45,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "34": {
+        "current_time": 484.32,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "42": {
+        "current_time": 956.95,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "43": {
+        "current_time": 111.93,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "321": {
+        "current_time": 23.4,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "322": {
+        "current_time": 109.42,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "323": {
+        "current_time": 37.35,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "324": {
+        "current_time": 117.92,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "325": {
+        "current_time": 189.55,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "326": {
+        "current_time": 642.4,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "327": {
+        "current_time": 308.2,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "328": {
+        "current_time": 472.48,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "329": {
+        "current_time": 150.35,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "330": {
+        "current_time": 149.12,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "331": {
+        "current_time": 903.28,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "332": {
+        "current_time": 41.48,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "396": {
+        "current_time": 1165.45,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "427": {
+        "current_time": 68.45,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "428": {
+        "current_time": 312.43,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "429": {
+        "current_time": 63.33,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "430": {
+        "current_time": 517.55,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "443": {
+        "current_time": 529.42,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "451": {
+        "current_time": 2878.75,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "468": {
+        "current_time": 36.97,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "470": {
+        "current_time": 1166.45,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "471": {
+        "current_time": 0.03,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "472": {
+        "current_time": 51.25,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "474": {
+        "current_time": 903.27,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "475": {
+        "current_time": 613.97,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "476": {
+        "current_time": 221.02,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "478": {
+        "current_time": 958.7,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "479": {
+        "current_time": 519.23,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "483": {
+        "current_time": 980.78,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "486": {
+        "current_time": 851.83,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "487": {
+        "current_time": 317.85,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "489": {
+        "current_time": 2040.57,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "492": {
+        "current_time": 81.83,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "536": {
+        "current_time": 78.57,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "590": {
+        "current_time": 1399.03,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "757": {
+        "current_time": 37.05,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "997": {
+        "current_time": 7973.55,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "998": {
+        "current_time": 21.1,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "999": {
+        "current_time": 0.08,
+        "max_time": null,
+        "usage_percentage": null
+      }
+    },
+    "last_updated": "2025-07-02 20:35:43"
+  }
+}

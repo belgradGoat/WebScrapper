@@ -1,0 +1,10 @@
+{
+  "job-492bff2c-8d9a-495d-8d8a-2795f71bb445": {
+    "id": "job-492bff2c-8d9a-495d-8d8a-2795f71bb445",
+    "name": "Testing 1.-1",
+    "totalParts": 2,
+    "cycleTime": 180.0,
+    "color": "#0ea5e9",
+    "createdAt": 1751512973721
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "part-211d1f96-ec86-454d-b1ac-d69245712402": {
+    "id": "part-211d1f96-ec86-454d-b1ac-d69245712402",
+    "jobId": "job-492bff2c-8d9a-495d-8d8a-2795f71bb445",
+    "partNumber": 1,
+    "machineId": "1",
+    "startTime": 1751468400000,
+    "estimate": true,
+    "status": "scheduled"
+  },
+  "part-dfff62ca-6171-4558-8992-d35429f2b796": {
+    "id": "part-dfff62ca-6171-4558-8992-d35429f2b796",
+    "jobId": "job-492bff2c-8d9a-495d-8d8a-2795f71bb445",
+    "partNumber": 2,
+    "machineId": "1",
+    "startTime": 1751479200000,
+    "estimate": true,
+    "status": "scheduled"
+  }
+}

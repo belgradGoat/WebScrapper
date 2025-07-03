@@ -1,0 +1,23 @@
+2025-07-02 21:19:31,520 - main - INFO - Starting application
+2025-07-02 21:19:31,584 - main - ERROR - Error starting application: name 'requests' is not defined
+
+Traceback (most recent call last):
+  File "C:\Users\sszewczyk\Documents\GitHub\WebScrapper\GimmeDaTools\refactored_nc_tool_analyzer\main.py", line 39, in main
+    from ui.main_window import MainWindow
+  File "C:\Users\sszewczyk\Documents\GitHub\WebScrapper\GimmeDaTools\refactored_nc_tool_analyzer\ui\main_window.py", line 10, in <module>
+    from services.jms_service import JMSService
+  File "C:\Users\sszewczyk\Documents\GitHub\WebScrapper\GimmeDaTools\refactored_nc_tool_analyzer\services\jms_service.py", line 17, in <module>
+    from services.jms.jms_client import JMSClient
+  File "C:\Users\sszewczyk\Documents\GitHub\WebScrapper\GimmeDaTools\refactored_nc_tool_analyzer\services\jms\jms_client.py", line 6, in <module>
+    from .jms_cell_client import JMSCellClient
+  File "C:\Users\sszewczyk\Documents\GitHub\WebScrapper\GimmeDaTools\refactored_nc_tool_analyzer\services\jms\jms_cell_client.py", line 5, in <module>
+    from .jms_base_client import JMSBaseClient
+  File "C:\Users\sszewczyk\Documents\GitHub\WebScrapper\GimmeDaTools\refactored_nc_tool_analyzer\services\jms\jms_base_client.py", line 14, in <module>
+    class JMSBaseClient:
+    ...<194 lines>...
+                raise Exception(error_msg)
+  File "C:\Users\sszewczyk\Documents\GitHub\WebScrapper\GimmeDaTools\refactored_nc_tool_analyzer\services\jms\jms_base_client.py", line 46, in JMSBaseClient
+    headers: Optional[Dict[str, str]] = None) -> requests.Response:
+                                                 ^^^^^^^^
+NameError: name 'requests' is not defined
+
