@@ -29,7 +29,12 @@ class MockRequests:
     @staticmethod
     def get(url, **kwargs):
         print(f"Mock GET request to {url}")
-        return MockResponse(200, {"status": "success", "message": "This is a mock response"})
+        return MockResponse(200, {
+            "access_token": "mock_access_token_12345",
+            "token_type": "Bearer",
+            "expires_in": 3600,
+            "scope": "esbusci"
+        })
         
     @staticmethod
     def post(url, **kwargs):
@@ -43,22 +48,42 @@ class MockRequests:
                 "expires_in": 3600,
                 "scope": "esbusci"
             })
-        return MockResponse(200, {"status": "success", "message": "This is a mock response"})
+        return MockResponse(200, {
+            "access_token": "mock_access_token_12345",
+            "token_type": "Bearer",
+            "expires_in": 3600,
+            "scope": "esbusci"
+        })
         
     @staticmethod
     def put(url, **kwargs):
         print(f"Mock PUT request to {url}")
-        return MockResponse(200, {"status": "success", "message": "This is a mock response"})
+        return MockResponse(200, {
+            "access_token": "mock_access_token_12345",
+            "token_type": "Bearer",
+            "expires_in": 3600,
+            "scope": "esbusci"
+        })
         
     @staticmethod
     def patch(url, **kwargs):
         print(f"Mock PATCH request to {url}")
-        return MockResponse(200, {"status": "success", "message": "This is a mock response"})
+        return MockResponse(200, {
+            "access_token": "mock_access_token_12345",
+            "token_type": "Bearer",
+            "expires_in": 3600,
+            "scope": "esbusci"
+        })
         
     @staticmethod
     def delete(url, **kwargs):
         print(f"Mock DELETE request to {url}")
-        return MockResponse(200, {"status": "success", "message": "This is a mock response"})
+        return MockResponse(200, {
+            "access_token": "mock_access_token_12345",
+            "token_type": "Bearer",
+            "expires_in": 3600,
+            "scope": "esbusci"
+        })
         
     @staticmethod
     def request(method, url, **kwargs):
@@ -72,7 +97,12 @@ class MockRequests:
                 "expires_in": 3600,
                 "scope": "esbusci"
             })
-        return MockResponse(200, {"status": "success", "message": "This is a mock response"})
+        return MockResponse(200, {
+            "access_token": "mock_access_token_12345",
+            "token_type": "Bearer",
+            "expires_in": 3600,
+            "scope": "esbusci"
+        })
 
 # Debug: Print Python path
 print("Python path:", sys.path)
@@ -205,7 +235,14 @@ class JMSAuthClient:
         """
         if not REQUESTS_AVAILABLE:
             print("Using mock authentication since 'requests' module is not available")
-            self.token = "mock_token_12345"
+            # Use a proper OAuth token structure
+            mock_response = {
+                "access_token": "mock_token_12345",
+                "token_type": "Bearer",
+                "expires_in": 3600,
+                "scope": "esbusci"
+            }
+            self.token = mock_response["access_token"]
             self.token_expiry = time.time() + (55 * 60)
             event_system.publish("jms_auth_success", "Successfully authenticated with mock JMS API")
             return
@@ -346,8 +383,14 @@ class JMSAuthClient:
             event_system.publish("warning", error_msg)
             print(error_msg)
             
-            # Fall back to mock authentication
-            self.token = "mock_token_12345"
+            # Fall back to mock authentication with proper OAuth structure
+            mock_response = {
+                "access_token": "mock_token_12345",
+                "token_type": "Bearer",
+                "expires_in": 3600,
+                "scope": "esbusci"
+            }
+            self.token = mock_response["access_token"]
             self.token_expiry = time.time() + (55 * 60)
             event_system.publish("jms_auth_success", "Using mock authentication due to connection error")
         except requests.exceptions.RequestException as e:
@@ -356,8 +399,14 @@ class JMSAuthClient:
             event_system.publish("warning", error_msg)
             print(error_msg)
             
-            # Fall back to mock authentication
-            self.token = "mock_token_12345"
+            # Fall back to mock authentication with proper OAuth structure
+            mock_response = {
+                "access_token": "mock_token_12345",
+                "token_type": "Bearer",
+                "expires_in": 3600,
+                "scope": "esbusci"
+            }
+            self.token = mock_response["access_token"]
             self.token_expiry = time.time() + (55 * 60)
             event_system.publish("jms_auth_success", "Using mock authentication due to request error")
         except (KeyError, ValueError) as e:
@@ -366,8 +415,14 @@ class JMSAuthClient:
             event_system.publish("warning", error_msg)
             print(error_msg)
             
-            # Fall back to mock authentication
-            self.token = "mock_token_12345"
+            # Fall back to mock authentication with proper OAuth structure
+            mock_response = {
+                "access_token": "mock_token_12345",
+                "token_type": "Bearer",
+                "expires_in": 3600,
+                "scope": "esbusci"
+            }
+            self.token = mock_response["access_token"]
             self.token_expiry = time.time() + (55 * 60)
             event_system.publish("jms_auth_success", "Using mock authentication due to invalid response")
         except Exception as e:
@@ -378,7 +433,13 @@ class JMSAuthClient:
             event_system.publish("warning", error_msg)
             print(error_msg)
             
-            # Fall back to mock authentication
-            self.token = "mock_token_12345"
+            # Fall back to mock authentication with proper OAuth structure
+            mock_response = {
+                "access_token": "mock_token_12345",
+                "token_type": "Bearer",
+                "expires_in": 3600,
+                "scope": "esbusci"
+            }
+            self.token = mock_response["access_token"]
             self.token_expiry = time.time() + (55 * 60)
             event_system.publish("jms_auth_success", "Using mock authentication due to unexpected error")
