@@ -42,17 +42,23 @@ class JMSMenuExtensionModule(ModuleInterface):
     
     def get_required_services(self) -> List[str]:
         """Return list of service names this module requires"""
-        return ["jms_service", "extension_registry"]
+        return ["jms_service_module", "extension_registry"]
     
     def initialize(self, service_registry) -> None:
         """Initialize the module with required services"""
         logger.info("Initializing JMS menu extension module")
         
-        # Get the JMS service
+        # Get the JMS service module
+        self.jms_service_module = service_registry.get_service("jms_service_module")
+        if not self.jms_service_module:
+            logger.warning("JMS service module not found. JMS menu extensions will not be available.")
+            return
+            
+        # Get the JMS service from the module
         self.jms_service = service_registry.get_service("jms_service")
         if not self.jms_service:
-            logger.warning("JMS service not found. JMS menu extensions will not be available.")
-            return
+            logger.warning("JMS service not found. Using JMS service module directly.")
+            self.jms_service = self.jms_service_module
             
         # Get the extension registry
         extension_registry = service_registry.get_service("extension_registry")
@@ -80,18 +86,11 @@ class JMSMenuExtensionModule(ModuleInterface):
             tk.messagebox.showerror("Error", "JMS configuration is not available")
             return
             
-        # Get the main window from the application
-        if not self.main_window:
-            # Try to find the main window
-            for widget in tk._default_root.winfo_children():
-                if widget.winfo_class() == "Tk":
-                    self.main_window = widget
-                    break
+        # Get the root window
+        root = tk._default_root
         
-        if self.main_window:
-            JMSConfigDialog(self.main_window, self.jms_service)
-        else:
-            JMSConfigDialog(tk._default_root, self.jms_service)
+        # Create the dialog with the JMS service module
+        JMSConfigDialog(root, self.jms_service)
     
     def shutdown(self) -> None:
         """Shutdown the module and release resources"""

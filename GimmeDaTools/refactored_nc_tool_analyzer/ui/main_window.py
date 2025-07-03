@@ -156,6 +156,9 @@ class MainWindow:
         tools_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Tools", menu=tools_menu)
         
+        # Add a default item to ensure the menu is not empty
+        tools_menu.add_command(label="Settings", command=self._show_settings)
+        
         # Add tools menu items from extension points
         tools_ext_point = self.extension_registry.get_extension_point("ui.menu.tools")
         tools_ext_point.invoke(tools_menu)
@@ -182,6 +185,13 @@ class MainWindow:
             "NC Tool Analyzer\n\n"
             "A tool for analyzing NC programs and scheduling machine shop operations.\n\n"
             f"Version {version}"
+        )
+        
+    def _show_settings(self):
+        """Show the settings dialog"""
+        messagebox.showinfo(
+            "Settings",
+            "Settings dialog not implemented yet."
         )
     
     def get_service(self, name):

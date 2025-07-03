@@ -15,16 +15,16 @@ except ImportError:
 class JMSConfigDialog:
     """Dialog for configuring JMS integration"""
     
-    def __init__(self, parent, main_window):
+    def __init__(self, parent, jms_service):
         """
         Initialize the JMS configuration dialog
         
         Args:
             parent: Parent widget
-            main_window: MainWindow instance
+            jms_service: JMSService module or instance
         """
         self.parent = parent
-        self.main_window = main_window
+        self.jms_service = jms_service
         
         # Create dialog window
         self.dialog = tk.Toplevel(parent)
@@ -49,7 +49,7 @@ class JMSConfigDialog:
         
         # Create variables
         self.jms_url = tk.StringVar(value="http://localhost:8080")
-        self.jms_enabled = tk.BooleanVar(value=self.main_window.jms_enabled)
+        self.jms_enabled = tk.BooleanVar(value=hasattr(self.jms_service, 'jms_enabled') and self.jms_service.jms_enabled)
         
         # Create UI
         self._create_ui()
@@ -117,12 +117,30 @@ class JMSConfigDialog:
         """Toggle JMS integration"""
         if self.jms_enabled.get():
             # Enable JMS
-            success = self.main_window.enable_jms_integration(self.jms_url.get())
+            if hasattr(self.jms_service, 'enable_jms'):
+                success = self.jms_service.enable_jms(self.jms_url.get())
+            else:
+                # Fallback for direct JMSService instance
+                try:
+                    self.jms_service.test_connection()
+                    self.jms_service.start_polling()
+                    success = True
+                except Exception as e:
+                    messagebox.showerror("JMS Error", f"Error enabling JMS integration: {str(e)}")
+                    success = False
+                    
             if not success:
                 self.jms_enabled.set(False)
         else:
             # Disable JMS
-            self.main_window.disable_jms_integration()
+            if hasattr(self.jms_service, 'disable_jms'):
+                self.jms_service.disable_jms()
+            else:
+                # Fallback for direct JMSService instance
+                try:
+                    self.jms_service.stop_polling()
+                except Exception as e:
+                    messagebox.showerror("JMS Error", f"Error disabling JMS integration: {str(e)}")
             
         # Update status
         self._update_status()
@@ -134,15 +152,35 @@ class JMSConfigDialog:
             return
             
         try:
-            # Create temporary JMS service
-            from services.jms_service import JMSService
-            jms_service = JMSService(self.main_window.scheduler_service, self.jms_url.get())
-            
-            # Test connection
-            if jms_service.test_connection():
-                messagebox.showinfo("Connection Test", "Successfully connected to JMS API!")
+            # Test connection using existing JMS service
+            if hasattr(self.jms_service, 'test_connection'):
+                # For JMSServiceModule
+                if self.jms_service.test_connection():
+                    messagebox.showinfo("Connection Test", "Successfully connected to JMS API!")
+                else:
+                    messagebox.showerror("Connection Test", "Failed to connect to JMS API!")
             else:
-                messagebox.showerror("Connection Test", "Failed to connect to JMS API!")
+                # Create temporary JMS service for testing
+                from services.jms_service import JMSService
+                from services.scheduler_service import SchedulerService
+                
+                # Try to get scheduler service from the JMS service if available
+                if hasattr(self.jms_service, 'scheduler_service'):
+                    scheduler_service = self.jms_service.scheduler_service
+                else:
+                    # Create a temporary scheduler service
+                    from services.machine_service import MachineService
+                    machine_service = MachineService()
+                    scheduler_service = SchedulerService(machine_service)
+                
+                # Create temporary JMS service
+                temp_jms_service = JMSService(scheduler_service, self.jms_url.get())
+                
+                # Test connection
+                if temp_jms_service.test_connection():
+                    messagebox.showinfo("Connection Test", "Successfully connected to JMS API!")
+                else:
+                    messagebox.showerror("Connection Test", "Failed to connect to JMS API!")
         except Exception as e:
             messagebox.showerror("Error", f"Error testing connection: {str(e)}")
             
