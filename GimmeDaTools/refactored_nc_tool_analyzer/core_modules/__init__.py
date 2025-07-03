@@ -1,4 +1,4 @@
 """
-Core Modules for NC Tool Analyzer
-Contains built-in modules for the application
+Core Modules Package for NC Tool Analyzer
+Contains built-in modules that provide essential functionality
 """

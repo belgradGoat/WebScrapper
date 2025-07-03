@@ -2,7 +2,10 @@
 Service Registry for NC Tool Analyzer
 Provides a registry for services that can be used by modules
 """
+import logging
 from typing import Dict, Any, Optional
+
+logger = logging.getLogger(__name__)
 
 
 class ServiceRegistry:
@@ -20,6 +23,7 @@ class ServiceRegistry:
             name: Name of the service
             service: Service instance
         """
+        logger.info(f"Registering service: {name} ({type(service).__name__})")
         self.services[name] = service
     
     def get_service(self, name: str) -> Optional[Any]:
@@ -32,7 +36,13 @@ class ServiceRegistry:
         Returns:
             Service instance or None if not found
         """
-        return self.services.get(name)
+        service = self.services.get(name)
+        if service:
+            logger.info(f"Retrieved service: {name} ({type(service).__name__})")
+        else:
+            logger.warning(f"Service not found: {name}")
+            logger.debug(f"Available services: {', '.join(self.services.keys())}")
+        return service
     
     def has_service(self, name: str) -> bool:
         """
@@ -53,4 +63,5 @@ class ServiceRegistry:
         Returns:
             Dictionary of all registered services
         """
+        logger.info(f"Getting all services. {len(self.services)} services available")
         return self.services.copy()

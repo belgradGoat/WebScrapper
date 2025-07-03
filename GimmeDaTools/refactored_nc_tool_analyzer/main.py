@@ -61,10 +61,22 @@ def main():
         # Initialize the application core
         logger.info("Initializing application core")
         app_core = ApplicationCore()
+        
+        # Log the module paths
+        for path in app_core.module_registry.module_paths:
+            logger.info(f"Module path: {path}")
+        
+        # Initialize the application core
         if not app_core.initialize():
             logger.error("Failed to initialize application core")
             show_error("Startup Error", "Failed to initialize application core.\n\nSee app.log for details.")
             sys.exit(1)
+            
+        # Log the loaded modules
+        modules = app_core.module_registry.get_all_modules()
+        logger.info(f"Loaded {len(modules)} modules:")
+        for name, module in modules.items():
+            logger.info(f"  - {name} (v{module.get_version()})")
         
         # Create the main window
         logger.info("Creating main window")

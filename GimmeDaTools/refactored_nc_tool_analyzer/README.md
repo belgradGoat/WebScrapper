@@ -196,12 +196,22 @@ You can enable/disable JMS integration by changing the `enabled` property.
 
 ### UI Integration
 
-The JMS UI integration works through the extension point system:
+The JMS UI integration provides multiple ways to access JMS functionality:
 
-1. The `JMSMenuExtensionModule` registers a handler for the `ui.menu.tools` extension point
-2. When the main window creates the Tools menu, it invokes this extension point
-3. The handler adds the "JMS Configuration" menu item to the Tools menu
-4. When clicked, it opens the JMSConfigDialog with the JMS service
+1. **Tools Menu > JMS Configuration**: Direct access to JMS configuration
+   - Added by both the MainWindow and the JMSMenuExtensionModule
+   - Opens the JMSConfigDialog for configuring JMS connection
+
+2. **Tools Menu > Settings > JMS Tab**: Access through the Settings dialog
+   - The Settings dialog includes a dedicated JMS tab
+   - Provides options to enable/disable JMS integration
+   - Allows configuring the JMS API URL
+   - Includes a "Test Connection" button
+
+3. **Extension Point System**:
+   - The `JMSMenuExtensionModule` registers a handler for the `ui.menu.tools` extension point
+   - When the main window creates the Tools menu, it invokes this extension point
+   - The handler adds the "JMS Configuration" menu item to the Tools menu
 
 ### Error Handling
 

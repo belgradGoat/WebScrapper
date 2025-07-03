@@ -4,10 +4,10 @@ const CLIENT_ID = 'b1ee25b8600a462bbe94c23defd64eeb';
 const CLIENT_SECRET = 'vqVoMi6dRfgRJh03GSH77q2boukqqUgIb99tkeho';
 
 async function testDirectAuth() {
-    // First, you need to get a fresh auth code by visiting this URL in your browser:
-    const authUrl = `https://login.eveonline.com/oauth/authorize?response_type=code&client_id=${CLIENT_ID}&redirect_uri=http://localhost:8085/callback&scope=esi-markets.structure_markets.v1`;
+    // Use V2 OAuth endpoint
+    const authUrl = `https://login.eveonline.com/v2/oauth/authorize?response_type=code&client_id=${CLIENT_ID}&redirect_uri=http://localhost:8085/callback&scope=esi-markets.structure_markets.v1&state=testing123`;
     
-    console.log('Visit this URL to get an auth code:');
+    console.log('Visit this URL to get an auth code (V2 endpoint):');
     console.log(authUrl);
     console.log('\nAfter authorization, copy the "code" parameter from the redirect URL');
     console.log('Then run: node src/test-eve-auth.js YOUR_CODE_HERE\n');
@@ -19,8 +19,16 @@ async function testDirectAuth() {
     
     console.log('Testing with code:', code.substring(0, 10) + '...');
     
+    // Try both v1 and v2 token endpoints
+    console.log('\n--- Testing V1 Token Endpoint ---');
+    await testTokenEndpoint('https://login.eveonline.com/oauth/token', code);
+    
+    console.log('\n--- Testing V2 Token Endpoint ---');
+    await testTokenEndpoint('https://login.eveonline.com/v2/oauth/token', code);
+}
+
+async function testTokenEndpoint(tokenUrl, code) {
     try {
-        const tokenUrl = 'https://login.eveonline.com/oauth/token';
         const authHeader = 'Basic ' + Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
         
         const response = await fetch(tokenUrl, {
@@ -35,18 +43,17 @@ async function testDirectAuth() {
         });
         
         console.log('Response status:', response.status);
-        console.log('Response headers:', JSON.stringify(Object.fromEntries(response.headers), null, 2));
         
         const text = await response.text();
         console.log('Raw response:', text);
         
         try {
             const data = JSON.parse(text);
-            console.log('\nParsed response:', JSON.stringify(data, null, 2));
             
             if (data.access_token) {
                 console.log('\nToken preview:', data.access_token.substring(0, 50) + '...');
                 console.log('Token starts with "eyJ"?:', data.access_token.startsWith('eyJ'));
+                console.log('Token format looks like JWT?:', data.access_token.split('.').length === 3);
             }
         } catch (e) {
             console.log('Could not parse as JSON');

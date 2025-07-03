@@ -136,16 +136,21 @@ class MainWindow:
         
     def _create_menu(self):
         """Create the application menu"""
+        logger.info("Creating application menu")
+        
         # Create menu bar
         menubar = tk.Menu(self.root)
         self.root.config(menu=menubar)
         
         # File menu
+        logger.info("Creating File menu")
         file_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="File", menu=file_menu)
         
         # Add file menu items from extension points
+        logger.info("Getting ui.menu.file extension point")
         file_ext_point = self.extension_registry.get_extension_point("ui.menu.file")
+        logger.info("Invoking ui.menu.file extension point")
         file_ext_point.invoke(file_menu)
         
         # Add exit command
@@ -153,14 +158,32 @@ class MainWindow:
         file_menu.add_command(label="Exit", command=self.root.quit)
         
         # Tools menu
+        logger.info("Creating Tools menu")
         tools_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Tools", menu=tools_menu)
         
-        # Add a default item to ensure the menu is not empty
-        tools_menu.add_command(label="Settings", command=self._show_settings)
+        # Add Settings menu item
+        logger.info("Adding Settings menu item")
+        tools_menu.add_command(label="Settings...", command=self._show_settings)
+        
+        # Add JMS Configuration menu item directly
+        logger.info("Checking for JMS service")
+        jms_service = self.service_registry.get_service("jms_service")
+        if jms_service:
+            logger.info("JMS service found, adding JMS Configuration menu item")
+            tools_menu.add_command(label="JMS Configuration...", command=self._show_jms_config)
+        else:
+            logger.warning("JMS service not found, skipping JMS Configuration menu item")
+            # Check if JMS service module is available
+            jms_service_module = self.service_registry.get_service("jms_service_module")
+            if jms_service_module:
+                logger.info("JMS service module found, adding JMS Configuration menu item")
+                tools_menu.add_command(label="JMS Configuration...", command=self._show_jms_config)
         
         # Add tools menu items from extension points
+        logger.info("Getting ui.menu.tools extension point")
         tools_ext_point = self.extension_registry.get_extension_point("ui.menu.tools")
+        logger.info("Invoking ui.menu.tools extension point")
         tools_ext_point.invoke(tools_menu)
         
         # Help menu
@@ -189,10 +212,44 @@ class MainWindow:
         
     def _show_settings(self):
         """Show the settings dialog"""
-        messagebox.showinfo(
-            "Settings",
-            "Settings dialog not implemented yet."
-        )
+        from ui.settings_dialog import SettingsDialog
+        try:
+            SettingsDialog(self.root, self.app_core)
+        except ImportError:
+            messagebox.showinfo(
+                "Settings",
+                "Settings dialog not implemented yet."
+            )
+    
+    def _show_jms_config(self):
+        """Show the JMS configuration dialog"""
+        logger.info("Showing JMS configuration dialog")
+        try:
+            logger.info("Importing JMSConfigDialog")
+            from ui.jms_config_dialog import JMSConfigDialog
+            
+            logger.info("Getting JMS service")
+            jms_service = self.service_registry.get_service("jms_service")
+            if jms_service:
+                logger.info(f"Using JMS service: {type(jms_service).__name__}")
+                JMSConfigDialog(self.root, jms_service)
+            else:
+                logger.warning("JMS service not found, trying JMS service module")
+                jms_service_module = self.service_registry.get_service("jms_service_module")
+                if jms_service_module:
+                    logger.info(f"Using JMS service module: {type(jms_service_module).__name__}")
+                    JMSConfigDialog(self.root, jms_service_module)
+                else:
+                    logger.error("Neither JMS service nor JMS service module found")
+                    messagebox.showerror("Error", "JMS service not available")
+        except ImportError as e:
+            logger.error(f"Error importing JMS configuration dialog: {str(e)}")
+            messagebox.showerror("Error", "JMS configuration dialog not available")
+        except Exception as e:
+            logger.error(f"Error showing JMS configuration dialog: {str(e)}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            messagebox.showerror("Error", f"Error showing JMS configuration: {str(e)}")
     
     def get_service(self, name):
         """

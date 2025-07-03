@@ -12,11 +12,33 @@ logger = logging.getLogger(__name__)
 
 # Try to import JMS modules
 try:
-    from services.jms_service import JMSService
-    from services.jms.jms_auth import REQUESTS_AVAILABLE
+    logger.info("Attempting to import JMS modules...")
+    # Try absolute imports first
+    try:
+        from services.jms_service import JMSService
+        from services.jms.jms_auth import REQUESTS_AVAILABLE
+        logger.info("Successfully imported JMS modules using absolute imports")
+    except ImportError:
+        # Try relative imports
+        logger.info("Absolute imports failed, trying relative imports...")
+        import sys
+        import os
+        # Add parent directory to path to enable relative imports
+        parent_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        if parent_dir not in sys.path:
+            sys.path.append(parent_dir)
+            logger.info(f"Added parent directory to path: {parent_dir}")
+        
+        from services.jms_service import JMSService
+        from services.jms.jms_auth import REQUESTS_AVAILABLE
+        logger.info("Successfully imported JMS modules using relative imports")
+    
+    logger.info(f"JMS auth module imported, REQUESTS_AVAILABLE={REQUESTS_AVAILABLE}")
     JMS_AVAILABLE = REQUESTS_AVAILABLE
-except ImportError:
+except ImportError as e:
     JMS_AVAILABLE = False
+    logger.error(f"JMS modules import error: {str(e)}")
+    logger.error(f"Python path: {sys.path}")
     logger.warning("JMS modules not found. JMS integration will not be available.")
 
 
@@ -55,24 +77,34 @@ class JMSServiceModule(ServiceModuleInterface):
         
         try:
             # Get the scheduler service
+            logger.info("Looking for scheduler_service in service registry")
             scheduler_service = service_registry.get_service("scheduler_service")
             if not scheduler_service:
+                logger.error("Scheduler service not found in service registry")
                 raise ValueError("Scheduler service not found")
+            else:
+                logger.info(f"Found scheduler_service: {type(scheduler_service).__name__}")
             
             # Create the JMS service (disabled by default)
+            logger.info("Creating JMS service instance")
             self.jms_service = JMSService(scheduler_service)
             logger.info("JMS service created successfully")
             
         except Exception as e:
             logger.error(f"Error initializing JMS service: {str(e)}")
+            logger.error(f"Exception details: {type(e).__name__}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
             event_system.publish("error", f"Error initializing JMS service: {str(e)}")
     
     def get_provided_services(self) -> Dict[str, Any]:
         """Return a dictionary of services provided by this module"""
         if self.jms_service:
+            logger.info("Providing jms_service to service registry")
             return {
                 "jms_service": self.jms_service
             }
+        logger.warning("No JMS service available to provide")
         return {}
     
     def enable_jms(self, base_url: str = "http://localhost:8080") -> bool:
