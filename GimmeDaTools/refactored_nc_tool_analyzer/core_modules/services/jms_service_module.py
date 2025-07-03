@@ -54,6 +54,8 @@ class JMSServiceModule(ServiceModuleInterface):
         self.password = None
         self.client_id = "EsbusciClient"
         self.client_secret = "DefaultEsbusciClientSecret"
+        self.base_url = "http://localhost:8080"  # Default URL
+        self.config_manager = None
     
     def get_name(self) -> str:
         """Return the name of the module"""
@@ -90,10 +92,20 @@ class JMSServiceModule(ServiceModuleInterface):
             else:
                 logger.info(f"Found scheduler_service: {type(scheduler_service).__name__}")
             
+            # Get the config manager
+            logger.info("Looking for config_manager in service registry")
+            self.config_manager = service_registry.get_service("config_manager")
+            if not self.config_manager:
+                logger.warning("Config manager not found in service registry, using default values")
+            else:
+                logger.info("Found config_manager, loading JMS configuration")
+                self._load_config()
+            
             # Create the JMS service (disabled by default)
             logger.info("Creating JMS service instance")
             self.jms_service = JMSService(
                 scheduler_service,
+                base_url=self.base_url,
                 username=self.username,
                 password=self.password,
                 client_id=self.client_id,
@@ -118,7 +130,46 @@ class JMSServiceModule(ServiceModuleInterface):
         logger.warning("No JMS service available to provide")
         return {}
     
-    def enable_jms(self, base_url: str = "http://localhost:8080", username: str = None, password: str = None) -> bool:
+    def _load_config(self) -> None:
+        """Load JMS configuration from config manager"""
+        if not self.config_manager:
+            return
+            
+        # Get JMS module configuration
+        jms_config = self.config_manager.get_module_config("jms_service_module")
+        
+        # Load values if they exist
+        self.base_url = jms_config.get("base_url", self.base_url)
+        self.username = jms_config.get("username", self.username)
+        self.password = jms_config.get("password", self.password)
+        self.client_id = jms_config.get("client_id", self.client_id)
+        self.client_secret = jms_config.get("client_secret", self.client_secret)
+        self.jms_enabled = jms_config.get("enabled", self.jms_enabled)
+        
+        logger.info(f"Loaded JMS configuration: URL={self.base_url}, Username={self.username is not None}")
+    
+    def _save_config(self) -> None:
+        """Save JMS configuration to config manager"""
+        if not self.config_manager:
+            logger.warning("Config manager not available, cannot save JMS configuration")
+            return
+            
+        # Get JMS module configuration
+        jms_config = self.config_manager.get_module_config("jms_service_module")
+        
+        # Update values
+        jms_config["base_url"] = self.base_url
+        jms_config["username"] = self.username
+        jms_config["password"] = self.password
+        jms_config["client_id"] = self.client_id
+        jms_config["client_secret"] = self.client_secret
+        jms_config["enabled"] = self.jms_enabled
+        
+        # Save configuration
+        self.config_manager.save_config()
+        logger.info(f"Saved JMS configuration: URL={self.base_url}, Username={self.username is not None}")
+    
+    def enable_jms(self, base_url: str = None, username: str = None, password: str = None) -> bool:
         """
         Enable JMS integration
         
@@ -136,11 +187,17 @@ class JMSServiceModule(ServiceModuleInterface):
             
         if not self.jms_enabled:
             try:
+                # Use provided values or current values
+                base_url = base_url or self.base_url
+                
                 logger.info(f"Enabling JMS integration with URL: {base_url}")
                 if username and password:
                     logger.info("Using username/password authentication")
                     self.username = username
                     self.password = password
+                
+                # Update base URL
+                self.base_url = base_url
                 
                 # Create new JMS service with provided URL and credentials
                 scheduler_service = self.jms_service.scheduler_service
@@ -164,6 +221,9 @@ class JMSServiceModule(ServiceModuleInterface):
                     self.jms_service.start_polling()
                     self.jms_enabled = True
                     
+                    # Save configuration
+                    self._save_config()
+                    
                     # Publish event
                     event_system.publish("jms_enabled", f"JMS integration enabled with URL: {base_url}")
                     logger.info("JMS integration enabled successfully")
@@ -175,6 +235,10 @@ class JMSServiceModule(ServiceModuleInterface):
                     if not REQUESTS_AVAILABLE:
                         logger.info("Using mock JMS functionality")
                         self.jms_enabled = True
+                        
+                        # Save configuration
+                        self._save_config()
+                        
                         event_system.publish("jms_enabled", f"JMS integration enabled with mock functionality")
                         return True
                     
@@ -184,6 +248,10 @@ class JMSServiceModule(ServiceModuleInterface):
                                               "Failed to connect to JMS API. Enable integration anyway?"):
                             logger.info("Enabling JMS integration despite connection failure")
                             self.jms_enabled = True
+                            
+                            # Save configuration
+                            self._save_config()
+                            
                             event_system.publish("jms_enabled", f"JMS integration enabled with URL: {base_url} (connection failed)")
                             return True
                     except Exception as e:
@@ -191,6 +259,10 @@ class JMSServiceModule(ServiceModuleInterface):
                         # If messagebox fails, enable anyway as a fallback
                         logger.info("Enabling JMS integration despite connection failure (fallback)")
                         self.jms_enabled = True
+                        
+                        # Save configuration
+                        self._save_config()
+                        
                         event_system.publish("jms_enabled", f"JMS integration enabled with URL: {base_url} (connection failed)")
                         return True
                         
@@ -213,6 +285,9 @@ class JMSServiceModule(ServiceModuleInterface):
                 self.jms_service.stop_polling()
                 self.jms_enabled = False
                 
+                # Save configuration
+                self._save_config()
+                
                 # Publish event
                 event_system.publish("jms_disabled", "JMS integration disabled")
             except Exception as e:
@@ -222,3 +297,15 @@ class JMSServiceModule(ServiceModuleInterface):
         """Shutdown the module and release resources"""
         logger.info("Shutting down JMS service module")
         self.disable_jms()
+        
+    def get_base_url(self) -> str:
+        """Get the base URL for JMS API"""
+        return self.base_url
+        
+    def get_username(self) -> str:
+        """Get the username for JMS authentication"""
+        return self.username
+        
+    def get_password(self) -> str:
+        """Get the password for JMS authentication"""
+        return self.password

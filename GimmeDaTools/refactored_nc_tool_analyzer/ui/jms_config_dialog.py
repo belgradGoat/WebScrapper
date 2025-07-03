@@ -53,15 +53,61 @@ class JMSConfigDialog:
         y = (self.dialog.winfo_screenheight() // 2) - (height // 2)
         self.dialog.geometry(f"+{x}+{y}")
         
-        # Create variables
+        # Create variables with default values
         self.jms_url = tk.StringVar(value="http://localhost:8080")
         self.jms_enabled = tk.BooleanVar(value=hasattr(self.jms_service, 'jms_enabled') and self.jms_service.jms_enabled)
         self.jms_username = tk.StringVar(value="")
         self.jms_password = tk.StringVar(value="")
         
+        # Load current values from JMS service if available
+        self._load_current_values()
+        
         # Create UI
         self._create_ui()
         
+    def _load_current_values(self):
+        """Load current values from JMS service"""
+        try:
+            # Check if JMS service has get_base_url method (JMSServiceModule)
+            if hasattr(self.jms_service, 'get_base_url'):
+                base_url = self.jms_service.get_base_url()
+                if base_url:
+                    self.jms_url.set(base_url)
+                    logger.info(f"Loaded base URL from JMS service: {base_url}")
+                
+                # Load username if available
+                username = self.jms_service.get_username()
+                if username:
+                    self.jms_username.set(username)
+                    logger.info(f"Loaded username from JMS service: {username}")
+                
+                # Load password if available
+                password = self.jms_service.get_password()
+                if password:
+                    self.jms_password.set(password)
+                    logger.info("Loaded password from JMS service")
+            
+            # Check if JMS service has base_url attribute directly
+            elif hasattr(self.jms_service, 'base_url'):
+                base_url = self.jms_service.base_url
+                if base_url:
+                    self.jms_url.set(base_url)
+                    logger.info(f"Loaded base URL from JMS service attribute: {base_url}")
+                
+                # Load username if available
+                if hasattr(self.jms_service, 'username') and self.jms_service.username:
+                    self.jms_username.set(self.jms_service.username)
+                    logger.info(f"Loaded username from JMS service attribute: {self.jms_service.username}")
+                
+                # Load password if available
+                if hasattr(self.jms_service, 'password') and self.jms_service.password:
+                    self.jms_password.set(self.jms_service.password)
+                    logger.info("Loaded password from JMS service attribute")
+            
+            logger.info(f"JMS configuration loaded: URL={self.jms_url.get()}, Username={self.jms_username.get() != ''}")
+        except Exception as e:
+            logger.error(f"Error loading current values from JMS service: {str(e)}")
+    
     def _create_ui(self):
         """Create the UI components"""
         # Main frame
@@ -170,6 +216,28 @@ class JMSConfigDialog:
             else:
                 # Fallback for direct JMSService instance
                 try:
+                    # Update the JMS service with the new URL, username, and password
+                    url = self.jms_url.get().strip()
+                    if not url.startswith(('http://', 'https://')):
+                        url = 'http://' + url
+                        self.jms_url.set(url)
+                    
+                    username = self.jms_username.get().strip() if self.jms_username.get() else None
+                    password = self.jms_password.get() if self.jms_password.get() else None
+                    
+                    # Update JMS service attributes if available
+                    if hasattr(self.jms_service, 'base_url'):
+                        self.jms_service.base_url = url
+                        logger.info(f"Updated JMS service base URL to: {url}")
+                    
+                    if username and hasattr(self.jms_service, 'username'):
+                        self.jms_service.username = username
+                        logger.info(f"Updated JMS service username to: {username}")
+                    
+                    if password and hasattr(self.jms_service, 'password'):
+                        self.jms_service.password = password
+                        logger.info("Updated JMS service password")
+                    
                     logger.info("Testing JMS connection")
                     connection_result = self.jms_service.test_connection()
                     logger.info(f"Connection test result: {connection_result}")
@@ -239,6 +307,16 @@ class JMSConfigDialog:
                 username = self.jms_username.get().strip() if self.jms_username.get() else None
                 password = self.jms_password.get() if self.jms_password.get() else None
                 
+                # Update JMS service base URL if it has the attribute
+                if hasattr(self.jms_service, 'base_url'):
+                    self.jms_service.base_url = url
+                    logger.info(f"Updated JMS service base URL to: {url}")
+                
+                # If the JMS service has a save_config method, call it
+                if hasattr(self.jms_service, '_save_config'):
+                    self.jms_service._save_config()
+                    logger.info("Saved JMS configuration")
+                
                 # Create a new JMS service with the provided credentials for testing
                 if hasattr(self.jms_service, 'username') and hasattr(self.jms_service, 'password'):
                     # Store original credentials
@@ -288,23 +366,47 @@ class JMSConfigDialog:
                     scheduler_service = SchedulerService(machine_service)
                 
                 # Get username and password if provided
+                url = self.jms_url.get().strip()
+                if not url.startswith(('http://', 'https://')):
+                    url = 'http://' + url
+                    self.jms_url.set(url)
+                
                 username = self.jms_username.get() if self.jms_username.get() else None
                 password = self.jms_password.get() if self.jms_password.get() else None
                 
                 # Create temporary JMS service
-                logger.info(f"Creating temporary JMS service with URL: {self.jms_url.get()}")
+                logger.info(f"Creating temporary JMS service with URL: {url}")
                 if username and password:
                     logger.info(f"Using username authentication for test: {username}")
-                    temp_jms_service = JMSService(scheduler_service, self.jms_url.get(), username=username, password=password)
+                    temp_jms_service = JMSService(scheduler_service, url, username=username, password=password)
                 else:
                     logger.info("Using client credentials authentication for test")
-                    temp_jms_service = JMSService(scheduler_service, self.jms_url.get())
+                    temp_jms_service = JMSService(scheduler_service, url)
                 
                 # Test connection
                 logger.info("Testing connection with temporary JMS service")
-                if temp_jms_service.test_connection():
+                connection_result = temp_jms_service.test_connection()
+                if connection_result:
                     logger.info("Connection test successful")
                     messagebox.showinfo("Connection Test", "Successfully connected to JMS API!")
+                    
+                    # If the test is successful, update the main JMS service if it has the attributes
+                    if hasattr(self.jms_service, 'base_url'):
+                        self.jms_service.base_url = url
+                        logger.info(f"Updated JMS service base URL to: {url}")
+                    
+                    if username and hasattr(self.jms_service, 'username'):
+                        self.jms_service.username = username
+                        logger.info(f"Updated JMS service username to: {username}")
+                    
+                    if password and hasattr(self.jms_service, 'password'):
+                        self.jms_service.password = password
+                        logger.info("Updated JMS service password")
+                    
+                    # If the JMS service has a save_config method, call it
+                    if hasattr(self.jms_service, '_save_config'):
+                        self.jms_service._save_config()
+                        logger.info("Saved JMS configuration")
                 else:
                     logger.warning("Connection test failed")
                     messagebox.showerror("Connection Test", "Failed to connect to JMS API!")
