@@ -1,0 +1,3 @@
+"""
+JMS API Client Package
+"""

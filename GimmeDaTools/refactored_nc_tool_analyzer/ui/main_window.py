@@ -7,11 +7,15 @@ from tkinter import ttk
 from services.machine_service import MachineService
 from services.analysis_service import AnalysisService
 from services.scheduler_service import SchedulerService
+from services.jms_service import JMSService
 from ui.analysis_tab import AnalysisTab
 from ui.machine_tab import MachineTab
 from ui.results_tab import ResultsTab
 from ui.scheduler_tab import SchedulerTab
 from utils.event_system import event_system
+
+
+from ui.jms_config_dialog import JMSConfigDialog
 
 
 class MainWindow:
@@ -34,8 +38,15 @@ class MainWindow:
         self.analysis_service = AnalysisService(self.machine_service)
         self.scheduler_service = SchedulerService(self.machine_service)
         
+        # Initialize JMS service (disabled by default)
+        self.jms_service = JMSService(self.scheduler_service)
+        self.jms_enabled = False
+        
         # Setup UI
         self.setup_ui()
+        
+        # Create menu
+        self._create_menu()
         
         # Subscribe to events
         self._setup_event_handlers()
@@ -66,6 +77,11 @@ class MainWindow:
         # Handle errors
         event_system.subscribe("error", self._on_error)
         
+        # Handle JMS events
+        event_system.subscribe("jms_auth_success", self._on_jms_event)
+        event_system.subscribe("jms_polling_started", self._on_jms_event)
+        event_system.subscribe("jms_polling_stopped", self._on_jms_event)
+        
     def _on_analysis_complete(self, analysis_result):
         """
         Handle analysis complete event
@@ -85,3 +101,93 @@ class MainWindow:
             error_message: Error message to display
         """
         tk.messagebox.showerror("Error", error_message)
+    
+    def _on_jms_event(self, message):
+        """
+        Handle JMS event
+        
+        Args:
+            message: Event message
+        """
+        # Log JMS events to console for now
+        print(f"JMS Event: {message}")
+        
+    def _create_menu(self):
+        """Create the application menu"""
+        # Create menu bar
+        menubar = tk.Menu(self.root)
+        self.root.config(menu=menubar)
+        
+        # File menu
+        file_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="File", menu=file_menu)
+        file_menu.add_command(label="Exit", command=self.root.quit)
+        
+        # Tools menu
+        tools_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Tools", menu=tools_menu)
+        tools_menu.add_command(label="JMS Configuration", command=self._open_jms_config)
+        
+        # Help menu
+        help_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Help", menu=help_menu)
+        help_menu.add_command(label="About", command=self._show_about)
+    
+    def _open_jms_config(self):
+        """Open the JMS configuration dialog"""
+        JMSConfigDialog(self.root, self)
+        
+    def _show_about(self):
+        """Show the about dialog"""
+        messagebox.showinfo(
+            "About NC Tool Analyzer",
+            "NC Tool Analyzer\n\n"
+            "A tool for analyzing NC programs and scheduling machine shop operations.\n\n"
+            "Version 1.0"
+        )
+    
+    def enable_jms_integration(self, base_url: str = "http://localhost:8080"):
+        """
+        Enable JMS integration
+        
+        Args:
+            base_url: Base URL of the JMS API
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        if not self.jms_enabled:
+            # Create new JMS service with provided URL
+            self.jms_service = JMSService(self.scheduler_service, base_url)
+            
+            # Test connection
+            if self.jms_service.test_connection():
+                # Start polling
+                self.jms_service.start_polling()
+                self.jms_enabled = True
+                
+                # Pass JMS service to scheduler tab
+                self.scheduler_tab.set_jms_service(self.jms_service)
+                
+                # Publish event
+                event_system.publish("jms_enabled", f"JMS integration enabled with URL: {base_url}")
+                
+                return True
+            else:
+                tk.messagebox.showerror("JMS Connection Error",
+                                      f"Failed to connect to JMS API at {base_url}")
+                return False
+        return True
+    
+    def disable_jms_integration(self):
+        """Disable JMS integration"""
+        if self.jms_enabled:
+            # Stop polling
+            self.jms_service.stop_polling()
+            self.jms_enabled = False
+            
+            # Remove JMS service from scheduler tab
+            self.scheduler_tab.set_jms_service(None)
+            
+            # Publish event
+            event_system.publish("jms_disabled", "JMS integration disabled")

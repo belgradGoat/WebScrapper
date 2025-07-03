@@ -305,9 +305,13 @@ class SchedulerTab:
             completed_parts = sum(1 for part in job_parts if part.status == 'completed')
             in_progress_parts = sum(1 for part in job_parts if part.status == 'in-progress')
             
+            # Create job frame with button and indicator
+            job_frame = tk.Frame(self.jobs_buttons_frame)
+            job_frame.pack(side=tk.LEFT, padx=(0, 5), pady=5)
+            
             # Create job button with custom styling
             job_button = tk.Button(
-                self.jobs_buttons_frame,
+                job_frame,
                 text=f"{job.name} ({completed_parts}/{job.total_parts})",
                 bg=job.color,
                 fg="white",
@@ -318,7 +322,23 @@ class SchedulerTab:
                 font=('Arial', 9, 'bold'),
                 command=lambda j=job: self._show_job_details(j)
             )
-            job_button.pack(side=tk.LEFT, padx=(0, 5), pady=5)
+            job_button.pack(side=tk.TOP)
+            
+            # Check if job is synced with JMS
+            is_synced = hasattr(self, 'jms_service') and self.jms_service and \
+                        job.job_id in getattr(self.jms_service, 'job_order_mappings', {})
+            
+            # Add JMS indicator if synced
+            if is_synced:
+                tk.Label(
+                    job_frame,
+                    text="JMS",
+                    bg="#3b82f6",
+                    fg="white",
+                    font=('Arial', 7, 'bold'),
+                    padx=3,
+                    pady=0
+                ).pack(side=tk.TOP, fill=tk.X)
             
             # Add indicator for in-progress parts
             if in_progress_parts > 0:
@@ -586,6 +606,9 @@ class SchedulerTab:
         self.job_details_panel = tk.Frame(self.frame, bg="white", bd=2, relief=tk.RAISED)
         self.job_details_panel.place(relx=1.0, rely=0, anchor=tk.NE, width=300, relheight=1.0)
         
+        # Store selected job
+        self.selected_job = job
+        
         # Job header
         header_frame = tk.Frame(self.job_details_panel, bg="white", padx=10, pady=10)
         header_frame.pack(fill=tk.X)
@@ -611,6 +634,42 @@ class SchedulerTab:
             command=self._close_job_details
         )
         close_btn.pack(side=tk.RIGHT)
+        
+        # Check if JMS service is available
+        has_jms = hasattr(self, 'jms_service') and self.jms_service
+        
+        # Check if job is synced with JMS
+        is_synced = has_jms and job.job_id in getattr(self.jms_service, 'job_order_mappings', {})
+        
+        # JMS sync status
+        if has_jms:
+            jms_frame = tk.Frame(header_frame, bg="white")
+            jms_frame.pack(side=tk.RIGHT, padx=10)
+            
+            if is_synced:
+                jms_label = tk.Label(
+                    jms_frame,
+                    text="JMS Synced",
+                    bg="#22c55e",
+                    fg="white",
+                    font=('Arial', 8),
+                    padx=5,
+                    pady=2
+                )
+                jms_label.pack(side=tk.LEFT)
+            else:
+                jms_btn = tk.Button(
+                    jms_frame,
+                    text="Push to JMS",
+                    bg="#3b82f6",
+                    fg="white",
+                    font=('Arial', 8),
+                    padx=5,
+                    pady=2,
+                    bd=0,
+                    command=lambda: self._sync_job_to_jms(job)
+                )
+                jms_btn.pack(side=tk.LEFT)
         
         # Job info
         info_frame = tk.Frame(self.job_details_panel, bg="white", padx=10, pady=5)
@@ -974,3 +1033,43 @@ class SchedulerTab:
         if messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete Part {part.part_number}?"):
             self.scheduler_service.delete_part(part.part_id)
             self._update_ui()
+    
+    def set_jms_service(self, jms_service) -> None:
+        """
+        Set the JMS service
+        
+        Args:
+            jms_service: JMSService instance
+        """
+        self.jms_service = jms_service
+        self._update_ui()
+    
+    def _sync_job_to_jms(self, job) -> None:
+        """
+        Synchronize a job to JMS
+        
+        Args:
+            job: Job to synchronize
+        """
+        if not hasattr(self, 'jms_service') or not self.jms_service:
+            messagebox.showerror("JMS Error", "JMS integration is not enabled")
+            return
+            
+        try:
+            # Show progress
+            self.parent.config(cursor="wait")
+            self.parent.update()
+            
+            # Sync job to JMS
+            order_id = self.jms_service.sync_job_to_jms(job)
+            
+            # Show success message
+            messagebox.showinfo("JMS Sync", f"Job '{job.name}' successfully synchronized to JMS (Order ID: {order_id})")
+            
+            # Update UI
+            self._update_ui()
+        except Exception as e:
+            messagebox.showerror("JMS Error", str(e))
+        finally:
+            # Reset cursor
+            self.parent.config(cursor="")
