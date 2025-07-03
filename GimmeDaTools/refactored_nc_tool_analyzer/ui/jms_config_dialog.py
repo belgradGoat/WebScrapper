@@ -147,18 +147,24 @@ class JMSConfigDialog:
         if self.jms_enabled.get():
             # Enable JMS
             if hasattr(self.jms_service, 'enable_jms'):
-                logger.info(f"Enabling JMS with URL: {self.jms_url.get()}")
+                # Validate and normalize URL
+                url = self.jms_url.get().strip()
+                if not url.startswith(('http://', 'https://')):
+                    url = 'http://' + url
+                    self.jms_url.set(url)
+                
+                logger.info(f"Enabling JMS with URL: {url}")
                 
                 # Get username and password if provided
-                username = self.jms_username.get() if self.jms_username.get() else None
+                username = self.jms_username.get().strip() if self.jms_username.get() else None
                 password = self.jms_password.get() if self.jms_password.get() else None
                 
                 if username and password:
                     logger.info(f"Using username authentication: {username}")
-                    success = self.jms_service.enable_jms(self.jms_url.get(), username, password)
+                    success = self.jms_service.enable_jms(url, username, password)
                 else:
                     logger.info("Using client credentials authentication")
-                    success = self.jms_service.enable_jms(self.jms_url.get())
+                    success = self.jms_service.enable_jms(url)
                     
                 logger.info(f"JMS enable result: {success}")
             else:
@@ -221,10 +227,16 @@ class JMSConfigDialog:
             # Test connection using existing JMS service
             if hasattr(self.jms_service, 'test_connection'):
                 # For JMSServiceModule
-                logger.info(f"Testing connection to {self.jms_url.get()}")
+                # Validate and normalize URL
+                url = self.jms_url.get().strip()
+                if not url.startswith(('http://', 'https://')):
+                    url = 'http://' + url
+                    self.jms_url.set(url)
+                
+                logger.info(f"Testing connection to {url}")
                 
                 # Get username and password if provided
-                username = self.jms_username.get() if self.jms_username.get() else None
+                username = self.jms_username.get().strip() if self.jms_username.get() else None
                 password = self.jms_password.get() if self.jms_password.get() else None
                 
                 # Create a new JMS service with the provided credentials for testing

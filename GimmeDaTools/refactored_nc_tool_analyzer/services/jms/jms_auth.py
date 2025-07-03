@@ -3,9 +3,13 @@ JMS Authentication Client for OAuth2 authentication with JMS API
 """
 import time
 import sys
+import os
+import logging
 from typing import Dict, Optional
 from utils.event_system import event_system
 
+# Set up logger
+logger = logging.getLogger(__name__)
 
 # Mock requests module for testing
 class MockResponse:
@@ -221,51 +225,125 @@ class JMSAuthClient:
                 return
                 
             # Real authentication
-            print(f"Sending authentication request to {auth_url}")
-            try:
-                response = requests.post(auth_url, data=payload)
-                print(f"Authentication response status code: {response.status_code}")
-                
-                # Log response content for debugging
+            logger.info(f"Sending authentication request to {auth_url}")
+            
+            # Try with provided credentials first if available
+            if self.username and self.password:
                 try:
-                    response_text = response.text
-                    print(f"Authentication response text: {response_text[:200]}...")
-                except Exception as e:
-                    print(f"Could not get response text: {str(e)}")
-                
-                response.raise_for_status()
-                
-                data = response.json()
-                print(f"Authentication response parsed successfully")
-                
-                if "access_token" not in data:
-                    print(f"No access_token in response. Keys: {list(data.keys())}")
-                    raise KeyError("No access_token in response")
+                    logger.info(f"Attempting authentication with username: {self.username}")
+                    response = requests.post(auth_url, data=payload)
+                    logger.info(f"Authentication response status code: {response.status_code}")
                     
-                self.token = data["access_token"]
-                # Set expiry to 55 minutes (5 minutes before actual expiry)
-                self.token_expiry = time.time() + (55 * 60)
-                
-                event_system.publish("jms_auth_success", "Successfully authenticated with JMS API")
-            except requests.exceptions.ConnectionError as e:
-                print(f"Connection error: {str(e)}")
-                error_msg = f"Connection error: Could not connect to {auth_url}. Please check the URL and network connection."
-                event_system.publish("error", error_msg)
-                raise Exception(error_msg)
+                    # If authentication fails with username/password, try client credentials
+                    if response.status_code == 401:
+                        logger.warning("Username/password authentication failed. Trying client credentials.")
+                        event_system.publish("warning", "Username/password authentication failed. Trying client credentials.")
+                        
+                        # Switch to client credentials
+                        payload = {
+                            "client_id": self.client_id,
+                            "client_secret": self.client_secret,
+                            "grant_type": "client_credentials",
+                            "response_type": "token",
+                            "scope": "esbusci"
+                        }
+                        logger.info("Falling back to client credentials grant type")
+                        response = requests.post(auth_url, data=payload)
+                        logger.info(f"Client credentials authentication response status code: {response.status_code}")
+                    
+                    # Handle other error codes
+                    if response.status_code >= 400:
+                        error_msg = f"Authentication failed with status {response.status_code}"
+                        logger.error(error_msg)
+                        event_system.publish("error", error_msg)
+                        raise Exception(error_msg)
+                    
+                    # Log response content for debugging
+                    try:
+                        response_text = response.text
+                        logger.debug(f"Authentication response text: {response_text[:200]}...")
+                    except Exception as e:
+                        logger.error(f"Could not get response text: {str(e)}")
+                    
+                    response.raise_for_status()
+                    
+                    data = response.json()
+                    logger.info(f"Authentication response parsed successfully")
+                    
+                    if "access_token" not in data:
+                        logger.error(f"No access_token in response. Keys: {list(data.keys())}")
+                        raise KeyError("No access_token in response")
+                        
+                    self.token = data["access_token"]
+                    # Set expiry to 55 minutes (5 minutes before actual expiry)
+                    self.token_expiry = time.time() + (55 * 60)
+                    
+                    event_system.publish("jms_auth_success", "Successfully authenticated with JMS API")
+                    
+                except Exception as e:
+                    logger.error(f"Authentication attempt failed: {str(e)}")
+                    raise
+            else:
+                # Use client credentials directly if no username/password
+                try:
+                    response = requests.post(auth_url, data=payload)
+                    logger.info(f"Authentication response status code: {response.status_code}")
+                    
+                    # More detailed error handling based on status code
+                    if response.status_code == 401:
+                        error_msg = "Authentication failed: Invalid client credentials."
+                        logger.error(error_msg)
+                        event_system.publish("error", error_msg)
+                        raise Exception(error_msg)
+                    elif response.status_code >= 400:
+                        error_msg = f"Authentication failed with status {response.status_code}"
+                        logger.error(error_msg)
+                        event_system.publish("error", error_msg)
+                        raise Exception(error_msg)
+                    
+                    # Log response content for debugging
+                    try:
+                        response_text = response.text
+                        logger.debug(f"Authentication response text: {response_text[:200]}...")
+                    except Exception as e:
+                        logger.error(f"Could not get response text: {str(e)}")
+                    
+                    response.raise_for_status()
+                    
+                    data = response.json()
+                    logger.info(f"Authentication response parsed successfully")
+                    
+                    if "access_token" not in data:
+                        logger.error(f"No access_token in response. Keys: {list(data.keys())}")
+                        raise KeyError("No access_token in response")
+                        
+                    self.token = data["access_token"]
+                    # Set expiry to 55 minutes (5 minutes before actual expiry)
+                    self.token_expiry = time.time() + (55 * 60)
+                    
+                    event_system.publish("jms_auth_success", "Successfully authenticated with JMS API")
+                except Exception as e:
+                    logger.error(f"Authentication attempt failed: {str(e)}")
+                    raise
+        except requests.exceptions.ConnectionError as e:
+            logger.error(f"Connection error: {str(e)}")
+            error_msg = f"Connection error: Could not connect to {auth_url}. Please check the URL and network connection."
+            event_system.publish("error", error_msg)
+            raise Exception(error_msg)
         except requests.exceptions.RequestException as e:
             error_msg = f"Authentication failed: {str(e)}"
-            print(error_msg)
+            logger.error(error_msg)
             event_system.publish("error", error_msg)
             raise Exception(error_msg)
         except (KeyError, ValueError) as e:
             error_msg = f"Invalid authentication response: {str(e)}"
-            print(error_msg)
+            logger.error(error_msg)
             event_system.publish("error", error_msg)
             raise Exception(error_msg)
         except Exception as e:
             error_msg = f"Unexpected error during authentication: {str(e)}"
-            print(error_msg)
+            logger.error(error_msg)
             import traceback
-            print(f"Traceback: {traceback.format_exc()}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
             event_system.publish("error", error_msg)
             raise Exception(error_msg)

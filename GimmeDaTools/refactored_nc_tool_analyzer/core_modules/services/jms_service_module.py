@@ -3,6 +3,7 @@ JMS Service Module for NC Tool Analyzer
 Provides the JMS service as a module
 """
 import logging
+import tkinter.messagebox as messagebox
 from typing import Dict, List, Any
 
 from module_system.module_interface import ServiceModuleInterface
@@ -169,13 +170,30 @@ class JMSServiceModule(ServiceModuleInterface):
                     
                     return True
                 else:
-                    logger.error(f"Failed to connect to JMS API at {base_url}")
+                    logger.warning(f"Failed to connect to JMS API at {base_url}")
                     # If requests is not available, enable anyway with mock functionality
                     if not REQUESTS_AVAILABLE:
                         logger.info("Using mock JMS functionality")
                         self.jms_enabled = True
                         event_system.publish("jms_enabled", f"JMS integration enabled with mock functionality")
                         return True
+                    
+                    # Ask user if they want to enable anyway
+                    try:
+                        if messagebox.askyesno("Connection Failed",
+                                              "Failed to connect to JMS API. Enable integration anyway?"):
+                            logger.info("Enabling JMS integration despite connection failure")
+                            self.jms_enabled = True
+                            event_system.publish("jms_enabled", f"JMS integration enabled with URL: {base_url} (connection failed)")
+                            return True
+                    except Exception as e:
+                        logger.error(f"Error showing messagebox: {str(e)}")
+                        # If messagebox fails, enable anyway as a fallback
+                        logger.info("Enabling JMS integration despite connection failure (fallback)")
+                        self.jms_enabled = True
+                        event_system.publish("jms_enabled", f"JMS integration enabled with URL: {base_url} (connection failed)")
+                        return True
+                        
                     return False
             except Exception as e:
                 logger.error(f"Error enabling JMS integration: {str(e)}")
