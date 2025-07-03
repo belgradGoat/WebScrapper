@@ -9,33 +9,41 @@ from .jms_auth import JMSAuthClient, REQUESTS_AVAILABLE
 # Define a generic Response type to avoid direct reference to requests.Response
 Response = TypeVar('Response')
 
+# Create a mock Response class for when requests is not available
+class MockResponse:
+    def __init__(self, status_code=200, json_data=None):
+        self.status_code = status_code
+        self._json_data = json_data or {}
+        self.text = str(json_data)
+        
+    def json(self):
+        return self._json_data
+        
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            raise Exception(f"HTTP Error: {self.status_code}")
+
+# Create a mock requests module
+class MockRequests:
+    @staticmethod
+    def request(method, url, **kwargs):
+        print(f"Mock {method} request to {url}")
+        return MockResponse(200, {"status": "success", "message": "This is a mock response"})
+
 # Import requests if available
 if REQUESTS_AVAILABLE:
-    import requests
-    Response = requests.Response
+    try:
+        import requests
+        Response = requests.Response
+        print("Using real requests module in JMS base client")
+    except ImportError:
+        # Fall back to mock requests
+        print("Failed to import requests in JMS base client, using mock implementation")
+        requests = MockRequests
+        Response = MockResponse
 else:
-    # Create a mock Response class for when requests is not available
-    class MockResponse:
-        def __init__(self, status_code=200, json_data=None):
-            self.status_code = status_code
-            self._json_data = json_data or {}
-            self.text = str(json_data)
-            
-        def json(self):
-            return self._json_data
-            
-        def raise_for_status(self):
-            if self.status_code >= 400:
-                raise Exception(f"HTTP Error: {self.status_code}")
-    
-    # Create a mock requests module
-    class MockRequests:
-        @staticmethod
-        def request(method, url, **kwargs):
-            print(f"Mock {method} request to {url}")
-            return MockResponse(200, {"status": "success", "message": "This is a mock response"})
-    
     # Use mock requests
+    print("REQUESTS_AVAILABLE is False, using mock implementation in JMS base client")
     requests = MockRequests
     Response = MockResponse
 
@@ -89,8 +97,8 @@ class JMSBaseClient:
         Raises:
             Exception: If request fails after retry
         """
-        # If requests is not available, use mock implementation
-        if not REQUESTS_AVAILABLE:
+        # Check if we should use mock implementation
+        if not REQUESTS_AVAILABLE or not hasattr(requests, 'request'):
             print(f"Using mock implementation for {method} request to {endpoint}")
             return MockResponse(200, {"status": "success", "message": "This is a mock response"})
             
