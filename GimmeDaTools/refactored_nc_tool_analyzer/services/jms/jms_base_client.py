@@ -2,13 +2,17 @@
 Base client for JMS API interactions
 """
 import json
-from typing import Dict, Any, Optional, List, Union
+from typing import Dict, Any, Optional, List, Union, TypeVar
 from utils.event_system import event_system
 from .jms_auth import JMSAuthClient, REQUESTS_AVAILABLE
+
+# Define a generic Response type to avoid direct reference to requests.Response
+Response = TypeVar('Response')
 
 # Import requests if available
 if REQUESTS_AVAILABLE:
     import requests
+    Response = requests.Response
 
 
 class JMSBaseClient:
@@ -40,10 +44,10 @@ class JMSBaseClient:
         auth_header = self.auth_client.get_auth_header()
         return {**headers, **auth_header}
     
-    def _make_request(self, method: str, endpoint: str, 
+    def _make_request(self, method: str, endpoint: str,
                      data: Optional[Dict[str, Any]] = None,
                      params: Optional[Dict[str, Any]] = None,
-                     headers: Optional[Dict[str, str]] = None) -> requests.Response:
+                     headers: Optional[Dict[str, str]] = None) -> Any:
         """
         Make an authenticated request to the JMS API
         

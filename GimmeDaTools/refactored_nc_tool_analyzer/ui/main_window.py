@@ -7,15 +7,28 @@ from tkinter import ttk
 from services.machine_service import MachineService
 from services.analysis_service import AnalysisService
 from services.scheduler_service import SchedulerService
-from services.jms_service import JMSService
 from ui.analysis_tab import AnalysisTab
 from ui.machine_tab import MachineTab
 from ui.results_tab import ResultsTab
 from ui.scheduler_tab import SchedulerTab
 from utils.event_system import event_system
 
+# Try to import JMS modules
+try:
+    from services.jms_service import JMSService
+    from services.jms.jms_auth import REQUESTS_AVAILABLE
+    JMS_AVAILABLE = REQUESTS_AVAILABLE
+except ImportError:
+    JMS_AVAILABLE = False
+    event_system.publish("error", "JMS modules not found. JMS integration will not be available.")
 
-from ui.jms_config_dialog import JMSConfigDialog
+
+# Try to import JMS config dialog
+try:
+    from ui.jms_config_dialog import JMSConfigDialog
+    JMS_CONFIG_AVAILABLE = True
+except ImportError:
+    JMS_CONFIG_AVAILABLE = False
 
 
 class MainWindow:
@@ -38,9 +51,14 @@ class MainWindow:
         self.analysis_service = AnalysisService(self.machine_service)
         self.scheduler_service = SchedulerService(self.machine_service)
         
-        # Initialize JMS service (disabled by default)
-        self.jms_service = JMSService(self.scheduler_service)
+        # Initialize JMS service if available (disabled by default)
+        self.jms_service = None
         self.jms_enabled = False
+        if JMS_AVAILABLE:
+            try:
+                self.jms_service = JMSService(self.scheduler_service)
+            except Exception as e:
+                print(f"Error initializing JMS service: {str(e)}")
         
         # Setup UI
         self.setup_ui()
@@ -126,7 +144,10 @@ class MainWindow:
         # Tools menu
         tools_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Tools", menu=tools_menu)
-        tools_menu.add_command(label="JMS Configuration", command=self._open_jms_config)
+        
+        # Add JMS Configuration if available
+        if JMS_CONFIG_AVAILABLE:
+            tools_menu.add_command(label="JMS Configuration", command=self._open_jms_config)
         
         # Help menu
         help_menu = tk.Menu(menubar, tearoff=0)
@@ -135,7 +156,10 @@ class MainWindow:
     
     def _open_jms_config(self):
         """Open the JMS configuration dialog"""
-        JMSConfigDialog(self.root, self)
+        if JMS_CONFIG_AVAILABLE:
+            JMSConfigDialog(self.root, self)
+        else:
+            messagebox.showerror("Error", "JMS configuration is not available")
         
     def _show_about(self):
         """Show the about dialog"""
@@ -156,38 +180,53 @@ class MainWindow:
         Returns:
             True if successful, False otherwise
         """
-        if not self.jms_enabled:
-            # Create new JMS service with provided URL
-            self.jms_service = JMSService(self.scheduler_service, base_url)
+        if not JMS_AVAILABLE:
+            tk.messagebox.showerror("JMS Error",
+                                  "JMS integration is not available. Please install the 'requests' package.")
+            return False
             
-            # Test connection
-            if self.jms_service.test_connection():
-                # Start polling
-                self.jms_service.start_polling()
-                self.jms_enabled = True
+        if not self.jms_enabled:
+            try:
+                # Create new JMS service with provided URL
+                self.jms_service = JMSService(self.scheduler_service, base_url)
                 
-                # Pass JMS service to scheduler tab
-                self.scheduler_tab.set_jms_service(self.jms_service)
-                
-                # Publish event
-                event_system.publish("jms_enabled", f"JMS integration enabled with URL: {base_url}")
-                
-                return True
-            else:
-                tk.messagebox.showerror("JMS Connection Error",
-                                      f"Failed to connect to JMS API at {base_url}")
+                # Test connection
+                if self.jms_service.test_connection():
+                    # Start polling
+                    self.jms_service.start_polling()
+                    self.jms_enabled = True
+                    
+                    # Pass JMS service to scheduler tab
+                    self.scheduler_tab.set_jms_service(self.jms_service)
+                    
+                    # Publish event
+                    event_system.publish("jms_enabled", f"JMS integration enabled with URL: {base_url}")
+                    
+                    return True
+                else:
+                    tk.messagebox.showerror("JMS Connection Error",
+                                          f"Failed to connect to JMS API at {base_url}")
+                    return False
+            except Exception as e:
+                tk.messagebox.showerror("JMS Error", f"Error enabling JMS integration: {str(e)}")
                 return False
         return True
     
     def disable_jms_integration(self):
         """Disable JMS integration"""
-        if self.jms_enabled:
-            # Stop polling
-            self.jms_service.stop_polling()
-            self.jms_enabled = False
+        if not JMS_AVAILABLE:
+            return
             
-            # Remove JMS service from scheduler tab
-            self.scheduler_tab.set_jms_service(None)
-            
-            # Publish event
-            event_system.publish("jms_disabled", "JMS integration disabled")
+        if self.jms_enabled and self.jms_service:
+            try:
+                # Stop polling
+                self.jms_service.stop_polling()
+                self.jms_enabled = False
+                
+                # Remove JMS service from scheduler tab
+                self.scheduler_tab.set_jms_service(None)
+                
+                # Publish event
+                event_system.publish("jms_disabled", "JMS integration disabled")
+            except Exception as e:
+                print(f"Error disabling JMS integration: {str(e)}")
