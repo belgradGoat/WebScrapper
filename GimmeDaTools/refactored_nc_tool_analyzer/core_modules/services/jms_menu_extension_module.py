@@ -73,7 +73,7 @@ class JMSMenuExtensionModule(ModuleInterface):
         self.jms_service_module = service_registry.get_service("jms_service_module")
         if not self.jms_service_module:
             logger.error("JMS service module not found in service registry")
-            logger.error("Available services: " + ", ".join(service_registry._services.keys()))
+            logger.error("Available services: " + ", ".join(service_registry.services.keys()))
             return
         else:
             logger.info(f"Found jms_service_module: {type(self.jms_service_module).__name__}")
