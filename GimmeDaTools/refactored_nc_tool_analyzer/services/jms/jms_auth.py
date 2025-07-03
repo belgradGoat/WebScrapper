@@ -2,16 +2,35 @@
 JMS Authentication Client for OAuth2 authentication with JMS API
 """
 import time
+import sys
 from typing import Dict, Optional
 from utils.event_system import event_system
 
+# Debug: Print Python path
+print("Python path:", sys.path)
+
 # Check if requests module is available
 try:
+    print("Attempting to import requests module...")
     import requests
+    print(f"Successfully imported requests module from: {requests.__file__}")
     REQUESTS_AVAILABLE = True
-except ImportError:
+except ImportError as e:
+    print(f"Failed to import requests module: {str(e)}")
     REQUESTS_AVAILABLE = False
-    event_system.publish("error", "Python 'requests' module not found. JMS integration will not be available.")
+    event_system.publish("error", f"Python 'requests' module not found: {str(e)}. JMS integration will not be available.")
+
+# Alternative check using importlib
+try:
+    import importlib.util
+    print("Checking for requests module using importlib...")
+    spec = importlib.util.find_spec("requests")
+    if spec:
+        print(f"Found requests module spec at: {spec.origin}")
+    else:
+        print("No requests module spec found")
+except Exception as e:
+    print(f"Error checking for requests with importlib: {str(e)}")
 
 
 class JMSAuthClient:

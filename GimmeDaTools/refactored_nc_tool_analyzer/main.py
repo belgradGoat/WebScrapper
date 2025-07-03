@@ -8,6 +8,7 @@ import tkinter as tk
 import traceback
 import sys
 import os
+import importlib.util
 
 # Add error logging
 def setup_logging():
@@ -24,6 +25,24 @@ def setup_logging():
     return logging.getLogger("main")
 
 logger = setup_logging()
+
+# Log system information
+logger.info("Python version: %s", sys.version)
+logger.info("Python executable: %s", sys.executable)
+logger.info("Python path: %s", sys.path)
+
+# Check for requests module
+try:
+    spec = importlib.util.find_spec("requests")
+    if spec:
+        logger.info("Found requests module spec at: %s", spec.origin)
+        import requests
+        logger.info("Successfully imported requests module from: %s", requests.__file__)
+        logger.info("Requests version: %s", requests.__version__)
+    else:
+        logger.warning("No requests module spec found")
+except Exception as e:
+    logger.error("Error checking for requests module: %s", str(e))
 
 def show_error(title, message):
     """Show error dialog"""
