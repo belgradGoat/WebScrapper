@@ -1,0 +1,43 @@
+{
+    "app": {
+        "name": "NC Tool Analyzer",
+        "version": "1.0.0",
+        "description": "A tool for analyzing NC programs and scheduling machine shop operations"
+    },
+    "modules": {
+        "machine_service_module": {
+            "enabled": true
+        },
+        "analysis_service_module": {
+            "enabled": true
+        },
+        "scheduler_service_module": {
+            "enabled": true
+        },
+        "jms_service_module": {
+            "enabled": true,
+            "base_url": "http://localhost:8080"
+        },
+        "analysis_tab_module": {
+            "enabled": true
+        },
+        "machine_tab_module": {
+            "enabled": true
+        },
+        "results_tab_module": {
+            "enabled": true
+        },
+        "scheduler_tab_module": {
+            "enabled": true
+        },
+        "jms_menu_extension_module": {
+            "enabled": true
+        }
+    },
+    "paths": {
+        "module_paths": [
+            "core_modules",
+            "modules"
+        ]
+    }
+}

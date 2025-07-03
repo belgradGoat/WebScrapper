@@ -1,64 +1,42 @@
 """
 Main Window for NC Tool Analyzer
+Uses the module system for dynamic tab loading and service access
 """
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
+import logging
+from typing import Dict, List, Any
 
-from services.machine_service import MachineService
-from services.analysis_service import AnalysisService
-from services.scheduler_service import SchedulerService
-from ui.analysis_tab import AnalysisTab
-from ui.machine_tab import MachineTab
-from ui.results_tab import ResultsTab
-from ui.scheduler_tab import SchedulerTab
+from module_system.module_interface import TabModuleInterface
 from utils.event_system import event_system
 
-# Try to import JMS modules
-try:
-    from services.jms_service import JMSService
-    from services.jms.jms_auth import REQUESTS_AVAILABLE
-    JMS_AVAILABLE = REQUESTS_AVAILABLE
-except ImportError:
-    JMS_AVAILABLE = False
-    event_system.publish("error", "JMS modules not found. JMS integration will not be available.")
-
-
-# Try to import JMS config dialog
-try:
-    from ui.jms_config_dialog import JMSConfigDialog
-    JMS_CONFIG_AVAILABLE = True
-except ImportError:
-    JMS_CONFIG_AVAILABLE = False
+logger = logging.getLogger(__name__)
 
 
 class MainWindow:
     """
     Main window for the NC Tool Analyzer application
     """
-    def __init__(self, root):
+    def __init__(self, root, app_core):
         """
         Initialize the main window
         
         Args:
             root: Tkinter root window
+            app_core: ApplicationCore instance
         """
         self.root = root
         self.root.title("NC Tool Analyzer")
         self.root.geometry("1200x800")
         
-        # Initialize services
-        self.machine_service = MachineService()
-        self.analysis_service = AnalysisService(self.machine_service)
-        self.scheduler_service = SchedulerService(self.machine_service)
+        # Store application core
+        self.app_core = app_core
         
-        # Initialize JMS service if available (disabled by default)
-        self.jms_service = None
-        self.jms_enabled = False
-        if JMS_AVAILABLE:
-            try:
-                self.jms_service = JMSService(self.scheduler_service)
-            except Exception as e:
-                print(f"Error initializing JMS service: {str(e)}")
+        # Get service registry
+        self.service_registry = app_core.get_service_registry()
+        
+        # Get extension registry
+        self.extension_registry = app_core.get_extension_registry()
         
         # Setup UI
         self.setup_ui()
@@ -75,17 +53,43 @@ class MainWindow:
         self.notebook = ttk.Notebook(self.root)
         self.notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
-        # Create tabs
-        self.analysis_tab = AnalysisTab(self.notebook, self.analysis_service, self.machine_service)
-        self.machine_tab = MachineTab(self.notebook, self.machine_service)
-        self.results_tab = ResultsTab(self.notebook, self.analysis_service)
-        self.scheduler_tab = SchedulerTab(self.notebook, self.scheduler_service, self.machine_service)
+        # Load core tabs
+        self._load_core_tabs()
         
-        # Add tabs to notebook
-        self.notebook.add(self.analysis_tab.frame, text="🔍 Analysis")
-        self.notebook.add(self.machine_tab.frame, text="🏭 Machine Management")
-        self.notebook.add(self.results_tab.frame, text="📊 Results")
-        self.notebook.add(self.scheduler_tab.frame, text="📅 Scheduler")
+        # Load module tabs
+        self._load_module_tabs()
+    
+    def _load_core_tabs(self):
+        """Load core tabs from the core modules"""
+        logger.info("Loading core tabs")
+        
+        # Get the module registry
+        module_registry = self.app_core.get_module_registry()
+        
+        # Get all tab modules from core_modules
+        tab_modules = module_registry.get_modules_by_type(TabModuleInterface)
+        
+        if not tab_modules:
+            logger.warning("No core tab modules found")
+            
+        # Add each tab to the notebook
+        for module in tab_modules:
+            try:
+                logger.info(f"Loading tab from module: {module.get_name()}")
+                tab = module.get_tab(self.notebook)
+                tab_name = module.get_tab_name()
+                tab_icon = module.get_tab_icon() or ""
+                
+                # Add the tab to the notebook
+                self.notebook.add(tab, text=f"{tab_icon} {tab_name}")
+                
+            except Exception as e:
+                logger.error(f"Error loading tab from module {module.get_name()}: {str(e)}")
+    
+    def _load_module_tabs(self):
+        """Load tabs from user modules"""
+        # This will be implemented when user modules are supported
+        pass
         
     def _setup_event_handlers(self):
         """Set up event handlers for application events"""
@@ -139,94 +143,55 @@ class MainWindow:
         # File menu
         file_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="File", menu=file_menu)
+        
+        # Add file menu items from extension points
+        file_ext_point = self.extension_registry.get_extension_point("ui.menu.file")
+        file_ext_point.invoke(file_menu)
+        
+        # Add exit command
+        file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.root.quit)
         
         # Tools menu
         tools_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Tools", menu=tools_menu)
         
-        # Add JMS Configuration if available
-        if JMS_CONFIG_AVAILABLE:
-            tools_menu.add_command(label="JMS Configuration", command=self._open_jms_config)
+        # Add tools menu items from extension points
+        tools_ext_point = self.extension_registry.get_extension_point("ui.menu.tools")
+        tools_ext_point.invoke(tools_menu)
         
         # Help menu
         help_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Help", menu=help_menu)
+        
+        # Add help menu items from extension points
+        help_ext_point = self.extension_registry.get_extension_point("ui.menu.help")
+        help_ext_point.invoke(help_menu)
+        
+        # Add about command
+        help_menu.add_separator()
         help_menu.add_command(label="About", command=self._show_about)
     
-    def _open_jms_config(self):
-        """Open the JMS configuration dialog"""
-        if JMS_CONFIG_AVAILABLE:
-            JMSConfigDialog(self.root, self)
-        else:
-            messagebox.showerror("Error", "JMS configuration is not available")
-        
     def _show_about(self):
         """Show the about dialog"""
+        # Get version from config
+        version = self.app_core.get_config_manager().get_value("app.version", "1.0.0")
+        
         messagebox.showinfo(
             "About NC Tool Analyzer",
             "NC Tool Analyzer\n\n"
             "A tool for analyzing NC programs and scheduling machine shop operations.\n\n"
-            "Version 1.0"
+            f"Version {version}"
         )
     
-    def enable_jms_integration(self, base_url: str = "http://localhost:8080"):
+    def get_service(self, name):
         """
-        Enable JMS integration
+        Get a service by name
         
         Args:
-            base_url: Base URL of the JMS API
+            name: Name of the service
             
         Returns:
-            True if successful, False otherwise
+            Service instance or None if not found
         """
-        if not JMS_AVAILABLE:
-            tk.messagebox.showerror("JMS Error",
-                                  "JMS integration is not available. Please install the 'requests' package.")
-            return False
-            
-        if not self.jms_enabled:
-            try:
-                # Create new JMS service with provided URL
-                self.jms_service = JMSService(self.scheduler_service, base_url)
-                
-                # Test connection
-                if self.jms_service.test_connection():
-                    # Start polling
-                    self.jms_service.start_polling()
-                    self.jms_enabled = True
-                    
-                    # Pass JMS service to scheduler tab
-                    self.scheduler_tab.set_jms_service(self.jms_service)
-                    
-                    # Publish event
-                    event_system.publish("jms_enabled", f"JMS integration enabled with URL: {base_url}")
-                    
-                    return True
-                else:
-                    tk.messagebox.showerror("JMS Connection Error",
-                                          f"Failed to connect to JMS API at {base_url}")
-                    return False
-            except Exception as e:
-                tk.messagebox.showerror("JMS Error", f"Error enabling JMS integration: {str(e)}")
-                return False
-        return True
-    
-    def disable_jms_integration(self):
-        """Disable JMS integration"""
-        if not JMS_AVAILABLE:
-            return
-            
-        if self.jms_enabled and self.jms_service:
-            try:
-                # Stop polling
-                self.jms_service.stop_polling()
-                self.jms_enabled = False
-                
-                # Remove JMS service from scheduler tab
-                self.scheduler_tab.set_jms_service(None)
-                
-                # Publish event
-                event_system.publish("jms_disabled", "JMS integration disabled")
-            except Exception as e:
-                print(f"Error disabling JMS integration: {str(e)}")
+        return self.service_registry.get_service(name)

@@ -55,11 +55,29 @@ def main():
         logger.info("Starting application")
         
         # Import here to catch import errors
+        from application_core import ApplicationCore
         from ui.main_window import MainWindow
         
+        # Initialize the application core
+        logger.info("Initializing application core")
+        app_core = ApplicationCore()
+        if not app_core.initialize():
+            logger.error("Failed to initialize application core")
+            show_error("Startup Error", "Failed to initialize application core.\n\nSee app.log for details.")
+            sys.exit(1)
+        
+        # Create the main window
+        logger.info("Creating main window")
         root = tk.Tk()
-        app = MainWindow(root)
+        app = MainWindow(root, app_core)
+        
+        # Run the application
+        logger.info("Running application")
         root.mainloop()
+        
+        # Shutdown the application core
+        logger.info("Shutting down application core")
+        app_core.shutdown()
         
     except Exception as e:
         error_msg = f"Error starting application: {str(e)}\n\n{traceback.format_exc()}"
