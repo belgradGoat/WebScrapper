@@ -21,3 +21,9 @@ Traceback (most recent call last):
                                                  ^^^^^^^^
 NameError: name 'requests' is not defined
 
+2025-07-02 21:23:58,591 - main - INFO - Starting application
+2025-07-02 21:30:56,841 - main - INFO - Python version: 3.13.3 (tags/v3.13.3:6280bb5, Apr  8 2025, 14:47:33) [MSC v.1943 64 bit (AMD64)]
+2025-07-02 21:30:56,841 - main - INFO - Python executable: C:\Users\sszewczyk\AppData\Local\Programs\Python\Python313\python.exe
+2025-07-02 21:30:56,841 - main - INFO - Python path: ['C:\\Users\\sszewczyk\\Documents\\GitHub\\WebScrapper\\GimmeDaTools\\refactored_nc_tool_analyzer', 'C:\\Users\\sszewczyk\\AppData\\Local\\Programs\\Python\\Python313\\python313.zip', 'C:\\Users\\sszewczyk\\AppData\\Local\\Programs\\Python\\Python313\\DLLs', 'C:\\Users\\sszewczyk\\AppData\\Local\\Programs\\Python\\Python313\\Lib', 'C:\\Users\\sszewczyk\\AppData\\Local\\Programs\\Python\\Python313', 'C:\\Users\\sszewczyk\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\site-packages']
+2025-07-02 21:30:56,841 - main - WARNING - No requests module spec found
+2025-07-02 21:30:56,841 - main - INFO - Starting application
