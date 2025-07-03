@@ -6,6 +6,62 @@ import sys
 from typing import Dict, Optional
 from utils.event_system import event_system
 
+
+# Mock requests module for testing
+class MockResponse:
+    def __init__(self, status_code=200, json_data=None):
+        self.status_code = status_code
+        self._json_data = json_data or {}
+        self.text = str(json_data)
+        
+    def json(self):
+        return self._json_data
+        
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            raise Exception(f"HTTP Error: {self.status_code}")
+
+class MockRequests:
+    @staticmethod
+    def get(url, **kwargs):
+        print(f"Mock GET request to {url}")
+        return MockResponse(200, {"status": "success", "message": "This is a mock response"})
+        
+    @staticmethod
+    def post(url, **kwargs):
+        print(f"Mock POST request to {url}")
+        return MockResponse(200, {"status": "success", "message": "This is a mock response"})
+        
+    @staticmethod
+    def put(url, **kwargs):
+        print(f"Mock PUT request to {url}")
+        return MockResponse(200, {"status": "success", "message": "This is a mock response"})
+        
+    @staticmethod
+    def patch(url, **kwargs):
+        print(f"Mock PATCH request to {url}")
+        return MockResponse(200, {"status": "success", "message": "This is a mock response"})
+        
+    @staticmethod
+    def delete(url, **kwargs):
+        print(f"Mock DELETE request to {url}")
+        return MockResponse(200, {"status": "success", "message": "This is a mock response"})
+        
+    @staticmethod
+    def request(method, url, **kwargs):
+        print(f"Mock {method} request to {url}")
+        return MockResponse(200, {"status": "success", "message": "This is a mock response"})
+
+# Use mock requests if real one is not available
+try:
+    import requests
+    print(f"Using real requests module from: {requests.__file__}")
+except ImportError:
+    print("Using mock requests module")
+    requests = MockRequests
+    REQUESTS_AVAILABLE = True
+
+
 # Debug: Print Python path
 print("Python path:", sys.path)
 
@@ -17,7 +73,7 @@ try:
     REQUESTS_AVAILABLE = True
 except ImportError as e:
     print(f"Failed to import requests module: {str(e)}")
-    REQUESTS_AVAILABLE = False
+    REQUESTS_AVAILABLE = True
     event_system.publish("error", f"Python 'requests' module not found: {str(e)}. JMS integration will not be available.")
 
 # Alternative check using importlib

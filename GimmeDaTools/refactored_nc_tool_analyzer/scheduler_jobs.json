@@ -1,10 +1,10 @@
 {
-  "job-492bff2c-8d9a-495d-8d8a-2795f71bb445": {
-    "id": "job-492bff2c-8d9a-495d-8d8a-2795f71bb445",
-    "name": "Testing 1.-1",
-    "totalParts": 2,
-    "cycleTime": 180.0,
+  "job-6d2bd6c2-27d7-4689-8603-f6ab69ab0631": {
+    "id": "job-6d2bd6c2-27d7-4689-8603-f6ab69ab0631",
+    "name": "testing1",
+    "totalParts": 10,
+    "cycleTime": 100.0,
     "color": "#0ea5e9",
-    "createdAt": 1751512973721
+    "createdAt": 1751544675092
   }
 }
