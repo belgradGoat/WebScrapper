@@ -34,6 +34,15 @@ class MockRequests:
     @staticmethod
     def post(url, **kwargs):
         print(f"Mock POST request to {url}")
+        # If this is an authentication request (URL contains "token"), return a proper OAuth token response
+        if "token" in url:
+            print("Returning mock OAuth token response")
+            return MockResponse(200, {
+                "access_token": "mock_access_token_12345",
+                "token_type": "Bearer",
+                "expires_in": 3600,
+                "scope": "esbusci"
+            })
         return MockResponse(200, {"status": "success", "message": "This is a mock response"})
         
     @staticmethod
@@ -54,6 +63,15 @@ class MockRequests:
     @staticmethod
     def request(method, url, **kwargs):
         print(f"Mock {method} request to {url}")
+        # If this is an authentication request (URL contains "token"), return a proper OAuth token response
+        if "token" in url and method.upper() == "POST":
+            print("Returning mock OAuth token response")
+            return MockResponse(200, {
+                "access_token": "mock_access_token_12345",
+                "token_type": "Bearer",
+                "expires_in": 3600,
+                "scope": "esbusci"
+            })
         return MockResponse(200, {"status": "success", "message": "This is a mock response"})
 
 # Debug: Print Python path
@@ -121,9 +139,10 @@ except Exception as e:
     REQUESTS_AVAILABLE = False
     event_system.publish("error", f"Error handling requests import: {str(e)}. Using mock JMS functionality.")
 
-# Force REQUESTS_AVAILABLE to True for testing
-print("Forcing REQUESTS_AVAILABLE to True for testing")
-REQUESTS_AVAILABLE = True
+# Comment out forcing REQUESTS_AVAILABLE to True for testing
+# This allows the code to properly detect whether requests is available
+print("Using detected REQUESTS_AVAILABLE value:", REQUESTS_AVAILABLE)
+# REQUESTS_AVAILABLE = True
 
 # Alternative check using importlib
 try:
@@ -185,9 +204,11 @@ class JMSAuthClient:
             Exception: If authentication fails
         """
         if not REQUESTS_AVAILABLE:
-            error_msg = "Cannot authenticate: 'requests' module not available"
-            event_system.publish("error", error_msg)
-            raise Exception(error_msg)
+            print("Using mock authentication since 'requests' module is not available")
+            self.token = "mock_token_12345"
+            self.token_expiry = time.time() + (55 * 60)
+            event_system.publish("jms_auth_success", "Successfully authenticated with mock JMS API")
+            return
             
         auth_url = f"{self.base_url}/IAM/Authorization/token"
         
@@ -216,13 +237,7 @@ class JMSAuthClient:
             print("Using client credentials grant type")
         
         try:
-            # If using mock requests, generate a fake token
-            if not REQUESTS_AVAILABLE:
-                print("Using mock authentication")
-                self.token = "mock_token_12345"
-                self.token_expiry = time.time() + (55 * 60)
-                event_system.publish("jms_auth_success", "Successfully authenticated with mock JMS API")
-                return
+            # This block is now redundant since we handle mock authentication at the beginning of the method
                 
             # Real authentication
             logger.info(f"Sending authentication request to {auth_url}")
