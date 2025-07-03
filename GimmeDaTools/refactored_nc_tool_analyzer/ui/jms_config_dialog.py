@@ -4,6 +4,13 @@ JMS Configuration Dialog
 import tkinter as tk
 from tkinter import ttk, messagebox
 
+# Check if JMS modules are available
+try:
+    from services.jms.jms_auth import REQUESTS_AVAILABLE
+    JMS_AVAILABLE = REQUESTS_AVAILABLE
+except ImportError:
+    JMS_AVAILABLE = False
+
 
 class JMSConfigDialog:
     """Dialog for configuring JMS integration"""
@@ -26,6 +33,11 @@ class JMSConfigDialog:
         self.dialog.resizable(False, False)
         self.dialog.transient(parent)
         self.dialog.grab_set()
+        
+        # Check if JMS is available
+        if not JMS_AVAILABLE:
+            self._show_jms_unavailable()
+            return
         
         # Center the dialog
         self.dialog.update_idletasks()
@@ -117,15 +129,52 @@ class JMSConfigDialog:
         
     def _test_connection(self):
         """Test connection to JMS API"""
-        # Create temporary JMS service
-        from services.jms_service import JMSService
-        jms_service = JMSService(self.main_window.scheduler_service, self.jms_url.get())
+        if not JMS_AVAILABLE:
+            messagebox.showerror("Error", "JMS integration is not available. Please install the 'requests' package.")
+            return
+            
+        try:
+            # Create temporary JMS service
+            from services.jms_service import JMSService
+            jms_service = JMSService(self.main_window.scheduler_service, self.jms_url.get())
+            
+            # Test connection
+            if jms_service.test_connection():
+                messagebox.showinfo("Connection Test", "Successfully connected to JMS API!")
+            else:
+                messagebox.showerror("Connection Test", "Failed to connect to JMS API!")
+        except Exception as e:
+            messagebox.showerror("Error", f"Error testing connection: {str(e)}")
+            
+    def _show_jms_unavailable(self):
+        """Show message that JMS is unavailable"""
+        # Clear the dialog
+        for widget in self.dialog.winfo_children():
+            widget.destroy()
+            
+        # Show message
+        message_frame = ttk.Frame(self.dialog, padding=20)
+        message_frame.pack(fill=tk.BOTH, expand=True)
         
-        # Test connection
-        if jms_service.test_connection():
-            messagebox.showinfo("Connection Test", "Successfully connected to JMS API!")
-        else:
-            messagebox.showerror("Connection Test", "Failed to connect to JMS API!")
+        ttk.Label(
+            message_frame,
+            text="JMS Integration Unavailable",
+            font=("Arial", 14, "bold")
+        ).pack(pady=(0, 20))
+        
+        ttk.Label(
+            message_frame,
+            text="The Python 'requests' package is required for JMS integration.\n\n"
+                 "Please install it using pip:\n"
+                 "pip install requests",
+            justify=tk.CENTER
+        ).pack(pady=20)
+        
+        ttk.Button(
+            message_frame,
+            text="Close",
+            command=self.dialog.destroy
+        ).pack(pady=20)
             
     def _update_status(self):
         """Update status label"""

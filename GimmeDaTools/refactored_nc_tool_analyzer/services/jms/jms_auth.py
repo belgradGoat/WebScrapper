@@ -1,10 +1,17 @@
 """
 JMS Authentication Client for OAuth2 authentication with JMS API
 """
-import requests
 import time
 from typing import Dict, Optional
 from utils.event_system import event_system
+
+# Check if requests module is available
+try:
+    import requests
+    REQUESTS_AVAILABLE = True
+except ImportError:
+    REQUESTS_AVAILABLE = False
+    event_system.publish("error", "Python 'requests' module not found. JMS integration will not be available.")
 
 
 class JMSAuthClient:
@@ -44,6 +51,11 @@ class JMSAuthClient:
         Raises:
             Exception: If authentication fails
         """
+        if not REQUESTS_AVAILABLE:
+            error_msg = "Cannot authenticate: 'requests' module not available"
+            event_system.publish("error", error_msg)
+            raise Exception(error_msg)
+            
         auth_url = f"{self.base_url}/IAM/Authorization/token"
         payload = {
             "client_id": self.client_id,

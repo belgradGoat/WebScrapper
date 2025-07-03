@@ -1042,6 +1042,11 @@ class SchedulerTab:
             jms_service: JMSService instance
         """
         self.jms_service = jms_service
+        
+        # Check if JMS service is available and working
+        if self.jms_service and not hasattr(self.jms_service, 'client'):
+            self.jms_service = None
+            
         self._update_ui()
     
     def _sync_job_to_jms(self, job) -> None:
@@ -1051,6 +1056,18 @@ class SchedulerTab:
         Args:
             job: Job to synchronize
         """
+        # Check if JMS is available
+        try:
+            from services.jms.jms_auth import REQUESTS_AVAILABLE
+            if not REQUESTS_AVAILABLE:
+                messagebox.showerror("JMS Error",
+                                    "JMS integration requires the 'requests' package.\n"
+                                    "Please install it using pip: pip install requests")
+                return
+        except ImportError:
+            messagebox.showerror("JMS Error", "JMS integration is not available")
+            return
+            
         if not hasattr(self, 'jms_service') or not self.jms_service:
             messagebox.showerror("JMS Error", "JMS integration is not enabled")
             return

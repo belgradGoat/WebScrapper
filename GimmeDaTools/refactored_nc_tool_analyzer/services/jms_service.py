@@ -11,7 +11,15 @@ from models.job import Job
 from models.part import Part
 from utils.event_system import event_system
 from utils.file_utils import load_json_file, save_json_file
-from services.jms.jms_client import JMSClient
+
+# Check if JMS client is available
+try:
+    from services.jms.jms_client import JMSClient
+    from services.jms.jms_auth import REQUESTS_AVAILABLE
+    JMS_AVAILABLE = REQUESTS_AVAILABLE
+except ImportError:
+    JMS_AVAILABLE = False
+    event_system.publish("error", "JMS client modules not found. JMS integration will not be available.")
 
 
 class JMSService:
@@ -34,13 +42,20 @@ class JMSService:
             mapping_file: Path to the file storing job-order mappings
         """
         self.scheduler_service = scheduler_service
-        self.client = JMSClient(base_url)
         self.polling_interval = polling_interval
         self.mapping_file = mapping_file
         
         # Thread for background polling
         self.polling_thread = None
         self.stop_polling_flag = threading.Event()
+        
+        # Initialize client if available
+        self.client = None
+        if JMS_AVAILABLE:
+            try:
+                self.client = JMSClient(base_url)
+            except Exception as e:
+                event_system.publish("error", f"Failed to initialize JMS client: {str(e)}")
         
         # Load job-order mappings
         self.job_order_mappings = self._load_mappings()
@@ -61,6 +76,10 @@ class JMSService:
     
     def start_polling(self) -> None:
         """Start background polling for production updates"""
+        if not JMS_AVAILABLE or not self.client:
+            event_system.publish("error", "Cannot start polling: JMS client not available")
+            return
+            
         if self.polling_thread and self.polling_thread.is_alive():
             return
             
@@ -154,6 +173,11 @@ class JMSService:
         Raises:
             Exception: If synchronization fails
         """
+        if not JMS_AVAILABLE or not self.client:
+            error_msg = "Cannot synchronize job: JMS client not available"
+            event_system.publish("error", error_msg)
+            raise Exception(error_msg)
+            
         # Check if job is already mapped to an order
         order_id = self.job_order_mappings.get(job.job_id)
         
@@ -227,6 +251,11 @@ class JMSService:
         Raises:
             Exception: If synchronization fails
         """
+        if not JMS_AVAILABLE or not self.client:
+            error_msg = "Cannot synchronize order: JMS client not available"
+            event_system.publish("error", error_msg)
+            raise Exception(error_msg)
+            
         try:
             # Get order from JMS
             order_data = self.client.order.get_order(order_id)
@@ -316,6 +345,11 @@ class JMSService:
         Raises:
             Exception: If request fails
         """
+        if not JMS_AVAILABLE or not self.client:
+            error_msg = "Cannot get machine status: JMS client not available"
+            event_system.publish("error", error_msg)
+            raise Exception(error_msg)
+            
         try:
             # Get machine from machine service
             machine = self.scheduler_service.machine_service.get_machine(machine_id)
@@ -340,6 +374,9 @@ class JMSService:
         Returns:
             True if connection is successful, False otherwise
         """
+        if not JMS_AVAILABLE or not self.client:
+            return False
+            
         try:
             return self.client.test_connection()
         except Exception:

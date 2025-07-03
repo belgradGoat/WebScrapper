@@ -1,11 +1,14 @@
 """
 Base client for JMS API interactions
 """
-import requests
 import json
 from typing import Dict, Any, Optional, List, Union
 from utils.event_system import event_system
-from .jms_auth import JMSAuthClient
+from .jms_auth import JMSAuthClient, REQUESTS_AVAILABLE
+
+# Import requests if available
+if REQUESTS_AVAILABLE:
+    import requests
 
 
 class JMSBaseClient:
@@ -57,6 +60,11 @@ class JMSBaseClient:
         Raises:
             Exception: If request fails after retry
         """
+        if not REQUESTS_AVAILABLE:
+            error_msg = "Cannot make request: 'requests' module not available"
+            event_system.publish("error", error_msg)
+            raise Exception(error_msg)
+            
         url = f"{self.api_base}/{endpoint.lstrip('/')}"
         headers = self._ensure_authenticated(headers)
         
