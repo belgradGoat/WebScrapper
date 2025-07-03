@@ -9,10 +9,13 @@ from .jms_production_client import JMSProductionClient
 from .jms_mdc_client import JMSMDCClient
 
 
+# Import REQUESTS_AVAILABLE flag
+from .jms_auth import REQUESTS_AVAILABLE
+
 class JMSClient:
     """Factory for JMS API clients"""
     
-    def __init__(self, base_url: str, client_id: str = "EsbusciClient", 
+    def __init__(self, base_url: str, client_id: str = "EsbusciClient",
                  client_secret: str = "DefaultEsbusciClientSecret"):
         """
         Initialize the JMS client factory
@@ -30,6 +33,12 @@ class JMSClient:
         self._order = None
         self._production = None
         self._mdc = None
+        
+        # Print status
+        if REQUESTS_AVAILABLE:
+            print(f"JMSClient initialized with real HTTP client, base URL: {base_url}")
+        else:
+            print(f"JMSClient initialized with mock HTTP client, base URL: {base_url}")
     
     @property
     def cell(self) -> JMSCellClient:
@@ -87,8 +96,16 @@ class JMSClient:
             True if connection is successful, False otherwise
         """
         try:
+            # If using mock client, always return True
+            if not REQUESTS_AVAILABLE:
+                print("Using mock connection test, returning True")
+                return True
+                
             # Try to get an authentication token
+            print("Testing connection by requesting auth header")
             self.auth_client.get_auth_header()
+            print("Connection test successful")
             return True
-        except Exception:
+        except Exception as e:
+            print(f"Connection test failed: {str(e)}")
             return False

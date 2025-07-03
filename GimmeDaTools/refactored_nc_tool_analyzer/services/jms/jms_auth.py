@@ -52,16 +52,6 @@ class MockRequests:
         print(f"Mock {method} request to {url}")
         return MockResponse(200, {"status": "success", "message": "This is a mock response"})
 
-# Use mock requests if real one is not available
-try:
-    import requests
-    print(f"Using real requests module from: {requests.__file__}")
-except ImportError:
-    print("Using mock requests module")
-    requests = MockRequests
-    REQUESTS_AVAILABLE = True
-
-
 # Debug: Print Python path
 print("Python path:", sys.path)
 
@@ -73,7 +63,9 @@ try:
     REQUESTS_AVAILABLE = True
 except ImportError as e:
     print(f"Failed to import requests module: {str(e)}")
-    REQUESTS_AVAILABLE = True
+    REQUESTS_AVAILABLE = False  # Fixed: Set to False when import fails
+    requests = MockRequests  # Use mock requests
+    print("Using mock requests module")
     event_system.publish("error", f"Python 'requests' module not found: {str(e)}. JMS integration will not be available.")
 
 # Alternative check using importlib
@@ -141,10 +133,21 @@ class JMSAuthClient:
         }
         
         try:
+            # If using mock requests, generate a fake token
+            if not REQUESTS_AVAILABLE:
+                print("Using mock authentication")
+                self.token = "mock_token_12345"
+                self.token_expiry = time.time() + (55 * 60)
+                event_system.publish("jms_auth_success", "Successfully authenticated with mock JMS API")
+                return
+                
+            # Real authentication
+            print(f"Sending authentication request to {auth_url}")
             response = requests.post(auth_url, data=payload)
             response.raise_for_status()
             
             data = response.json()
+            print(f"Authentication response: {data}")
             self.token = data["access_token"]
             # Set expiry to 55 minutes (5 minutes before actual expiry)
             self.token_expiry = time.time() + (55 * 60)

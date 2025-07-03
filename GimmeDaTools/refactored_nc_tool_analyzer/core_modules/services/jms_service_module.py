@@ -34,7 +34,7 @@ try:
         logger.info("Successfully imported JMS modules using relative imports")
     
     logger.info(f"JMS auth module imported, REQUESTS_AVAILABLE={REQUESTS_AVAILABLE}")
-    JMS_AVAILABLE = REQUESTS_AVAILABLE
+    JMS_AVAILABLE = True  # Module is available even if requests is not
 except ImportError as e:
     JMS_AVAILABLE = False
     logger.error(f"JMS modules import error: {str(e)}")
@@ -123,25 +123,41 @@ class JMSServiceModule(ServiceModuleInterface):
             
         if not self.jms_enabled:
             try:
+                logger.info(f"Enabling JMS integration with URL: {base_url}")
+                
                 # Create new JMS service with provided URL
                 scheduler_service = self.jms_service.scheduler_service
                 self.jms_service = JMSService(scheduler_service, base_url)
                 
                 # Test connection
-                if self.jms_service.test_connection():
+                logger.info("Testing JMS connection")
+                connection_result = self.jms_service.test_connection()
+                logger.info(f"Connection test result: {connection_result}")
+                
+                if connection_result:
                     # Start polling
+                    logger.info("Starting JMS polling")
                     self.jms_service.start_polling()
                     self.jms_enabled = True
                     
                     # Publish event
                     event_system.publish("jms_enabled", f"JMS integration enabled with URL: {base_url}")
+                    logger.info("JMS integration enabled successfully")
                     
                     return True
                 else:
                     logger.error(f"Failed to connect to JMS API at {base_url}")
+                    # If requests is not available, enable anyway with mock functionality
+                    if not REQUESTS_AVAILABLE:
+                        logger.info("Using mock JMS functionality")
+                        self.jms_enabled = True
+                        event_system.publish("jms_enabled", f"JMS integration enabled with mock functionality")
+                        return True
                     return False
             except Exception as e:
                 logger.error(f"Error enabling JMS integration: {str(e)}")
+                import traceback
+                logger.error(f"Traceback: {traceback.format_exc()}")
                 return False
         return True
     

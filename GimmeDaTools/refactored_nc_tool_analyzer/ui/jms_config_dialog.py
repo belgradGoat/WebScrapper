@@ -7,9 +7,12 @@ from tkinter import ttk, messagebox
 # Check if JMS modules are available
 try:
     from services.jms.jms_auth import REQUESTS_AVAILABLE
-    JMS_AVAILABLE = REQUESTS_AVAILABLE
+    JMS_AVAILABLE = True  # Module is available even if requests is not
 except ImportError:
     JMS_AVAILABLE = False
+    
+import logging
+logger = logging.getLogger(__name__)
 
 
 class JMSConfigDialog:
@@ -38,6 +41,9 @@ class JMSConfigDialog:
         if not JMS_AVAILABLE:
             self._show_jms_unavailable()
             return
+            
+        # Log JMS availability
+        logger.info(f"JMS config dialog initialized, REQUESTS_AVAILABLE={REQUESTS_AVAILABLE}")
         
         # Center the dialog
         self.dialog.update_idletasks()
@@ -115,24 +121,43 @@ class JMSConfigDialog:
         
     def _toggle_jms(self):
         """Toggle JMS integration"""
+        logger.info(f"Toggling JMS integration, current state: {self.jms_enabled.get()}")
+        
         if self.jms_enabled.get():
             # Enable JMS
             if hasattr(self.jms_service, 'enable_jms'):
+                logger.info(f"Enabling JMS with URL: {self.jms_url.get()}")
                 success = self.jms_service.enable_jms(self.jms_url.get())
+                logger.info(f"JMS enable result: {success}")
             else:
                 # Fallback for direct JMSService instance
                 try:
-                    self.jms_service.test_connection()
-                    self.jms_service.start_polling()
-                    success = True
+                    logger.info("Testing JMS connection")
+                    connection_result = self.jms_service.test_connection()
+                    logger.info(f"Connection test result: {connection_result}")
+                    
+                    if connection_result or not REQUESTS_AVAILABLE:
+                        logger.info("Starting JMS polling")
+                        self.jms_service.start_polling()
+                        success = True
+                    else:
+                        success = False
                 except Exception as e:
+                    logger.error(f"Error enabling JMS integration: {str(e)}")
                     messagebox.showerror("JMS Error", f"Error enabling JMS integration: {str(e)}")
                     success = False
+                    
+            # If requests is not available but JMS modules are, enable anyway with mock functionality
+            if not success and not REQUESTS_AVAILABLE:
+                logger.info("Using mock JMS functionality")
+                success = True
+                messagebox.showinfo("JMS Information", "Using mock JMS functionality (requests module not available)")
                     
             if not success:
                 self.jms_enabled.set(False)
         else:
             # Disable JMS
+            logger.info("Disabling JMS integration")
             if hasattr(self.jms_service, 'disable_jms'):
                 self.jms_service.disable_jms()
             else:
@@ -140,6 +165,7 @@ class JMSConfigDialog:
                 try:
                     self.jms_service.stop_polling()
                 except Exception as e:
+                    logger.error(f"Error disabling JMS integration: {str(e)}")
                     messagebox.showerror("JMS Error", f"Error disabling JMS integration: {str(e)}")
             
         # Update status
@@ -147,45 +173,68 @@ class JMSConfigDialog:
         
     def _test_connection(self):
         """Test connection to JMS API"""
+        logger.info("Testing JMS connection")
+        
         if not JMS_AVAILABLE:
             messagebox.showerror("Error", "JMS integration is not available. Please install the 'requests' package.")
+            return
+            
+        # If requests is not available but JMS modules are, show mock message
+        if not REQUESTS_AVAILABLE:
+            logger.info("Using mock connection test")
+            messagebox.showinfo("Connection Test", "Using mock JMS functionality (requests module not available)")
             return
             
         try:
             # Test connection using existing JMS service
             if hasattr(self.jms_service, 'test_connection'):
                 # For JMSServiceModule
+                logger.info(f"Testing connection to {self.jms_url.get()}")
                 if self.jms_service.test_connection():
+                    logger.info("Connection test successful")
                     messagebox.showinfo("Connection Test", "Successfully connected to JMS API!")
                 else:
+                    logger.warning("Connection test failed")
                     messagebox.showerror("Connection Test", "Failed to connect to JMS API!")
             else:
                 # Create temporary JMS service for testing
+                logger.info("Creating temporary JMS service for testing")
                 from services.jms_service import JMSService
                 from services.scheduler_service import SchedulerService
                 
                 # Try to get scheduler service from the JMS service if available
                 if hasattr(self.jms_service, 'scheduler_service'):
                     scheduler_service = self.jms_service.scheduler_service
+                    logger.info("Using scheduler service from JMS service")
                 else:
                     # Create a temporary scheduler service
+                    logger.info("Creating temporary scheduler service")
                     from services.machine_service import MachineService
                     machine_service = MachineService()
                     scheduler_service = SchedulerService(machine_service)
                 
                 # Create temporary JMS service
+                logger.info(f"Creating temporary JMS service with URL: {self.jms_url.get()}")
                 temp_jms_service = JMSService(scheduler_service, self.jms_url.get())
                 
                 # Test connection
+                logger.info("Testing connection with temporary JMS service")
                 if temp_jms_service.test_connection():
+                    logger.info("Connection test successful")
                     messagebox.showinfo("Connection Test", "Successfully connected to JMS API!")
                 else:
+                    logger.warning("Connection test failed")
                     messagebox.showerror("Connection Test", "Failed to connect to JMS API!")
         except Exception as e:
+            logger.error(f"Error testing connection: {str(e)}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
             messagebox.showerror("Error", f"Error testing connection: {str(e)}")
             
     def _show_jms_unavailable(self):
         """Show message that JMS is unavailable"""
+        logger.warning("JMS is unavailable")
+        
         # Clear the dialog
         for widget in self.dialog.winfo_children():
             widget.destroy()
@@ -200,11 +249,19 @@ class JMSConfigDialog:
             font=("Arial", 14, "bold")
         ).pack(pady=(0, 20))
         
+        if not JMS_AVAILABLE:
+            # JMS modules not found
+            message_text = "JMS modules not found. JMS integration will not be available."
+        else:
+            # Requests module not found
+            message_text = "The Python 'requests' package is required for JMS integration.\n\n" \
+                          "Please install it using pip:\n" \
+                          "pip install requests\n\n" \
+                          "You can still use the application with mock JMS functionality."
+        
         ttk.Label(
             message_frame,
-            text="The Python 'requests' package is required for JMS integration.\n\n"
-                 "Please install it using pip:\n"
-                 "pip install requests",
+            text=message_text,
             justify=tk.CENTER
         ).pack(pady=20)
         
