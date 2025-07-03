@@ -6,9 +6,11 @@ from tkinter import ttk
 
 from services.machine_service import MachineService
 from services.analysis_service import AnalysisService
+from services.scheduler_service import SchedulerService
 from ui.analysis_tab import AnalysisTab
 from ui.machine_tab import MachineTab
 from ui.results_tab import ResultsTab
+from ui.scheduler_tab import SchedulerTab
 from utils.event_system import event_system
 
 
@@ -30,6 +32,7 @@ class MainWindow:
         # Initialize services
         self.machine_service = MachineService()
         self.analysis_service = AnalysisService(self.machine_service)
+        self.scheduler_service = SchedulerService(self.machine_service)
         
         # Setup UI
         self.setup_ui()
@@ -47,11 +50,13 @@ class MainWindow:
         self.analysis_tab = AnalysisTab(self.notebook, self.analysis_service, self.machine_service)
         self.machine_tab = MachineTab(self.notebook, self.machine_service)
         self.results_tab = ResultsTab(self.notebook, self.analysis_service)
+        self.scheduler_tab = SchedulerTab(self.notebook, self.scheduler_service, self.machine_service)
         
         # Add tabs to notebook
         self.notebook.add(self.analysis_tab.frame, text="🔍 Analysis")
         self.notebook.add(self.machine_tab.frame, text="🏭 Machine Management")
         self.notebook.add(self.results_tab.frame, text="📊 Results")
+        self.notebook.add(self.scheduler_tab.frame, text="📅 Scheduler")
         
     def _setup_event_handlers(self):
         """Set up event handlers for application events"""
