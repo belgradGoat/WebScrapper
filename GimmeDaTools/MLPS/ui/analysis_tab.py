@@ -8,8 +8,11 @@ import re
 import math
 import threading
 from typing import Dict, List, Any
+from datetime import datetime
 
 from models.analysis_result import AnalysisResult, MachineCompatibility
+from models.job import Job
+from models.part import Part
 from utils.event_system import event_system
 
 
@@ -170,7 +173,7 @@ class AnalysisTab:
     """
     Analysis tab for the NC Tool Analyzer application
     """
-    def __init__(self, parent, analysis_service, machine_service):
+    def __init__(self, parent, analysis_service, machine_service, scheduler_service=None):
         """
         Initialize the analysis tab
         
@@ -178,13 +181,19 @@ class AnalysisTab:
             parent: Parent widget
             analysis_service: AnalysisService instance
             machine_service: MachineService instance
+            scheduler_service: SchedulerService instance (optional)
         """
         self.parent = parent
         self.analysis_service = analysis_service
         self.machine_service = machine_service
+        self.scheduler_service = scheduler_service
         
         # Create frame
         self.frame = ttk.Frame(parent)
+        
+        # Track last calculated cycle time for job creation
+        self.last_cycle_time = None
+        self.last_analysis_data = None
         
         # Setup UI components
         self.setup_ui()
@@ -221,7 +230,8 @@ class AnalysisTab:
         
         ttk.Button(button_frame, text="🔄 Refresh All Machines", command=self.refresh_all_machines).pack(side=tk.LEFT, padx=(0,10))
         ttk.Button(button_frame, text="🔍 Analyze NC File", command=self.analyze_nc_file).pack(side=tk.LEFT, padx=(0,10))
-        ttk.Button(button_frame, text="⏱️ Calculate Cycle Time", command=self.calculate_cycle_time).pack(side=tk.LEFT)
+        ttk.Button(button_frame, text="⏱️ Calculate Cycle Time", command=self.calculate_cycle_time).pack(side=tk.LEFT, padx=(0,10))
+        ttk.Button(button_frame, text="🗂️ Create Job from File", command=self.create_job_from_file).pack(side=tk.LEFT)
         
         # Status/Progress
         self.status_var = tk.StringVar(value="Ready")
@@ -660,6 +670,10 @@ class AnalysisTab:
         cycle_data = data['cycle_data']
         analysis = data['analysis']
         
+        # Store the data for job creation
+        self.last_cycle_time = cycle_data['total_time'] / 60.0  # Convert to minutes
+        self.last_analysis_data = data
+        
         self.update_status(f"Cycle time calculated: {cycle_data['total_time_formatted']}")
         
         # Show results in popup
@@ -829,6 +843,31 @@ class AnalysisTab:
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to save report: {str(e)}")
 
+    def create_job_from_file(self):
+        """Create a job from the current NC file"""
+        nc_file = self.file_path_var.get()
+        if not nc_file or not os.path.exists(nc_file):
+            messagebox.showerror("Error", "Please select a valid NC file first")
+            return
+        
+        if not self.scheduler_service:
+            messagebox.showerror("Error", "Scheduler service not available")
+            return
+        
+        # Show job creation dialog
+        self._show_job_creation_dialog(nc_file)
+    
+    def _show_job_creation_dialog(self, nc_file):
+        """Show the job creation dialog"""
+        dialog = JobCreationDialog(
+            self.frame,
+            nc_file,
+            self.scheduler_service,
+            self.machine_service,
+            self.last_cycle_time,
+            self.last_analysis_data
+        )
+        
     def _start_background_task(self, task_func):
         """
         Start a background task in a separate thread
@@ -838,3 +877,240 @@ class AnalysisTab:
         """
         thread = threading.Thread(target=task_func, daemon=True)
         thread.start()
+
+
+class JobCreationDialog:
+    """Dialog for creating a job from an NC file"""
+    
+    def __init__(self, parent, nc_file_path, scheduler_service, machine_service,
+                 cycle_time=None, analysis_data=None):
+        """
+        Initialize the job creation dialog
+        
+        Args:
+            parent: Parent widget
+            nc_file_path: Path to the NC file
+            scheduler_service: SchedulerService instance
+            machine_service: MachineService instance
+            cycle_time: Calculated cycle time in minutes (optional)
+            analysis_data: Analysis data from cycle time calculation (optional)
+        """
+        self.parent = parent
+        self.nc_file_path = nc_file_path
+        self.scheduler_service = scheduler_service
+        self.machine_service = machine_service
+        self.cycle_time = cycle_time or 10.0  # Default to 10 minutes
+        self.analysis_data = analysis_data
+        
+        # Extract filename
+        self.filename = os.path.basename(nc_file_path)
+        self.job_name = os.path.splitext(self.filename)[0]  # Remove extension
+        
+        # Create dialog window
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Create Job from File")
+        self.dialog.geometry("600x500")
+        self.dialog.resizable(True, True)
+        
+        # Make dialog modal
+        self.dialog.transient(parent)
+        self.dialog.grab_set()
+        
+        # Form variables
+        self.job_name_var = tk.StringVar(value=self.job_name)
+        self.machine_id_var = tk.StringVar()
+        self.total_parts_var = tk.IntVar(value=1)
+        self.cycle_time_var = tk.DoubleVar(value=self.cycle_time)
+        self.start_date_var = tk.StringVar(value=datetime.now().strftime("%Y-%m-%d"))
+        self.start_hour_var = tk.IntVar(value=8)
+        self.start_minute_var = tk.IntVar(value=0)
+        
+        # JMS integration flag
+        self.create_jms_order_var = tk.BooleanVar(value=False)
+        
+        # Setup UI
+        self._setup_ui()
+        
+        # Center the dialog
+        self._center_dialog()
+        
+    def _setup_ui(self):
+        """Setup the dialog UI"""
+        # Main frame
+        main_frame = ttk.Frame(self.dialog)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        # Title
+        title_label = ttk.Label(main_frame, text="Create Job from NC File",
+                               font=('Arial', 14, 'bold'))
+        title_label.pack(pady=(0, 10))
+        
+        # File info section
+        file_frame = ttk.LabelFrame(main_frame, text="File Information", padding=10)
+        file_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        ttk.Label(file_frame, text=f"File: {self.filename}", font=('Arial', 10, 'bold')).pack(anchor=tk.W)
+        ttk.Label(file_frame, text=f"Path: {self.nc_file_path}", font=('Arial', 9)).pack(anchor=tk.W)
+        
+        # Show cycle time if available
+        if self.analysis_data:
+            cycle_data = self.analysis_data['cycle_data']
+            analysis = self.analysis_data['analysis']
+            
+            ttk.Label(file_frame, text=f"Calculated Cycle Time: {cycle_data['total_time_formatted']}",
+                     font=('Arial', 9), foreground='blue').pack(anchor=tk.W)
+            ttk.Label(file_frame, text=f"Tools Required: {analysis.total_tools}",
+                     font=('Arial', 9)).pack(anchor=tk.W)
+        
+        # Job details section
+        job_frame = ttk.LabelFrame(main_frame, text="Job Details", padding=10)
+        job_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        # Create grid
+        job_grid = ttk.Frame(job_frame)
+        job_grid.pack(fill=tk.X)
+        
+        # Job name
+        ttk.Label(job_grid, text="Job Name:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(job_grid, textvariable=self.job_name_var, width=30).grid(row=0, column=1, sticky=tk.W, padx=5, pady=2)
+        
+        # Machine selection
+        ttk.Label(job_grid, text="Initial Machine:").grid(row=0, column=2, sticky=tk.W, padx=5, pady=2)
+        machine_combo = ttk.Combobox(job_grid, textvariable=self.machine_id_var, width=20)
+        machine_combo.grid(row=0, column=3, sticky=tk.W, padx=5, pady=2)
+        
+        # Populate machine options
+        machines = self.machine_service.get_all_machines()
+        if machines:
+            machine_options = [(m.machine_id, f"{m.name} ({m.machine_id})") for m in machines.values()]
+            machine_combo['values'] = [m[1] for m in machine_options]
+            # Set first machine as default
+            if machine_options:
+                machine_combo.current(0)
+                self.machine_id_var.set(machine_options[0][0])
+            
+            def on_machine_select(event):
+                selected_index = machine_combo.current()
+                if selected_index >= 0:
+                    self.machine_id_var.set(machine_options[selected_index][0])
+            
+            machine_combo.bind('<<ComboboxSelected>>', on_machine_select)
+        
+        # Total parts
+        ttk.Label(job_grid, text="Number of Parts:").grid(row=1, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Spinbox(job_grid, from_=1, to=100, textvariable=self.total_parts_var, width=10).grid(row=1, column=1, sticky=tk.W, padx=5, pady=2)
+        
+        # Cycle time
+        ttk.Label(job_grid, text="Cycle Time per Part (min):").grid(row=1, column=2, sticky=tk.W, padx=5, pady=2)
+        ttk.Spinbox(job_grid, from_=0.1, to=1000, increment=0.1, textvariable=self.cycle_time_var, width=10).grid(row=1, column=3, sticky=tk.W, padx=5, pady=2)
+        
+        # Start date
+        ttk.Label(job_grid, text="Start Date:").grid(row=2, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Entry(job_grid, textvariable=self.start_date_var, width=15).grid(row=2, column=1, sticky=tk.W, padx=5, pady=2)
+        
+        # Start time
+        ttk.Label(job_grid, text="Start Time:").grid(row=2, column=2, sticky=tk.W, padx=5, pady=2)
+        time_frame = ttk.Frame(job_grid)
+        time_frame.grid(row=2, column=3, sticky=tk.W, padx=5, pady=2)
+        
+        ttk.Spinbox(time_frame, from_=0, to=23, textvariable=self.start_hour_var, width=5).pack(side=tk.LEFT)
+        ttk.Label(time_frame, text=":").pack(side=tk.LEFT)
+        ttk.Spinbox(time_frame, from_=0, to=59, textvariable=self.start_minute_var, width=5).pack(side=tk.LEFT)
+        
+        # Total time calculation
+        self.total_time_label = ttk.Label(job_grid, text="")
+        self.total_time_label.grid(row=3, column=0, columnspan=2, sticky=tk.W, padx=5, pady=2)
+        
+        # Update total time when values change
+        self.total_parts_var.trace_add('write', self._update_total_time)
+        self.cycle_time_var.trace_add('write', self._update_total_time)
+        self._update_total_time()
+        
+        # JMS Integration section
+        jms_frame = ttk.LabelFrame(main_frame, text="JMS Integration (Future)", padding=10)
+        jms_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        ttk.Checkbutton(jms_frame, text="Create JMS Work Order (Coming Soon)",
+                       variable=self.create_jms_order_var, state=tk.DISABLED).pack(anchor=tk.W)
+        ttk.Label(jms_frame, text="Future integration with Job Management System",
+                 font=('Arial', 9), foreground='gray').pack(anchor=tk.W)
+        
+        # Button frame
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill=tk.X, pady=(10, 0))
+        
+        ttk.Button(button_frame, text="Cancel", command=self._cancel).pack(side=tk.RIGHT, padx=(5, 0))
+        ttk.Button(button_frame, text="Create Job", command=self._create_job).pack(side=tk.RIGHT)
+        
+    def _update_total_time(self, *args):
+        """Update the total time calculation"""
+        try:
+            total_parts = self.total_parts_var.get()
+            cycle_time = self.cycle_time_var.get()
+            total_minutes = total_parts * cycle_time
+            total_hours = total_minutes / 60
+            
+            self.total_time_label.config(
+                text=f"Total Time: {total_minutes:.1f} minutes ({total_hours:.1f} hours)"
+            )
+        except (ValueError, tk.TclError):
+            self.total_time_label.config(text="Total Time: Invalid input")
+    
+    def _center_dialog(self):
+        """Center the dialog on the parent window"""
+        self.dialog.update_idletasks()
+        x = (self.dialog.winfo_screenwidth() // 2) - (self.dialog.winfo_width() // 2)
+        y = (self.dialog.winfo_screenheight() // 2) - (self.dialog.winfo_height() // 2)
+        self.dialog.geometry(f"+{x}+{y}")
+    
+    def _cancel(self):
+        """Cancel job creation"""
+        self.dialog.destroy()
+    
+    def _create_job(self):
+        """Create the job"""
+        try:
+            # Validate inputs
+            job_name = self.job_name_var.get().strip()
+            if not job_name:
+                messagebox.showerror("Error", "Job name is required", parent=self.dialog)
+                return
+            
+            machine_id = self.machine_id_var.get()
+            if not machine_id:
+                messagebox.showerror("Error", "Machine selection is required", parent=self.dialog)
+                return
+            
+            total_parts = self.total_parts_var.get()
+            cycle_time = self.cycle_time_var.get()
+            start_date = self.start_date_var.get()
+            start_hour = self.start_hour_var.get()
+            start_minute = self.start_minute_var.get()
+            
+            # Create the job
+            job = self.scheduler_service.create_job_with_parts(
+                name=job_name,
+                machine_id=machine_id,
+                total_parts=total_parts,
+                cycle_time=cycle_time,
+                start_date=start_date,
+                start_hour=start_hour,
+                start_minute=start_minute
+            )
+            
+            # Show success message
+            message = f"Job '{job_name}' created successfully!\n\n"
+            message += f"Job ID: {job.job_id}\n"
+            message += f"Total Parts: {total_parts}\n"
+            message += f"Cycle Time: {cycle_time} min per part\n"
+            message += f"Total Time: {total_parts * cycle_time:.1f} minutes\n"
+            message += f"Machine: {machine_id}\n\n"
+            message += "The job has been added to the scheduler."
+            
+            messagebox.showinfo("Job Created", message, parent=self.dialog)
+            
+            # Close dialog
+            self.dialog.destroy()
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to create job:\n{str(e)}", parent=self.dialog)

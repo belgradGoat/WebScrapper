@@ -32,7 +32,7 @@ class AnalysisTabModule(TabModuleInterface):
     
     def get_required_services(self) -> List[str]:
         """Return list of service names this module requires"""
-        return ["analysis_service", "machine_service"]
+        return ["analysis_service", "machine_service", "scheduler_service"]
     
     def initialize(self, service_registry) -> None:
         """Initialize the module with required services"""
@@ -46,11 +46,15 @@ class AnalysisTabModule(TabModuleInterface):
         self.machine_service = service_registry.get_service("machine_service")
         if not self.machine_service:
             raise ValueError("Machine service not found")
+            
+        self.scheduler_service = service_registry.get_service("scheduler_service")
+        if not self.scheduler_service:
+            raise ValueError("Scheduler service not found")
     
     def get_tab(self, parent) -> Any:
         """Return the tab frame for this module"""
         logger.info("Creating analysis tab")
-        self.analysis_tab = AnalysisTab(parent, self.analysis_service, self.machine_service)
+        self.analysis_tab = AnalysisTab(parent, self.analysis_service, self.machine_service, self.scheduler_service)
         return self.analysis_tab.frame
     
     def get_tab_name(self) -> str:
