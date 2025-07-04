@@ -2,12 +2,168 @@
 Analysis Tab for NC Tool Analyzer
 """
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
+from tkinter import ttk, filedialog, messagebox, scrolledtext
 import os
+import re
+import math
+import threading
 from typing import Dict, List, Any
 
 from models.analysis_result import AnalysisResult, MachineCompatibility
 from utils.event_system import event_system
+
+
+class NCCycleTimeCalculator:
+    """Calculate cycle time from NC code by analyzing movements and feedrates"""
+    
+    def __init__(self):
+        self.current_position = {'X': 0, 'Y': 0, 'Z': 0}
+        self.current_feedrate = 0  # mm/min
+        self.rapid_feedrate = 10000  # Default rapid feedrate (mm/min)
+        self.tool_change_time = 10  # Default tool change time (seconds)
+        self.total_time = 0  # Total time in seconds
+        self.current_tool = None
+        self.movements = []
+        self.operation_times = {
+            'rapid': 0,
+            'feed': 0,
+            'tool_change': 0,
+            'dwell': 0,
+            'other': 0
+        }
+        self.operation_counts = {
+            'rapid': 0,
+            'feed': 0,
+            'tool_change': 0,
+            'dwell': 0,
+            'other': 0
+        }
+        
+    def parse_nc_file(self, file_path):
+        """Parse NC file and calculate cycle time"""
+        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+            lines = f.readlines()
+            
+        line_number = 0
+        for line in lines:
+            line_number += 1
+            line = line.strip()
+            
+            # Skip empty lines and comments
+            if not line or line.startswith(';') or line.startswith('(') or line.startswith('*'):
+                continue
+                
+            # Process the line
+            self.process_line(line, line_number)
+            
+        return {
+            'total_time': self.total_time,
+            'total_time_formatted': self.format_time(self.total_time),
+            'operation_times': self.operation_times,
+            'operation_counts': self.operation_counts,
+            'movements': self.movements
+        }
+    
+    def process_line(self, line, line_number):
+        """Process a single line of Heidenhain NC code"""
+        # Tool change
+        tool_match = re.search(r'TOOL CALL (\d+)', line)
+        if tool_match:
+            new_tool = tool_match.group(1)
+            if self.current_tool != new_tool:
+                self.current_tool = new_tool
+                self.add_time('tool_change', self.tool_change_time)
+                self.operation_counts['tool_change'] += 1
+                self.movements.append({
+                    'line': line_number,
+                    'type': 'tool_change',
+                    'tool': self.current_tool,
+                    'time': self.tool_change_time
+                })
+            return
+            
+        # Feedrate
+        f_match = re.search(r'F(\d+\.?\d*)', line)
+        if f_match:
+            self.current_feedrate = float(f_match.group(1))
+        
+        # FMAX (rapid movement)
+        is_rapid = 'FMAX' in line
+        
+        # Dwell
+        dwell_match = re.search(r'DWELL\s+[F](\d+\.?\d*)', line)
+        if dwell_match:
+            dwell_time = float(dwell_match.group(1))
+            self.add_time('dwell', dwell_time)
+            self.operation_counts['dwell'] += 1
+            self.movements.append({
+                'line': line_number,
+                'type': 'dwell',
+                'time': dwell_time
+            })
+            return
+            
+        # Movement commands (L, C, CR, CT)
+        new_position = self.current_position.copy()
+        has_movement = False
+        
+        # Extract X, Y, Z coordinates
+        for axis in ['X', 'Y', 'Z']:
+            axis_match = re.search(rf'{axis}([+-]?\d+\.?\d*)', line)
+            if axis_match:
+                new_position[axis] = float(axis_match.group(1))
+                has_movement = True
+                
+        if has_movement:
+            # Calculate distance
+            distance = self.calculate_distance(self.current_position, new_position)
+            
+            # Calculate time
+            if is_rapid:
+                time_seconds = (distance / self.rapid_feedrate) * 60
+                movement_type = 'rapid'
+            else:
+                if self.current_feedrate <= 0:
+                    # Default feedrate if none specified
+                    self.current_feedrate = 100
+                time_seconds = (distance / self.current_feedrate) * 60
+                movement_type = 'feed'
+                
+            self.add_time(movement_type, time_seconds)
+            self.operation_counts[movement_type] += 1
+            
+            self.movements.append({
+                'line': line_number,
+                'type': movement_type,
+                'from': self.current_position.copy(),
+                'to': new_position.copy(),
+                'distance': distance,
+                'feedrate': self.rapid_feedrate if is_rapid else self.current_feedrate,
+                'time': time_seconds
+            })
+            
+            # Update current position
+            self.current_position = new_position
+    
+    def calculate_distance(self, pos1, pos2):
+        """Calculate 3D distance between two points"""
+        return math.sqrt(
+            (pos2['X'] - pos1['X'])**2 +
+            (pos2['Y'] - pos1['Y'])**2 +
+            (pos2['Z'] - pos1['Z'])**2
+        )
+    
+    def add_time(self, operation_type, seconds):
+        """Add time to total and operation-specific counters"""
+        self.total_time += seconds
+        self.operation_times[operation_type] += seconds
+    
+    def format_time(self, seconds):
+        """Format time in seconds to hours:minutes:seconds"""
+        hours = int(seconds // 3600)
+        minutes = int((seconds % 3600) // 60)
+        secs = int(seconds % 60)
+        return f"{hours}h {minutes}m {secs}s"
 
 
 class AnalysisTab:
@@ -64,7 +220,8 @@ class AnalysisTab:
         button_frame.pack(fill=tk.X, pady=10)
         
         ttk.Button(button_frame, text="🔄 Refresh All Machines", command=self.refresh_all_machines).pack(side=tk.LEFT, padx=(0,10))
-        ttk.Button(button_frame, text="🔍 Analyze NC File", command=self.analyze_nc_file).pack(side=tk.LEFT)
+        ttk.Button(button_frame, text="🔍 Analyze NC File", command=self.analyze_nc_file).pack(side=tk.LEFT, padx=(0,10))
+        ttk.Button(button_frame, text="⏱️ Calculate Cycle Time", command=self.calculate_cycle_time).pack(side=tk.LEFT)
         
         # Status/Progress
         self.status_var = tk.StringVar(value="Ready")
@@ -462,6 +619,216 @@ class AnalysisTab:
         self.status_var.set(message)
         self.frame.update_idletasks()
         
+    def calculate_cycle_time(self):
+        """Calculate cycle time for the current NC file"""
+        nc_file = self.file_path_var.get()
+        if not nc_file or not os.path.exists(nc_file):
+            messagebox.showerror("Error", "Please select a valid NC file first")
+            return
+        
+        self.update_status("Calculating cycle time...")
+        self.progress.start()
+        
+        # Use a separate thread to avoid blocking the UI
+        self._start_background_task(lambda: self._calculate_cycle_time_task(nc_file))
+    
+    def _calculate_cycle_time_task(self, nc_file):
+        """Background task for calculating cycle time"""
+        try:
+            calculator = NCCycleTimeCalculator()
+            cycle_data = calculator.parse_nc_file(nc_file)
+            
+            # Also get basic NC file analysis for additional info
+            analysis_result = self.analysis_service.analyze_nc_file(nc_file, refresh_tools=False)
+            
+            # Combine data
+            combined_data = {
+                'cycle_data': cycle_data,
+                'analysis': analysis_result
+            }
+            
+            # Update UI in main thread
+            self.frame.after(0, lambda: self._cycle_time_complete(combined_data))
+            
+        except Exception as e:
+            # Update UI in main thread
+            self.frame.after(0, lambda: self._cycle_time_error(str(e)))
+    
+    def _cycle_time_complete(self, data):
+        """Called when cycle time calculation is complete"""
+        self.progress.stop()
+        cycle_data = data['cycle_data']
+        analysis = data['analysis']
+        
+        self.update_status(f"Cycle time calculated: {cycle_data['total_time_formatted']}")
+        
+        # Show results in popup
+        self.show_cycle_time_results(data)
+    
+    def _cycle_time_error(self, error_msg):
+        """Called when cycle time calculation fails"""
+        self.progress.stop()
+        self.update_status("Cycle time calculation failed")
+        messagebox.showerror("Calculation Error", f"Failed to calculate cycle time:\n{error_msg}")
+    
+    def show_cycle_time_results(self, data):
+        """Show cycle time results in a popup window"""
+        cycle_data = data['cycle_data']
+        analysis = data['analysis']
+        
+        # Create popup window
+        popup = tk.Toplevel(self.frame)
+        popup.title("Cycle Time Analysis Results")
+        popup.geometry("800x600")
+        popup.resizable(True, True)
+        
+        # Main frame with scrollbar
+        main_frame = ttk.Frame(popup)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        # Create scrollable text widget
+        text_widget = scrolledtext.ScrolledText(main_frame, wrap=tk.WORD, font=('Courier', 10))
+        text_widget.pack(fill=tk.BOTH, expand=True)
+        
+        # Build results text
+        results = []
+        results.append("=" * 70)
+        results.append("NC FILE CYCLE TIME ANALYSIS")
+        results.append("=" * 70)
+        results.append(f"File: {analysis.file_name}")
+        results.append(f"Total Cycle Time: {cycle_data['total_time_formatted']}")
+        results.append(f"Total Cycle Time (seconds): {cycle_data['total_time']:.2f}")
+        results.append("")
+        
+        # Operation breakdown
+        results.append("TIME BREAKDOWN BY OPERATION:")
+        results.append("-" * 40)
+        for op_type, time_seconds in cycle_data['operation_times'].items():
+            if time_seconds > 0:
+                count = cycle_data['operation_counts'][op_type]
+                formatted_time = self.format_time_simple(time_seconds)
+                percentage = (time_seconds / cycle_data['total_time']) * 100 if cycle_data['total_time'] > 0 else 0
+                results.append(f"{op_type.title():12}: {formatted_time:>12} ({percentage:5.1f}%) - {count} operations")
+        results.append("")
+        
+        # Tool information
+        results.append("TOOL INFORMATION:")
+        results.append("-" * 40)
+        results.append(f"Total Tools Used: {analysis.total_tools}")
+        results.append(f"Tools: T{', T'.join(analysis.tool_numbers)}")
+        results.append("")
+        
+        # Stock dimensions
+        if analysis.dimensions:
+            dim = analysis.dimensions
+            results.append("STOCK DIMENSIONS:")
+            results.append(f"Width:  {dim['width']:.2f} mm")
+            results.append(f"Height: {dim['height']:.2f} mm")
+            results.append(f"Depth:  {dim['depth']:.2f} mm")
+            results.append("")
+        
+        # Movement analysis
+        rapid_moves = [m for m in cycle_data['movements'] if m['type'] == 'rapid']
+        feed_moves = [m for m in cycle_data['movements'] if m['type'] == 'feed']
+        
+        if rapid_moves or feed_moves:
+            results.append("MOVEMENT ANALYSIS:")
+            results.append("-" * 40)
+            
+            if rapid_moves:
+                total_rapid_distance = sum(m['distance'] for m in rapid_moves)
+                avg_rapid_feedrate = sum(m['feedrate'] for m in rapid_moves) / len(rapid_moves)
+                results.append(f"Rapid Movements: {len(rapid_moves)} moves")
+                results.append(f"Total Rapid Distance: {total_rapid_distance:.2f} mm")
+                results.append(f"Average Rapid Rate: {avg_rapid_feedrate:.0f} mm/min")
+                results.append("")
+            
+            if feed_moves:
+                total_feed_distance = sum(m['distance'] for m in feed_moves)
+                avg_feedrate = sum(m['feedrate'] for m in feed_moves) / len(feed_moves)
+                results.append(f"Feed Movements: {len(feed_moves)} moves")
+                results.append(f"Total Feed Distance: {total_feed_distance:.2f} mm")
+                results.append(f"Average Feed Rate: {avg_feedrate:.0f} mm/min")
+                results.append("")
+        
+        # Cutter compensation info
+        comp_on_tools = [tool for tool, info in analysis.cutter_comp_info.items() if 'On' in info]
+        if comp_on_tools:
+            results.append("CUTTER COMPENSATION:")
+            results.append(f"Tools with compensation: T{', T'.join(comp_on_tools)}")
+            results.append("")
+        
+        # F-value errors
+        if analysis.f_value_errors:
+            results.append("F-VALUE WARNINGS (>80000):")
+            results.append("-" * 40)
+            for error in analysis.f_value_errors[:5]:  # Show first 5
+                results.append(f"Line {error['line']}: F{error['value']}")
+            if len(analysis.f_value_errors) > 5:
+                results.append(f"... and {len(analysis.f_value_errors) - 5} more warnings")
+            results.append("")
+        
+        # Summary
+        results.append("SUMMARY:")
+        results.append("-" * 40)
+        results.append(f"• Total operations: {sum(cycle_data['operation_counts'].values())}")
+        results.append(f"• Tool changes: {cycle_data['operation_counts']['tool_change']}")
+        results.append(f"• Feed movements: {cycle_data['operation_counts']['feed']}")
+        results.append(f"• Rapid movements: {cycle_data['operation_counts']['rapid']}")
+        if cycle_data['operation_counts']['dwell'] > 0:
+            results.append(f"• Dwell operations: {cycle_data['operation_counts']['dwell']}")
+        
+        # Insert results into text widget
+        text_widget.insert(tk.END, "\n".join(results))
+        text_widget.config(state=tk.DISABLED)  # Make read-only
+        
+        # Add close button
+        button_frame = ttk.Frame(popup)
+        button_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
+        
+        ttk.Button(button_frame, text="Close", command=popup.destroy).pack(side=tk.RIGHT)
+        ttk.Button(button_frame, text="Save Report",
+                  command=lambda: self.save_cycle_time_report(results)).pack(side=tk.RIGHT, padx=(0, 10))
+        
+        # Center the popup
+        popup.transient(self.frame)
+        popup.grab_set()
+        
+        # Calculate position to center the popup
+        popup.update_idletasks()
+        x = (popup.winfo_screenwidth() // 2) - (popup.winfo_width() // 2)
+        y = (popup.winfo_screenheight() // 2) - (popup.winfo_height() // 2)
+        popup.geometry(f"+{x}+{y}")
+    
+    def format_time_simple(self, seconds):
+        """Format time in a simple format for the report"""
+        if seconds < 60:
+            return f"{seconds:.1f}s"
+        elif seconds < 3600:
+            minutes = seconds / 60
+            return f"{minutes:.1f}min"
+        else:
+            hours = seconds / 3600
+            return f"{hours:.1f}h"
+    
+    def save_cycle_time_report(self, results):
+        """Save cycle time report to file"""
+        filename = filedialog.asksaveasfilename(
+            title="Save Cycle Time Report",
+            defaultextension=".txt",
+            filetypes=[
+                ("Text files", "*.txt"),
+                ("All files", "*.*")
+            ]
+        )
+        if filename:
+            try:
+                with open(filename, 'w', encoding='utf-8') as f:
+                    f.write("\n".join(results))
+                messagebox.showinfo("Success", f"Report saved to {filename}")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to save report: {str(e)}")
+
     def _start_background_task(self, task_func):
         """
         Start a background task in a separate thread
@@ -469,6 +836,5 @@ class AnalysisTab:
         Args:
             task_func: Function to run in the background
         """
-        import threading
         thread = threading.Thread(target=task_func, daemon=True)
         thread.start()
