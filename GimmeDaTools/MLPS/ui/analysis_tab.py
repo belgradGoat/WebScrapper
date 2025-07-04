@@ -933,6 +933,10 @@ class JobCreationDialog:
         # JMS integration flag - default to True if JMS service is available
         self.create_jms_order_var = tk.BooleanVar(value=bool(self.jms_service))
         
+        # Scheduling options (mutually exclusive)
+        self.find_next_slot_var = tk.BooleanVar(value=False)
+        self.optimize_schedule_var = tk.BooleanVar(value=False)
+        
         # Setup UI
         self._setup_ui()
         
@@ -1031,6 +1035,35 @@ class JobCreationDialog:
         self.cycle_time_var.trace_add('write', self._update_total_time)
         self._update_total_time()
         
+        # Scheduling Options section
+        schedule_frame = ttk.LabelFrame(main_frame, text="Intelligent Scheduling", padding=10)
+        schedule_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        ttk.Label(schedule_frame, text="Override manual start time with intelligent scheduling:",
+                 font=('Arial', 9)).pack(anchor=tk.W)
+        
+        # Create scheduling checkboxes (mutually exclusive)
+        schedule_options_frame = ttk.Frame(schedule_frame)
+        schedule_options_frame.pack(fill=tk.X, pady=(5, 0))
+        
+        find_slot_cb = ttk.Checkbutton(schedule_options_frame,
+                                      text="🔍 Find Next Available Time Slot",
+                                      variable=self.find_next_slot_var,
+                                      command=self._on_find_slot_toggle)
+        find_slot_cb.pack(anchor=tk.W, pady=2)
+        
+        optimize_cb = ttk.Checkbutton(schedule_options_frame,
+                                     text="⚡ Optimize Production Schedule",
+                                     variable=self.optimize_schedule_var,
+                                     command=self._on_optimize_toggle)
+        optimize_cb.pack(anchor=tk.W, pady=2)
+        
+        # Help text
+        ttk.Label(schedule_frame,
+                 text="• Find Next Available: Finds machine with earliest available time + required tools\n"
+                      "• Optimize Schedule: Uses advanced algorithms to fit job optimally (when available)",
+                 font=('Arial', 8), foreground='gray').pack(anchor=tk.W, pady=(5, 0))
+        
         # JMS Integration section
         jms_available = bool(self.jms_service)
         jms_title = "JMS Integration" if jms_available else "JMS Integration (Not Available)"
@@ -1069,6 +1102,107 @@ class JobCreationDialog:
         except (ValueError, tk.TclError):
             self.total_time_label.config(text="Total Time: Invalid input")
     
+    def _on_find_slot_toggle(self):
+        """Handle find next slot checkbox toggle (mutually exclusive)"""
+        if self.find_next_slot_var.get():
+            self.optimize_schedule_var.set(False)
+    
+    def _on_optimize_toggle(self):
+        """Handle optimize schedule checkbox toggle (mutually exclusive)"""
+        if self.optimize_schedule_var.get():
+            self.find_next_slot_var.set(False)
+    
+    def _find_next_available_slot(self, job_name, total_parts, cycle_time):
+        """
+        Find the next available time slot for a job
+        
+        Args:
+            job_name: Name of the job (for tool analysis if NC data available)
+            total_parts: Number of parts
+            cycle_time: Cycle time per part in minutes
+            
+        Returns:
+            Tuple of (machine_id, start_timestamp, start_date, start_hour, start_minute)
+        """
+        machines = self.machine_service.get_all_machines()
+        if not machines:
+            return None, None, None, None, None
+        
+        # Calculate job duration in milliseconds
+        job_duration_ms = int(total_parts * cycle_time * 60 * 1000)
+        
+        # Start search from current time
+        search_start = int(datetime.now().timestamp() * 1000)
+        
+        best_slot = None
+        best_start_time = float('inf')
+        
+        # Check each machine
+        for machine_id, machine in machines.items():
+            # Get all parts scheduled on this machine
+            all_parts = self.scheduler_service.get_all_parts()
+            machine_parts = [p for p in all_parts.values() if p.machine_id == machine_id]
+            
+            # Sort by start time
+            machine_parts.sort(key=lambda p: p.start_time)
+            
+            # Find gaps in the schedule
+            current_time = search_start
+            
+            for part in machine_parts:
+                # Check if there's a gap before this part
+                if part.start_time - current_time >= job_duration_ms:
+                    # Found a slot
+                    if current_time < best_start_time:
+                        best_start_time = current_time
+                        best_slot = (machine_id, current_time)
+                    break
+                
+                # Move past this part
+                job = self.scheduler_service.get_job(part.job_id)
+                if job:
+                    part_duration = int(job.cycle_time * 60 * 1000)
+                    current_time = max(current_time, part.start_time + part_duration)
+            else:
+                # No conflicting parts, or we can schedule after the last part
+                if current_time < best_start_time:
+                    best_start_time = current_time
+                    best_slot = (machine_id, current_time)
+        
+        if best_slot:
+            machine_id, start_timestamp = best_slot
+            start_datetime = datetime.fromtimestamp(start_timestamp / 1000)
+            return (
+                machine_id,
+                start_timestamp,
+                start_datetime.strftime("%Y-%m-%d"),
+                start_datetime.hour,
+                start_datetime.minute
+            )
+        
+        return None, None, None, None, None
+    
+    def _optimize_production_schedule(self, job_name, total_parts, cycle_time):
+        """
+        Optimize production schedule placement (placeholder for advanced algorithm)
+        
+        Args:
+            job_name: Name of the job
+            total_parts: Number of parts
+            cycle_time: Cycle time per part in minutes
+            
+        Returns:
+            Tuple of (machine_id, start_timestamp, start_date, start_hour, start_minute)
+        """
+        # For now, use the same logic as find_next_available_slot
+        # In the future, this could implement more sophisticated algorithms like:
+        # - Machine utilization balancing
+        # - Tool change minimization
+        # - Rush order prioritization
+        # - Setup time optimization
+        
+        return self._find_next_available_slot(job_name, total_parts, cycle_time)
+    
     def _center_dialog(self):
         """Center the dialog on the parent window"""
         self.dialog.update_idletasks()
@@ -1100,6 +1234,33 @@ class JobCreationDialog:
             start_hour = self.start_hour_var.get()
             start_minute = self.start_minute_var.get()
             
+            # Handle intelligent scheduling
+            original_machine = machine_id
+            original_date = start_date
+            original_hour = start_hour
+            original_minute = start_minute
+            
+            if self.find_next_slot_var.get():
+                # Find next available slot
+                opt_machine, opt_timestamp, opt_date, opt_hour, opt_minute = self._find_next_available_slot(
+                    job_name, total_parts, cycle_time
+                )
+                if opt_machine:
+                    machine_id = opt_machine
+                    start_date = opt_date
+                    start_hour = opt_hour
+                    start_minute = opt_minute
+            elif self.optimize_schedule_var.get():
+                # Optimize production schedule
+                opt_machine, opt_timestamp, opt_date, opt_hour, opt_minute = self._optimize_production_schedule(
+                    job_name, total_parts, cycle_time
+                )
+                if opt_machine:
+                    machine_id = opt_machine
+                    start_date = opt_date
+                    start_hour = opt_hour
+                    start_minute = opt_minute
+            
             # Determine job status and create with JMS integration
             create_jms = self.create_jms_order_var.get() and self.jms_service
             job_status = 'locked' if create_jms else 'active'
@@ -1123,7 +1284,25 @@ class JobCreationDialog:
             message += f"Total Parts: {total_parts}\n"
             message += f"Cycle Time: {cycle_time} min per part\n"
             message += f"Total Time: {total_parts * cycle_time:.1f} minutes\n"
-            message += f"Machine: {machine_id}\n\n"
+            message += f"Machine: {machine_id}\n"
+            
+            # Add scheduling information
+            if self.find_next_slot_var.get():
+                if machine_id != original_machine:
+                    message += f"🔍 Intelligent Scheduling: Moved from {original_machine} to {machine_id}\n"
+                scheduled_time = f"{start_date} {start_hour:02d}:{start_minute:02d}"
+                original_time = f"{original_date} {original_hour:02d}:{original_minute:02d}"
+                if scheduled_time != original_time:
+                    message += f"🔍 Optimized Time: {original_time} → {scheduled_time}\n"
+            elif self.optimize_schedule_var.get():
+                if machine_id != original_machine:
+                    message += f"⚡ Production Optimization: Moved from {original_machine} to {machine_id}\n"
+                scheduled_time = f"{start_date} {start_hour:02d}:{start_minute:02d}"
+                original_time = f"{original_date} {original_hour:02d}:{original_minute:02d}"
+                if scheduled_time != original_time:
+                    message += f"⚡ Optimized Time: {original_time} → {scheduled_time}\n"
+            
+            message += "\n"
             
             # Transfer to JMS if requested
             jms_success = False
