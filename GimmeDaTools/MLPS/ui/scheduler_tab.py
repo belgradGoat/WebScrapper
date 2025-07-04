@@ -51,7 +51,7 @@ class SchedulerTab:
             'start_minute': tk.IntVar(value=0)
         }
         
-        # Scheduling options (mutually exclusive)
+        # Scheduling options (mutually exclusive) - MUST be initialized BEFORE setup_ui()
         self.find_next_slot_var = tk.BooleanVar(value=False)
         self.optimize_schedule_var = tk.BooleanVar(value=False)
         
