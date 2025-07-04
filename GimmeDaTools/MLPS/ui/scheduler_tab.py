@@ -309,13 +309,32 @@ class SchedulerTab:
             job_frame = tk.Frame(self.jobs_buttons_frame)
             job_frame.pack(side=tk.LEFT, padx=(0, 5), pady=5)
             
+            # Determine button style based on job status
+            button_bg = job.color
+            button_relief = tk.RAISED
+            status_indicator = ""
+            
+            if hasattr(job, 'status'):
+                if job.status == 'locked':
+                    button_relief = tk.SUNKEN
+                    status_indicator = "🔒"
+                elif job.status == 'error':
+                    button_bg = '#dc3545'  # Red for errors
+                    status_indicator = "❌"
+                elif job.status == 'completed':
+                    button_bg = '#28a745'  # Green for completed
+                    status_indicator = "✅"
+                elif job.status == 'paused':
+                    button_bg = '#6c757d'  # Gray for paused
+                    status_indicator = "⏸️"
+            
             # Create job button with custom styling
             job_button = tk.Button(
                 job_frame,
-                text=f"{job.name} ({completed_parts}/{job.total_parts})",
-                bg=job.color,
+                text=f"{status_indicator}{job.name} ({completed_parts}/{job.total_parts})",
+                bg=button_bg,
                 fg="white",
-                relief=tk.RAISED,
+                relief=button_relief,
                 borderwidth=1,
                 padx=10,
                 pady=5,
@@ -695,6 +714,25 @@ class SchedulerTab:
             bg="white",
             anchor=tk.W
         ).pack(fill=tk.X)
+        
+        # Show job status
+        if hasattr(job, 'status'):
+            status_colors = {
+                'active': 'green',
+                'locked': 'orange',
+                'error': 'red',
+                'completed': 'blue',
+                'paused': 'gray'
+            }
+            status_color = status_colors.get(job.status, 'black')
+            tk.Label(
+                info_frame,
+                text=f"Status: {job.status.upper()}",
+                bg="white",
+                fg=status_color,
+                font=('Arial', 10, 'bold'),
+                anchor=tk.W
+            ).pack(fill=tk.X)
         
         # Machine distribution
         machine_frame = tk.LabelFrame(self.job_details_panel, text="Machine Distribution", bg="white", padx=10, pady=5)

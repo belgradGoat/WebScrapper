@@ -50,11 +50,18 @@ class AnalysisTabModule(TabModuleInterface):
         self.scheduler_service = service_registry.get_service("scheduler_service")
         if not self.scheduler_service:
             raise ValueError("Scheduler service not found")
+            
+        # JMS service is optional
+        self.jms_service = service_registry.get_service("jms_service")
+        if self.jms_service:
+            logger.info("JMS service found and will be used for job transfer")
+        else:
+            logger.info("JMS service not found - jobs will be created without JMS transfer")
     
     def get_tab(self, parent) -> Any:
         """Return the tab frame for this module"""
         logger.info("Creating analysis tab")
-        self.analysis_tab = AnalysisTab(parent, self.analysis_service, self.machine_service, self.scheduler_service)
+        self.analysis_tab = AnalysisTab(parent, self.analysis_service, self.machine_service, self.scheduler_service, self.jms_service)
         return self.analysis_tab.frame
     
     def get_tab_name(self) -> str:

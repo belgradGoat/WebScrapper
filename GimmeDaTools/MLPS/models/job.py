@@ -2,7 +2,7 @@
 Job model for Machine Shop Scheduler
 """
 from datetime import datetime
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Literal
 import uuid
 
 
@@ -17,7 +17,8 @@ class Job:
         total_parts: int = 1,
         cycle_time: float = 1.0,
         color: Optional[str] = None,
-        created_at: Optional[int] = None
+        created_at: Optional[int] = None,
+        status: Literal['active', 'locked', 'error', 'completed', 'paused'] = 'active'
     ):
         """
         Initialize a job with its properties
@@ -29,6 +30,7 @@ class Job:
             cycle_time: Cycle time per part in minutes
             color: Color for visual representation
             created_at: Creation timestamp
+            status: Job status (active, locked, error, completed, paused)
         """
         self.job_id = job_id or f"job-{uuid.uuid4()}"
         self.name = name
@@ -36,6 +38,7 @@ class Job:
         self.cycle_time = cycle_time
         self.color = color or self._generate_color()
         self.created_at = created_at or int(datetime.now().timestamp() * 1000)
+        self.status = status
         
     def _generate_color(self) -> str:
         """
@@ -82,7 +85,8 @@ class Job:
             'totalParts': self.total_parts,
             'cycleTime': self.cycle_time,
             'color': self.color,
-            'createdAt': self.created_at
+            'createdAt': self.created_at,
+            'status': self.status
         }
     
     @classmethod
@@ -102,5 +106,6 @@ class Job:
             total_parts=data.get('totalParts', 1),
             cycle_time=data.get('cycleTime', 1.0),
             color=data.get('color'),
-            created_at=data.get('createdAt')
+            created_at=data.get('createdAt'),
+            status=data.get('status', 'active')
         )

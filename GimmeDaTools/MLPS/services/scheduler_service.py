@@ -256,7 +256,8 @@ class SchedulerService:
         cycle_time: float,
         start_date: str,
         start_hour: int,
-        start_minute: int
+        start_minute: int,
+        status: str = 'active'
     ) -> Job:
         """
         Create a new job with parts
@@ -269,12 +270,13 @@ class SchedulerService:
             start_date: Start date in ISO format (YYYY-MM-DD)
             start_hour: Start hour (0-23)
             start_minute: Start minute (0-59)
+            status: Job status (active, locked, error, completed, paused)
             
         Returns:
             Created job
         """
         # Create the job
-        job = Job(name=name, total_parts=total_parts, cycle_time=cycle_time)
+        job = Job(name=name, total_parts=total_parts, cycle_time=cycle_time, status=status)
         self.jobs[job.job_id] = job
         
         # Parse date string to avoid timezone issues

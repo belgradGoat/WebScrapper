@@ -173,7 +173,7 @@ class AnalysisTab:
     """
     Analysis tab for the NC Tool Analyzer application
     """
-    def __init__(self, parent, analysis_service, machine_service, scheduler_service=None):
+    def __init__(self, parent, analysis_service, machine_service, scheduler_service=None, jms_service=None):
         """
         Initialize the analysis tab
         
@@ -182,11 +182,13 @@ class AnalysisTab:
             analysis_service: AnalysisService instance
             machine_service: MachineService instance
             scheduler_service: SchedulerService instance (optional)
+            jms_service: JMSService instance (optional)
         """
         self.parent = parent
         self.analysis_service = analysis_service
         self.machine_service = machine_service
         self.scheduler_service = scheduler_service
+        self.jms_service = jms_service
         
         # Create frame
         self.frame = ttk.Frame(parent)
@@ -865,7 +867,8 @@ class AnalysisTab:
             self.scheduler_service,
             self.machine_service,
             self.last_cycle_time,
-            self.last_analysis_data
+            self.last_analysis_data,
+            self.jms_service
         )
         
     def _start_background_task(self, task_func):
@@ -883,7 +886,7 @@ class JobCreationDialog:
     """Dialog for creating a job from an NC file"""
     
     def __init__(self, parent, nc_file_path, scheduler_service, machine_service,
-                 cycle_time=None, analysis_data=None):
+                 cycle_time=None, analysis_data=None, jms_service=None):
         """
         Initialize the job creation dialog
         
@@ -894,11 +897,13 @@ class JobCreationDialog:
             machine_service: MachineService instance
             cycle_time: Calculated cycle time in minutes (optional)
             analysis_data: Analysis data from cycle time calculation (optional)
+            jms_service: JMSService instance (optional)
         """
         self.parent = parent
         self.nc_file_path = nc_file_path
         self.scheduler_service = scheduler_service
         self.machine_service = machine_service
+        self.jms_service = jms_service
         self.cycle_time = cycle_time or 10.0  # Default to 10 minutes
         self.analysis_data = analysis_data
         
@@ -925,8 +930,8 @@ class JobCreationDialog:
         self.start_hour_var = tk.IntVar(value=8)
         self.start_minute_var = tk.IntVar(value=0)
         
-        # JMS integration flag
-        self.create_jms_order_var = tk.BooleanVar(value=False)
+        # JMS integration flag - default to True if JMS service is available
+        self.create_jms_order_var = tk.BooleanVar(value=bool(self.jms_service))
         
         # Setup UI
         self._setup_ui()
@@ -1027,13 +1032,21 @@ class JobCreationDialog:
         self._update_total_time()
         
         # JMS Integration section
-        jms_frame = ttk.LabelFrame(main_frame, text="JMS Integration (Future)", padding=10)
+        jms_available = bool(self.jms_service)
+        jms_title = "JMS Integration" if jms_available else "JMS Integration (Not Available)"
+        jms_frame = ttk.LabelFrame(main_frame, text=jms_title, padding=10)
         jms_frame.pack(fill=tk.X, pady=(0, 10))
         
-        ttk.Checkbutton(jms_frame, text="Create JMS Work Order (Coming Soon)",
-                       variable=self.create_jms_order_var, state=tk.DISABLED).pack(anchor=tk.W)
-        ttk.Label(jms_frame, text="Future integration with Job Management System",
-                 font=('Arial', 9), foreground='gray').pack(anchor=tk.W)
+        if jms_available:
+            ttk.Checkbutton(jms_frame, text="Create JMS Work Order and Lock Job",
+                           variable=self.create_jms_order_var).pack(anchor=tk.W)
+            ttk.Label(jms_frame, text="Job will be created as 'locked' and transferred to JMS",
+                     font=('Arial', 9), foreground='blue').pack(anchor=tk.W)
+        else:
+            ttk.Checkbutton(jms_frame, text="Create JMS Work Order (Not Available)",
+                           variable=self.create_jms_order_var, state=tk.DISABLED).pack(anchor=tk.W)
+            ttk.Label(jms_frame, text="JMS service not configured. Job will be created as 'active'",
+                     font=('Arial', 9), foreground='gray').pack(anchor=tk.W)
         
         # Button frame
         button_frame = ttk.Frame(main_frame)
@@ -1087,6 +1100,10 @@ class JobCreationDialog:
             start_hour = self.start_hour_var.get()
             start_minute = self.start_minute_var.get()
             
+            # Determine job status and create with JMS integration
+            create_jms = self.create_jms_order_var.get() and self.jms_service
+            job_status = 'locked' if create_jms else 'active'
+            
             # Create the job
             job = self.scheduler_service.create_job_with_parts(
                 name=job_name,
@@ -1095,19 +1112,40 @@ class JobCreationDialog:
                 cycle_time=cycle_time,
                 start_date=start_date,
                 start_hour=start_hour,
-                start_minute=start_minute
+                start_minute=start_minute,
+                status=job_status
             )
             
-            # Show success message
+            # Build success message
             message = f"Job '{job_name}' created successfully!\n\n"
             message += f"Job ID: {job.job_id}\n"
+            message += f"Status: {job_status.upper()}\n"
             message += f"Total Parts: {total_parts}\n"
             message += f"Cycle Time: {cycle_time} min per part\n"
             message += f"Total Time: {total_parts * cycle_time:.1f} minutes\n"
             message += f"Machine: {machine_id}\n\n"
+            
+            # Transfer to JMS if requested
+            jms_success = False
+            if create_jms:
+                try:
+                    message += "Transferring job to JMS...\n"
+                    order_id = self.jms_service.sync_job_to_jms(job)
+                    message += f"✅ JMS Work Order Created: {order_id}\n"
+                    message += f"Job is now LOCKED and managed by JMS\n\n"
+                    jms_success = True
+                except Exception as e:
+                    message += f"❌ JMS Transfer Failed: {str(e)}\n"
+                    message += f"Job created locally but not transferred to JMS\n\n"
+            
             message += "The job has been added to the scheduler."
+            if create_jms and jms_success:
+                message += "\nCheck the scheduler tab to see the locked job."
             
             messagebox.showinfo("Job Created", message, parent=self.dialog)
+            
+            # Trigger UI refresh in scheduler tab
+            event_system.publish("job_added", job)
             
             # Close dialog
             self.dialog.destroy()
