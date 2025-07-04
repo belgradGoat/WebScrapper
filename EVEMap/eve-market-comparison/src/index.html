@@ -53,30 +53,6 @@
             });
         });
         
-        async function exchangeCodeForToken(code) {
-            try {
-                const response = await fetch('/api/token', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ code })
-                });
-        
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    console.error('Token exchange failed:', data);
-                    throw new Error(data.error_description || data.error || 'Failed to exchange code for token');
-                }
-        
-                return data.access_token;
-            } catch (error) {
-                console.error('Network or parsing error:', error);
-                throw error;
-            }
-        }
-        
 
     </script>
 </body>

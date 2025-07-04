@@ -10,15 +10,25 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
-app.use(express.static(__dirname)); // Serve files from src directory
+
+// Serve static files from the src directory
+app.use(express.static(path.join(__dirname)));
+app.use('/js', express.static(path.join(__dirname, 'js')));
+app.use('/css', express.static(path.join(__dirname, 'css')));
+
+// Handle the callback route explicitly
+app.get('/callback', (req, res) => {
+    console.log('Callback route hit with query:', req.query);
+    res.sendFile(path.join(__dirname, 'callback.html'));
+});
+
+// Serve index.html at root
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 const CLIENT_ID = 'b1ee25b8600a462bbe94c23defd64eeb';
 const CLIENT_SECRET = 'vqVoMi6dRfgRJh03GSH77q2boukqqUgIb99tkeho'; // Replace with your actual secret
-
-// Handle the callback route
-app.get('/callback', (req, res) => {
-    res.sendFile(path.join(__dirname, 'callback.html'));
-});
 
 app.post('/api/token', async (req, res) => {
     const { code } = req.body;
@@ -31,33 +41,54 @@ app.post('/api/token', async (req, res) => {
     }
     
     try {
-        const tokenUrl = 'https://login.eveonline.com/oauth/token';
-        console.log('Token URL:', tokenUrl);
-        console.log('Client ID:', CLIENT_ID);
+        // Try v2 endpoint first (without Basic auth, using client_id and client_secret in body)
+        console.log('Trying V2 token endpoint...');
         
-        const authHeader = 'Basic ' + Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
-        const body = new URLSearchParams({
+        const v2TokenUrl = 'https://login.eveonline.com/v2/oauth/token';
+        const v2Body = new URLSearchParams({
             grant_type: 'authorization_code',
             code: code,
+            client_id: CLIENT_ID,
+            client_secret: CLIENT_SECRET,
             redirect_uri: 'http://localhost:8085/callback'
         });
         
-        console.log('Making request to EVE OAuth server...');
-        console.log('Request body:', body.toString());
-        
-        const response = await fetch(tokenUrl, {
+        let response = await fetch(v2TokenUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
-                'Authorization': authHeader,
-                'User-Agent': 'EVE-Market-Comparison/1.0'
+                'User-Agent': 'EVE-Market-Comparison/1.0',
+                'Host': 'login.eveonline.com'
             },
-            body: body.toString()
+            body: v2Body.toString()
         });
         
-        console.log('EVE OAuth Response Status:', response.status);
-        console.log('Response Headers:', JSON.stringify(Object.fromEntries(response.headers), null, 2));
+        console.log('V2 Response Status:', response.status);
         
+        if (response.status === 404 || response.status === 400) {
+            // V2 endpoint not available or failed, try V1
+            console.log('V2 failed, trying V1 endpoint...');
+            
+            const tokenUrl = 'https://login.eveonline.com/oauth/token';
+            const authHeader = 'Basic ' + Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
+            const body = new URLSearchParams({
+                grant_type: 'authorization_code',
+                code: code,
+                redirect_uri: 'http://localhost:8085/callback'
+            });
+            
+            response = await fetch(tokenUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Authorization': authHeader,
+                    'User-Agent': 'EVE-Market-Comparison/1.0'
+                },
+                body: body.toString()
+            });
+        }
+        
+        console.log('Final Response Status:', response.status);
         const responseText = await response.text();
         console.log('Raw response:', responseText);
         
@@ -78,12 +109,16 @@ app.post('/api/token', async (req, res) => {
         }
         
         console.log('Token exchange successful');
-        console.log('Full response from EVE:', JSON.stringify(data, null, 2));
+        console.log('Token type:', data.token_type);
+        console.log('Token format check - starts with eyJ?:', data.access_token?.startsWith('eyJ'));
         
-        // Verify this is an EVE token
+        // If we still get opaque tokens, warn about it
         if (data.access_token && !data.access_token.startsWith('eyJ')) {
-            console.error('WARNING: Token does not appear to be a JWT!');
-            console.error('Token starts with:', data.access_token.substring(0, 10));
+            console.warn('WARNING: Received opaque token instead of JWT!');
+            console.warn('This is a known issue with EVE OAuth. ESI may not accept this token.');
+            
+            // Add a flag to the response
+            data._tokenFormatWarning = 'Token is in opaque format, not JWT. ESI authentication may fail.';
         }
         
         res.json(data);

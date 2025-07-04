@@ -4,7 +4,7 @@
   "description": "A tool for comparing EVE Online markets, including private structures requiring authentication.",
   "main": "src/index.html",
   "scripts": {
-    "start": "live-server src",
+    "start": "node src/token-exchange.js",
     "build": "echo 'Build step not defined'"
   },
   "dependencies": {

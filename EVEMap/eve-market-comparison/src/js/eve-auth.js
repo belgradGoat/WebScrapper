@@ -1,6 +1,9 @@
 // This file handles the authentication process with the EVE Online SSO.
 // It includes functions for redirecting users to the login page, receiving the authorization code, and exchanging it for access tokens.
 
+// This file handles the authentication process with the EVE Online SSO.
+// It includes functions for redirecting users to the login page, receiving the authorization code, and exchanging it for access tokens.
+
 const clientId = 'b1ee25b8600a462bbe94c23defd64eeb'; // Replace with your EVE Online application client ID
 const redirectUri = 'http://localhost:8085/callback'; // Replace with your redirect URI
 
@@ -13,7 +16,14 @@ const scope = [
 ].join(' ');
 
 function redirectToLogin() {
-    const authUrl = `https://login.eveonline.com/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}`;
+    // Generate state for security
+    const state = Math.random().toString(36).substring(7);
+    sessionStorage.setItem('oauth_state', state);
+    
+    // Try v2 OAuth endpoint
+    const authUrl = `https://login.eveonline.com/v2/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}&state=${state}`;
+    
+    console.log('Redirecting to v2 auth URL:', authUrl);
     window.location.href = authUrl;
 }
 

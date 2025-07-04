@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EVE SSO Callback</title>
     <link rel="stylesheet" href="css/market-comparison.css">
+    <script src="js/eve-auth.js" defer></script>
 </head>
 <body>
     <div class="callback-container" style="text-align: center; margin-top: 50px;">
@@ -18,7 +19,6 @@
             <p>Current URL: <code id="currentUrl"></code></p>
             <p>Authorization Code: <code id="authCode"></code></p>
             <button id="copyBtn" style="margin-top: 10px;">Copy Code</button>
-            <button id="continueBtn" style="margin-top: 10px;">Continue with Login</button>
         </div>
         
         <script>
@@ -34,13 +34,8 @@
                 alert('Code copied!');
             });
             
-            // Continue button
-            document.getElementById('continueBtn').addEventListener('click', () => {
-                // Load eve-auth.js and continue
-                const script = document.createElement('script');
-                script.src = 'js/eve-auth.js';
-                document.body.appendChild(script);
-            });
+            // The authentication will happen automatically when eve-auth.js loads
+            // No need for a continue button
         </script>
     </div>
 </body>
