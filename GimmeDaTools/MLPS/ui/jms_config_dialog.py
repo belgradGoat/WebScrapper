@@ -7,9 +7,14 @@ from tkinter import ttk, messagebox
 # Check if JMS modules are available
 try:
     from services.jms.jms_auth import REQUESTS_AVAILABLE
-    JMS_AVAILABLE = True  # Module is available even if requests is not
+    # Force REQUESTS_AVAILABLE to be True if requests is available
+    import sys
+    if 'requests' in sys.modules:
+        REQUESTS_AVAILABLE = True
+    JMS_AVAILABLE = True
 except ImportError:
     JMS_AVAILABLE = False
+    REQUESTS_AVAILABLE = False
     
 import logging
 logger = logging.getLogger(__name__)
