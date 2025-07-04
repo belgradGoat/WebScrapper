@@ -1,11 +1,8 @@
 // This file handles the authentication process with the EVE Online SSO.
 // It includes functions for redirecting users to the login page, receiving the authorization code, and exchanging it for access tokens.
 
-// This file handles the authentication process with the EVE Online SSO.
-// It includes functions for redirecting users to the login page, receiving the authorization code, and exchanging it for access tokens.
-
-const clientId = 'b1ee25b8600a462bbe94c23defd64eeb'; // Replace with your EVE Online application client ID
-const redirectUri = 'http://localhost:8085/callback'; // Replace with your redirect URI
+const clientId = 'b1ee25b8600a462bbe94c23defd64eeb';
+const redirectUri = 'http://localhost:8085/callback';
 
 // Updated with correct EVE Online ESI scopes for market comparison
 const scope = [
@@ -20,10 +17,10 @@ function redirectToLogin() {
     const state = Math.random().toString(36).substring(7);
     sessionStorage.setItem('oauth_state', state);
     
-    // Try v2 OAuth endpoint
+    // Use v2 OAuth endpoint
     const authUrl = `https://login.eveonline.com/v2/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}&state=${state}`;
     
-    console.log('Redirecting to v2 auth URL:', authUrl);
+    console.log('Redirecting to EVE Online v2 auth URL:', authUrl);
     window.location.href = authUrl;
 }
 
@@ -57,28 +54,47 @@ async function authenticate() {
             console.log('Full token data received:', tokenData);
             console.log('Token data keys:', Object.keys(tokenData));
             
-            // Store the access token and refresh token
-            localStorage.setItem('eveAccessToken', tokenData.access_token);
-            localStorage.setItem('eveRefreshToken', tokenData.refresh_token);
-            localStorage.setItem('eveTokenExpiry', Date.now() + (tokenData.expires_in * 1000));
-            
-            // Redirect to the main application page
-            window.location.href = '/index.html';
+            if (tokenData.access_token) {
+                localStorage.setItem('eveAccessToken', tokenData.access_token);
+                console.log('Token stored successfully');
+                
+                // Redirect to main page
+                window.location.href = '/';
+            } else {
+                throw new Error('No access token received');
+            }
         } catch (error) {
             console.error('Authentication error:', error);
-            alert('Authentication failed. Please try again.');
+            alert('Authentication failed: ' + error.message);
         }
     } else {
         console.log('No authorization code found in URL');
     }
 }
 
-// Update the authenticateUser function to match what's called from index.html
-function authenticateUser() {
-    redirectToLogin();
-}
-
-// Call authenticate on page load only if we're on the callback page
-if (window.location.pathname.includes('callback')) {
-    document.addEventListener('DOMContentLoaded', authenticate);
-}
+// Initialize login button and check authentication status
+document.addEventListener('DOMContentLoaded', () => {
+    const loginBtn = document.getElementById('loginBtn');
+    if (loginBtn) {
+        // Check if already logged in
+        const token = localStorage.getItem('eveAccessToken');
+        if (token) {
+            loginBtn.textContent = 'Logged In ✓';
+            loginBtn.style.backgroundColor = '#4CAF50';
+            loginBtn.onclick = () => {
+                if (confirm('Do you want to logout?')) {
+                    localStorage.removeItem('eveAccessToken');
+                    window.location.reload();
+                }
+            };
+        } else {
+            loginBtn.textContent = 'Login with EVE Online';
+            loginBtn.onclick = redirectToLogin;
+        }
+    }
+    
+    // Auto-authenticate if we're on callback page
+    if (window.location.pathname.includes('callback')) {
+        authenticate();
+    }
+});

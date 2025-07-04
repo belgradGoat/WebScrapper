@@ -19,27 +19,29 @@ async function testDirectAuth() {
     
     console.log('Testing with code:', code.substring(0, 10) + '...');
     
-    // Try both v1 and v2 token endpoints
-    console.log('\n--- Testing V1 Token Endpoint ---');
-    await testTokenEndpoint('https://login.eveonline.com/oauth/token', code);
-    
+    // Test only the v2 token endpoint
     console.log('\n--- Testing V2 Token Endpoint ---');
     await testTokenEndpoint('https://login.eveonline.com/v2/oauth/token', code);
 }
 
 async function testTokenEndpoint(tokenUrl, code) {
     try {
-        const authHeader = 'Basic ' + Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString('base64');
-        
+        const body = new URLSearchParams({
+            grant_type: 'authorization_code',
+            code: code,
+            client_id: CLIENT_ID,
+            client_secret: CLIENT_SECRET,
+            redirect_uri: 'http://localhost:8085/callback'
+        });
+
         const response = await fetch(tokenUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
-                'Authorization': authHeader,
                 'Host': 'login.eveonline.com',
-                'User-Agent': 'EVE-Market-Test/1.0'
+                'User-Agent': 'EVE-Market-Test/2.0'
             },
-            body: `grant_type=authorization_code&code=${code}&redirect_uri=http://localhost:8085/callback`
+            body: body.toString()
         });
         
         console.log('Response status:', response.status);

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EVE Market Comparison Tool</title>
     <link rel="stylesheet" href="css/market-comparison.css">
+    <!-- Load scripts with defer to ensure they execute after HTML is parsed -->
     <script src="js/eve-auth.js" defer></script>
     <script src="js/eve-market-api.js" defer></script>
     <script src="js/market-comparison.js" defer></script>
@@ -20,40 +21,47 @@
             <section id="marketComparison">
                 <h2>Compare Markets</h2>
                 <div class="input-group">
-                    <input type="text" id="publicMarketInput" placeholder="Public Market ID (e.g., 10000002 for The Forge)">
+                    <input type="text" id="publicMarketInput" value="10000002" placeholder="Public Market ID (e.g., 10000002 for The Forge)">
                     <input type="text" id="privateMarketInput" placeholder="Private Structure ID (e.g., 1035466617946)">
                     <button id="compareBtn">Compare</button>
                 </div>
+                <!-- Filter panel will be inserted here by JavaScript -->
                 <div id="comparisonResults">
                     <!-- Comparison results will be displayed here -->
+                    <div class="initial-message">
+                        <p>Enter market IDs above and configure filters to compare markets.</p>
+                        <p>You must be logged in to access private structure markets.</p>
+                    </div>
                 </div>
             </section>
         </main>
         <footer>
-            <p>&copy; 2023 EVE Market Comparison Tool</p>
+            <p>&copy; 2023-2025 EVE Market Comparison Tool</p>
+            <p class="version">Version 2.0 - Advanced Filtering</p>
         </footer>
     </div>
     <script>
         // Initialize the application
         document.addEventListener('DOMContentLoaded', () => {
-            // Add event listeners and initialize UI components
-            const loginBtn = document.getElementById('loginBtn');
+            // Add event listeners for the compare button
             const compareBtn = document.getElementById('compareBtn');
-
-            loginBtn.addEventListener('click', () => {
-                // Trigger login process
-                authenticateUser();
-            });
-
-            compareBtn.addEventListener('click', () => {
-                // Fetch and compare market data
-                const publicMarketId = document.getElementById('publicMarketInput').value;
-                const privateMarketId = document.getElementById('privateMarketInput').value;
-                compareMarkets(publicMarketId, privateMarketId);
-            });
+            if (compareBtn) {
+                compareBtn.addEventListener('click', () => {
+                    // Fetch and compare market data
+                    const publicMarketId = document.getElementById('publicMarketInput').value;
+                    const privateMarketId = document.getElementById('privateMarketInput').value;
+                    compareMarkets(publicMarketId, privateMarketId);
+                });
+            }
+            
+            // Login button is handled in market-ui.js
+            
+            // Set default values
+            const publicInput = document.getElementById('publicMarketInput');
+            if (publicInput && !publicInput.value) {
+                publicInput.value = '10000002'; // The Forge
+            }
         });
-        
-
     </script>
 </body>
 </html>
