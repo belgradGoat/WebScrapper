@@ -1175,18 +1175,20 @@ class JobCreationDialog:
         
         # Check each machine
         for machine_id, machine in machines.items():
-            # Check tool availability if we have tool requirements
-            if required_tools:
-                machine_obj = self.machine_service.get_machine(machine_id)
-                if not machine_obj:
-                    continue
+            # Check tool availability if we have tool requirements and analysis data
+            if required_tools and self.analysis_data and 'analysis' in self.analysis_data:
+                analysis_result = self.analysis_data['analysis']
                 
-                # Check if machine has all required tools
-                available_tools = set(machine_obj.tool_data.keys()) if machine_obj.tool_data else set()
-                missing_tools = set(required_tools) - available_tools
+                # Find this machine in the analysis results
+                machine_compatibility = None
+                for machine_analysis in analysis_result.machine_analysis:
+                    if machine_analysis.machine_id == machine_id:
+                        machine_compatibility = machine_analysis
+                        break
                 
-                if missing_tools:
-                    continue  # Skip machines without required tools
+                # Skip machines that weren't analyzed or have missing tools
+                if not machine_compatibility or machine_compatibility.missing_tools:
+                    continue  # Skip machines without all required tools
             
             # Get all parts scheduled on this machine
             all_parts = self.scheduler_service.get_all_parts()
