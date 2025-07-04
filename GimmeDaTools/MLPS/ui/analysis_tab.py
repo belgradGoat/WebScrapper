@@ -722,9 +722,9 @@ class AnalysisTab:
         if analysis.dimensions:
             dim = analysis.dimensions
             results.append("STOCK DIMENSIONS:")
-            results.append(f"Width:  {dim['width']:.2f} mm")
-            results.append(f"Height: {dim['height']:.2f} mm")
-            results.append(f"Depth:  {dim['depth']:.2f} mm")
+            results.append(f"Width:  {dim.width:.2f} mm")
+            results.append(f"Height: {dim.height:.2f} mm")
+            results.append(f"Depth:  {dim.depth:.2f} mm")
             results.append("")
         
         # Movement analysis
