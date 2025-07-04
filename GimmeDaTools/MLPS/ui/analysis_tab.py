@@ -914,7 +914,7 @@ class JobCreationDialog:
         # Create dialog window
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Create Job from File")
-        self.dialog.geometry("600x500")
+        self.dialog.geometry("700x650")
         self.dialog.resizable(True, True)
         
         # Make dialog modal
@@ -929,6 +929,12 @@ class JobCreationDialog:
         self.start_date_var = tk.StringVar(value=datetime.now().strftime("%Y-%m-%d"))
         self.start_hour_var = tk.IntVar(value=8)
         self.start_minute_var = tk.IntVar(value=0)
+        
+        # Store widget references for disabling/enabling
+        self.machine_combo = None
+        self.start_date_entry = None
+        self.start_hour_spinbox = None
+        self.start_minute_spinbox = None
         
         # JMS integration flag - default to True if JMS service is available
         self.create_jms_order_var = tk.BooleanVar(value=bool(self.jms_service))
@@ -985,25 +991,25 @@ class JobCreationDialog:
         
         # Machine selection
         ttk.Label(job_grid, text="Initial Machine:").grid(row=0, column=2, sticky=tk.W, padx=5, pady=2)
-        machine_combo = ttk.Combobox(job_grid, textvariable=self.machine_id_var, width=20)
-        machine_combo.grid(row=0, column=3, sticky=tk.W, padx=5, pady=2)
+        self.machine_combo = ttk.Combobox(job_grid, textvariable=self.machine_id_var, width=20)
+        self.machine_combo.grid(row=0, column=3, sticky=tk.W, padx=5, pady=2)
         
         # Populate machine options
         machines = self.machine_service.get_all_machines()
         if machines:
-            machine_options = [(m.machine_id, f"{m.name} ({m.machine_id})") for m in machines.values()]
-            machine_combo['values'] = [m[1] for m in machine_options]
+            self.machine_options = [(m.machine_id, f"{m.name} ({m.machine_id})") for m in machines.values()]
+            self.machine_combo['values'] = [m[1] for m in self.machine_options]
             # Set first machine as default
-            if machine_options:
-                machine_combo.current(0)
-                self.machine_id_var.set(machine_options[0][0])
+            if self.machine_options:
+                self.machine_combo.current(0)
+                self.machine_id_var.set(self.machine_options[0][0])
             
             def on_machine_select(event):
-                selected_index = machine_combo.current()
+                selected_index = self.machine_combo.current()
                 if selected_index >= 0:
-                    self.machine_id_var.set(machine_options[selected_index][0])
+                    self.machine_id_var.set(self.machine_options[selected_index][0])
             
-            machine_combo.bind('<<ComboboxSelected>>', on_machine_select)
+            self.machine_combo.bind('<<ComboboxSelected>>', on_machine_select)
         
         # Total parts
         ttk.Label(job_grid, text="Number of Parts:").grid(row=1, column=0, sticky=tk.W, padx=5, pady=2)
@@ -1015,16 +1021,19 @@ class JobCreationDialog:
         
         # Start date
         ttk.Label(job_grid, text="Start Date:").grid(row=2, column=0, sticky=tk.W, padx=5, pady=2)
-        ttk.Entry(job_grid, textvariable=self.start_date_var, width=15).grid(row=2, column=1, sticky=tk.W, padx=5, pady=2)
+        self.start_date_entry = ttk.Entry(job_grid, textvariable=self.start_date_var, width=15)
+        self.start_date_entry.grid(row=2, column=1, sticky=tk.W, padx=5, pady=2)
         
         # Start time
         ttk.Label(job_grid, text="Start Time:").grid(row=2, column=2, sticky=tk.W, padx=5, pady=2)
         time_frame = ttk.Frame(job_grid)
         time_frame.grid(row=2, column=3, sticky=tk.W, padx=5, pady=2)
         
-        ttk.Spinbox(time_frame, from_=0, to=23, textvariable=self.start_hour_var, width=5).pack(side=tk.LEFT)
+        self.start_hour_spinbox = ttk.Spinbox(time_frame, from_=0, to=23, textvariable=self.start_hour_var, width=5)
+        self.start_hour_spinbox.pack(side=tk.LEFT)
         ttk.Label(time_frame, text=":").pack(side=tk.LEFT)
-        ttk.Spinbox(time_frame, from_=0, to=59, textvariable=self.start_minute_var, width=5).pack(side=tk.LEFT)
+        self.start_minute_spinbox = ttk.Spinbox(time_frame, from_=0, to=59, textvariable=self.start_minute_var, width=5)
+        self.start_minute_spinbox.pack(side=tk.LEFT)
         
         # Total time calculation
         self.total_time_label = ttk.Label(job_grid, text="")
@@ -1106,15 +1115,36 @@ class JobCreationDialog:
         """Handle find next slot checkbox toggle (mutually exclusive)"""
         if self.find_next_slot_var.get():
             self.optimize_schedule_var.set(False)
+            # Disable manual machine and date selection
+            self._set_manual_controls_state(tk.DISABLED)
+        else:
+            # Re-enable manual controls
+            self._set_manual_controls_state(tk.NORMAL)
     
     def _on_optimize_toggle(self):
         """Handle optimize schedule checkbox toggle (mutually exclusive)"""
         if self.optimize_schedule_var.get():
             self.find_next_slot_var.set(False)
+            # Disable manual machine and date selection
+            self._set_manual_controls_state(tk.DISABLED)
+        else:
+            # Re-enable manual controls
+            self._set_manual_controls_state(tk.NORMAL)
+    
+    def _set_manual_controls_state(self, state):
+        """Enable or disable manual scheduling controls"""
+        if self.machine_combo:
+            self.machine_combo.configure(state=state)
+        if self.start_date_entry:
+            self.start_date_entry.configure(state=state)
+        if self.start_hour_spinbox:
+            self.start_hour_spinbox.configure(state=state)
+        if self.start_minute_spinbox:
+            self.start_minute_spinbox.configure(state=state)
     
     def _find_next_available_slot(self, job_name, total_parts, cycle_time):
         """
-        Find the next available time slot for a job
+        Find the next available time slot for a job with tool availability checking
         
         Args:
             job_name: Name of the job (for tool analysis if NC data available)
@@ -1128,17 +1158,36 @@ class JobCreationDialog:
         if not machines:
             return None, None, None, None, None
         
-        # Calculate job duration in milliseconds
-        job_duration_ms = int(total_parts * cycle_time * 60 * 1000)
+        # Get required tools from analysis data if available
+        required_tools = []
+        if self.analysis_data and 'analysis' in self.analysis_data:
+            analysis = self.analysis_data['analysis']
+            required_tools = analysis.tool_numbers
+        
+        # Calculate job duration in milliseconds (preferably whole order, minimum one part)
+        single_part_duration_ms = int(cycle_time * 60 * 1000)
+        full_order_duration_ms = int(total_parts * cycle_time * 60 * 1000)
         
         # Start search from current time
         search_start = int(datetime.now().timestamp() * 1000)
         
-        best_slot = None
-        best_start_time = float('inf')
+        best_slots = []  # Store all valid slots with scoring
         
         # Check each machine
         for machine_id, machine in machines.items():
+            # Check tool availability if we have tool requirements
+            if required_tools:
+                machine_obj = self.machine_service.get_machine(machine_id)
+                if not machine_obj:
+                    continue
+                
+                # Check if machine has all required tools
+                available_tools = set(machine_obj.tool_data.keys()) if machine_obj.tool_data else set()
+                missing_tools = set(required_tools) - available_tools
+                
+                if missing_tools:
+                    continue  # Skip machines without required tools
+            
             # Get all parts scheduled on this machine
             all_parts = self.scheduler_service.get_all_parts()
             machine_parts = [p for p in all_parts.values() if p.machine_id == machine_id]
@@ -1150,12 +1199,25 @@ class JobCreationDialog:
             current_time = search_start
             
             for part in machine_parts:
-                # Check if there's a gap before this part
-                if part.start_time - current_time >= job_duration_ms:
-                    # Found a slot
-                    if current_time < best_start_time:
-                        best_start_time = current_time
-                        best_slot = (machine_id, current_time)
+                # Check if there's a gap for full order first
+                if part.start_time - current_time >= full_order_duration_ms:
+                    # Found slot for full order - high priority
+                    best_slots.append({
+                        'machine_id': machine_id,
+                        'start_time': current_time,
+                        'duration_fit': 'full_order',
+                        'priority': 1
+                    })
+                    break
+                # Check if there's a gap for at least one part
+                elif part.start_time - current_time >= single_part_duration_ms:
+                    # Found slot for at least one part - lower priority
+                    best_slots.append({
+                        'machine_id': machine_id,
+                        'start_time': current_time,
+                        'duration_fit': 'single_part',
+                        'priority': 2
+                    })
                     break
                 
                 # Move past this part
@@ -1164,14 +1226,23 @@ class JobCreationDialog:
                     part_duration = int(job.cycle_time * 60 * 1000)
                     current_time = max(current_time, part.start_time + part_duration)
             else:
-                # No conflicting parts, or we can schedule after the last part
-                if current_time < best_start_time:
-                    best_start_time = current_time
-                    best_slot = (machine_id, current_time)
+                # No conflicting parts, can fit full order after last part
+                best_slots.append({
+                    'machine_id': machine_id,
+                    'start_time': current_time,
+                    'duration_fit': 'full_order',
+                    'priority': 1
+                })
         
-        if best_slot:
-            machine_id, start_timestamp = best_slot
+        if best_slots:
+            # Sort by priority (full order first), then by earliest time
+            best_slots.sort(key=lambda x: (x['priority'], x['start_time']))
+            best_slot = best_slots[0]
+            
+            machine_id = best_slot['machine_id']
+            start_timestamp = best_slot['start_time']
             start_datetime = datetime.fromtimestamp(start_timestamp / 1000)
+            
             return (
                 machine_id,
                 start_timestamp,
@@ -1290,13 +1361,32 @@ class JobCreationDialog:
             if self.find_next_slot_var.get():
                 if machine_id != original_machine:
                     message += f"🔍 Intelligent Scheduling: Moved from {original_machine} to {machine_id}\n"
+                    # Add tool availability info if we have analysis data
+                    if self.analysis_data and 'analysis' in self.analysis_data:
+                        analysis = self.analysis_data['analysis']
+                        message += f"🔧 Machine has all {len(analysis.tool_numbers)} required tools\n"
+                
                 scheduled_time = f"{start_date} {start_hour:02d}:{start_minute:02d}"
                 original_time = f"{original_date} {original_hour:02d}:{original_minute:02d}"
                 if scheduled_time != original_time:
                     message += f"🔍 Optimized Time: {original_time} → {scheduled_time}\n"
+                    
+                # Add duration fit information
+                duration_msg = f"📅 Scheduled for optimal fit: "
+                if total_parts > 1:
+                    duration_msg += f"Full order ({total_parts} parts) can complete uninterrupted"
+                else:
+                    duration_msg += "Single part fits in available slot"
+                message += duration_msg + "\n"
+                
             elif self.optimize_schedule_var.get():
                 if machine_id != original_machine:
                     message += f"⚡ Production Optimization: Moved from {original_machine} to {machine_id}\n"
+                    # Add tool availability info if we have analysis data
+                    if self.analysis_data and 'analysis' in self.analysis_data:
+                        analysis = self.analysis_data['analysis']
+                        message += f"🔧 Machine has all {len(analysis.tool_numbers)} required tools\n"
+                
                 scheduled_time = f"{start_date} {start_hour:02d}:{start_minute:02d}"
                 original_time = f"{original_date} {original_hour:02d}:{original_minute:02d}"
                 if scheduled_time != original_time:
