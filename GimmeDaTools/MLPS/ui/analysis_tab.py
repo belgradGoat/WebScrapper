@@ -233,7 +233,8 @@ class AnalysisTab:
         ttk.Button(button_frame, text="🔄 Refresh All Machines", command=self.refresh_all_machines).pack(side=tk.LEFT, padx=(0,10))
         ttk.Button(button_frame, text="🔍 Check Machine Compatibility", command=self.analyze_nc_file).pack(side=tk.LEFT, padx=(0,10))
         ttk.Button(button_frame, text="⏱️ Calculate Cycle Time", command=self.calculate_cycle_time).pack(side=tk.LEFT, padx=(0,10))
-        ttk.Button(button_frame, text="🗂️ Create Job from File", command=self.create_job_from_file).pack(side=tk.LEFT)
+        ttk.Button(button_frame, text="📊 Calculate Material Removal Rates", command=self.calculate_material_removal_rates).pack(side=tk.LEFT, padx=(0,10))
+        ttk.Button(button_frame, text="�️ Create Job from File", command=self.create_job_from_file).pack(side=tk.LEFT)
         
         # Status/Progress
         self.status_var = tk.StringVar(value="Ready")
@@ -831,6 +832,225 @@ class AnalysisTab:
         """Save cycle time report to file"""
         filename = filedialog.asksaveasfilename(
             title="Save Cycle Time Report",
+            defaultextension=".txt",
+            filetypes=[
+                ("Text files", "*.txt"),
+                ("All files", "*.*")
+            ]
+        )
+        if filename:
+            try:
+                with open(filename, 'w', encoding='utf-8') as f:
+                    f.write("\n".join(results))
+                messagebox.showinfo("Success", f"Report saved to {filename}")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to save report: {str(e)}")
+
+    def calculate_material_removal_rates(self):
+        """Calculate material removal rates for the current NC file"""
+        nc_file = self.file_path_var.get()
+        if not nc_file or not os.path.exists(nc_file):
+            messagebox.showerror("Error", "Please select a valid NC file first")
+            return
+        
+        self.update_status("Calculating material removal rates...")
+        self.progress.start()
+        
+        # Use a separate thread to avoid blocking the UI
+        self._start_background_task(lambda: self._calculate_mrr_task(nc_file))
+    
+    def _calculate_mrr_task(self, nc_file):
+        """Background task for calculating material removal rates"""
+        try:
+            from services.material_removal_calculator import MaterialRemovalCalculator
+            
+            calculator = MaterialRemovalCalculator()
+            
+            # Calculate MRR for each tool
+            mrr_results = calculator.analyze_nc_file_mrr(nc_file)
+            
+            # Combine with file info
+            combined_data = {
+                'mrr_results': mrr_results,
+                'file_name': os.path.basename(nc_file)
+            }
+            
+            # Update UI in main thread
+            self.frame.after(0, lambda: self._mrr_complete(combined_data))
+            
+        except Exception as e:
+            # Update UI in main thread
+            self.frame.after(0, lambda: self._mrr_error(str(e)))
+
+    def _mrr_complete(self, data):
+        """Called when MRR calculation is complete"""
+        self.progress.stop()
+        self.update_status("Material removal rates calculated")
+        
+        # Show results in popup
+        self.show_mrr_results(data)
+
+    def _mrr_error(self, error_msg):
+        """Called when MRR calculation fails"""
+        self.progress.stop()
+        self.update_status("MRR calculation failed")
+        messagebox.showerror("Calculation Error", f"Failed to calculate material removal rates:\n{error_msg}")
+
+    def show_mrr_results(self, data):
+        """Show material removal rate results in a popup window"""
+        mrr_results = data['mrr_results']
+        file_name = data['file_name']
+        
+        if not mrr_results:
+            messagebox.showinfo("No Results", "No tools with material removal data found in the NC file.")
+            return
+        
+        # Create popup window
+        popup = tk.Toplevel(self.frame)
+        popup.title("Material Removal Rate Analysis Results")
+        popup.geometry("900x700")
+        popup.resizable(True, True)
+        
+        # Main frame with scrollbar
+        main_frame = ttk.Frame(popup)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        # Create scrollable text widget
+        text_widget = scrolledtext.ScrolledText(main_frame, wrap=tk.WORD, font=('Courier', 10))
+        text_widget.pack(fill=tk.BOTH, expand=True)
+        
+        # Build results text
+        results = []
+        results.append("=" * 80)
+        results.append("MATERIAL REMOVAL RATE ANALYSIS")
+        results.append("=" * 80)
+        results.append(f"File: {file_name}")
+        results.append(f"Tools Analyzed: {len(mrr_results)}")
+        results.append("")
+        
+        # Calculate summary statistics
+        total_material_removed = sum(result.total_material_removed for result in mrr_results.values())
+        tools_with_data = [r for r in mrr_results.values() if r.total_material_removed > 0]
+        
+        if tools_with_data:
+            avg_mrr = sum(r.material_removal_rate for r in tools_with_data) / len(tools_with_data)
+            max_mrr_tool = max(tools_with_data, key=lambda x: x.material_removal_rate)
+            min_mrr_tool = min(tools_with_data, key=lambda x: x.material_removal_rate)
+        else:
+            avg_mrr = 0
+            max_mrr_tool = None
+            min_mrr_tool = None
+        
+        # Tool analysis results
+        results.append("TOOL ANALYSIS RESULTS:")
+        results.append("-" * 80)
+        
+        for tool_num, result in sorted(mrr_results.items()):
+            results.append("")
+            results.append(f"Tool T{result.tool_number}")
+            
+            # Tool information
+            if result.tool_info:
+                tool_info = result.tool_info
+                results.append(f"  Type: {tool_info.tool_type_name or 'Unknown'} ({tool_info.tool_type or 'N/A'})")
+                if tool_info.diameter:
+                    results.append(f"  Diameter: {tool_info.diameter:.2f} mm")
+                if tool_info.tool_holder:
+                    results.append(f"  Tool Holder: {tool_info.tool_holder}")
+                if tool_info.flute_length:
+                    results.append(f"  Flute Length: {tool_info.flute_length:.1f} mm")
+                if tool_info.material_code:
+                    results.append(f"  Material: {tool_info.material_code}")
+                if tool_info.flute_count:
+                    results.append(f"  Flutes: {tool_info.flute_count}")
+            else:
+                results.append("  Type: Information not found in comments")
+            
+            results.append("")
+            results.append("  Machining Operations:")
+            
+            if result.total_cutting_distance > 0:
+                results.append(f"  • Total Cutting Distance: {result.total_cutting_distance:.1f} mm")
+                results.append(f"  • Average Feed Rate: {result.average_feed_rate:.0f} mm/min")
+                results.append(f"  • Average Depth of Cut: {result.average_depth_of_cut:.2f} mm")
+                results.append(f"  • Average Width of Cut: {result.average_width_of_cut:.2f} mm")
+                results.append(f"  • Material Removal Rate: {result.material_removal_rate:.0f} mm³/min")
+                results.append(f"  • Cutting Time: {result.total_cutting_time:.1f} seconds")
+                results.append(f"  • Material Removed: {result.total_material_removed:.0f} mm³")
+                results.append(f"  • Number of Operations: {len(result.operations)}")
+                
+                # Show warnings if any
+                if result.warnings:
+                    results.append("  • Warnings:")
+                    for warning in result.warnings:
+                        results.append(f"    - {warning}")
+            else:
+                results.append("  • No cutting operations detected")
+        
+        # Summary section
+        results.append("")
+        results.append("SUMMARY:")
+        results.append("-" * 80)
+        results.append(f"• Total Material Removed: {total_material_removed:.0f} mm³")
+        
+        if tools_with_data:
+            results.append(f"• Average MRR across all tools: {avg_mrr:.0f} mm³/min")
+            results.append(f"• Most Efficient Tool: T{max_mrr_tool.tool_number} ({max_mrr_tool.material_removal_rate:.0f} mm³/min)")
+            results.append(f"• Least Efficient Tool: T{min_mrr_tool.tool_number} ({min_mrr_tool.material_removal_rate:.0f} mm³/min)")
+            
+            # Categorize tools
+            high_mrr_tools = [r for r in tools_with_data if r.material_removal_rate > 5000]
+            low_mrr_tools = [r for r in tools_with_data if r.material_removal_rate < 1000]
+            
+            if high_mrr_tools:
+                tool_list = ", ".join([f"T{t.tool_number}" for t in high_mrr_tools])
+                results.append(f"• High MRR Tools (>5000 mm³/min): {tool_list}")
+            
+            if low_mrr_tools:
+                tool_list = ", ".join([f"T{t.tool_number}" for t in low_mrr_tools])
+                results.append(f"• Low MRR Tools (<1000 mm³/min): {tool_list}")
+        else:
+            results.append("• No tools with cutting operations found")
+        
+        # Tool information summary
+        tools_with_info = sum(1 for r in mrr_results.values() if r.tool_info)
+        tools_with_diameter = sum(1 for r in mrr_results.values() if r.tool_info and r.tool_info.diameter)
+        
+        results.append("")
+        results.append("TOOL INFORMATION COVERAGE:")
+        results.append("-" * 40)
+        results.append(f"• Tools with comment information: {tools_with_info}/{len(mrr_results)}")
+        results.append(f"• Tools with diameter data: {tools_with_diameter}/{len(mrr_results)}")
+        
+        if tools_with_diameter < len(mrr_results):
+            results.append("• Consider adding tool comments for more accurate calculations")
+        
+        # Insert results into text widget
+        text_widget.insert(tk.END, "\n".join(results))
+        text_widget.config(state=tk.DISABLED)  # Make read-only
+        
+        # Add buttons
+        button_frame = ttk.Frame(popup)
+        button_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
+        
+        ttk.Button(button_frame, text="Close", command=popup.destroy).pack(side=tk.RIGHT)
+        ttk.Button(button_frame, text="Save Report",
+                  command=lambda: self.save_mrr_report(results)).pack(side=tk.RIGHT, padx=(0, 10))
+        
+        # Center the popup
+        popup.transient(self.frame)
+        popup.grab_set()
+        
+        # Calculate position to center the popup
+        popup.update_idletasks()
+        x = (popup.winfo_screenwidth() // 2) - (popup.winfo_width() // 2)
+        y = (popup.winfo_screenheight() // 2) - (popup.winfo_height() // 2)
+        popup.geometry(f"+{x}+{y}")
+
+    def save_mrr_report(self, results):
+        """Save material removal rate report to file"""
+        filename = filedialog.asksaveasfilename(
+            title="Save Material Removal Rate Report",
             defaultextension=".txt",
             filetypes=[
                 ("Text files", "*.txt"),
