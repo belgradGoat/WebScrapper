@@ -233,7 +233,7 @@ class AnalysisTab:
         ttk.Button(button_frame, text="🔄 Refresh All Machines", command=self.refresh_all_machines).pack(side=tk.LEFT, padx=(0,10))
         ttk.Button(button_frame, text="🔍 Check Machine Compatibility", command=self.analyze_nc_file).pack(side=tk.LEFT, padx=(0,10))
         ttk.Button(button_frame, text="⏱️ Calculate Cycle Time", command=self.calculate_cycle_time).pack(side=tk.LEFT, padx=(0,10))
-        ttk.Button(button_frame, text="📊 Calculate Material Removal Rates", command=self.calculate_material_removal_rates).pack(side=tk.LEFT, padx=(0,10))
+        ttk.Button(button_frame, text="📊 Advanced NC Analysis", command=self.calculate_material_removal_rates).pack(side=tk.LEFT, padx=(0,10))
         ttk.Button(button_frame, text="�️ Create Job from File", command=self.create_job_from_file).pack(side=tk.LEFT)
         
         # Status/Progress
@@ -679,6 +679,9 @@ class AnalysisTab:
         
         self.update_status(f"Cycle time calculated: {cycle_data['total_time_formatted']}")
         
+        # Publish event for results tab logging
+        event_system.publish("cycle_time_calculated", data)
+        
         # Show results in popup
         self.show_cycle_time_results(data)
     
@@ -886,6 +889,9 @@ class AnalysisTab:
         """Called when MRR calculation is complete"""
         self.progress.stop()
         self.update_status("Material removal rates calculated")
+        
+        # Publish event for results tab logging
+        event_system.publish("mrr_calculated", data)
         
         # Show results in popup
         self.show_mrr_results(data)
