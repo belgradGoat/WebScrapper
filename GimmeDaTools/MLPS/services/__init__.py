@@ -8,7 +8,7 @@ from .machine_service import MachineService
 from .scheduler_service import SchedulerService
 from .jms_service import JMSService
 from .tool_parser import ToolCommentParser, ToolInfo
-from .material_removal_calculator import MaterialRemovalCalculator, ToolMRRResult, CuttingOperation
+from .material_removal_calculator import MaterialRemovalCalculator, ToolMRRResult, CuttingMove, StockBoundary
 
 __all__ = [
     'AnalysisService',
@@ -19,5 +19,6 @@ __all__ = [
     'ToolInfo',
     'MaterialRemovalCalculator',
     'ToolMRRResult',
-    'CuttingOperation'
+    'CuttingMove',
+    'StockBoundary'
 ]
