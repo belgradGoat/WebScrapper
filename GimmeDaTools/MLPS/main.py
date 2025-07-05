@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-NC Tool Analyzer - Main Entry Point
+MLPS - Manufacturing Line Production System
 A complete tool analysis system with automatic machine communication
 """
 

@@ -231,7 +231,7 @@ class AnalysisTab:
         button_frame.pack(fill=tk.X, pady=10)
         
         ttk.Button(button_frame, text="🔄 Refresh All Machines", command=self.refresh_all_machines).pack(side=tk.LEFT, padx=(0,10))
-        ttk.Button(button_frame, text="🔍 Analyze NC File", command=self.analyze_nc_file).pack(side=tk.LEFT, padx=(0,10))
+        ttk.Button(button_frame, text="🔍 Check Machine Compatibility", command=self.analyze_nc_file).pack(side=tk.LEFT, padx=(0,10))
         ttk.Button(button_frame, text="⏱️ Calculate Cycle Time", command=self.calculate_cycle_time).pack(side=tk.LEFT, padx=(0,10))
         ttk.Button(button_frame, text="🗂️ Create Job from File", command=self.create_job_from_file).pack(side=tk.LEFT)
         
