@@ -1003,16 +1003,18 @@ class AnalysisTab:
         results.append("")
         results.append("SUMMARY:")
         results.append("-" * 80)
-        results.append(f"• Total Material Removed: {total_material_removed:.0f} mm³")
+        results.append(f"• Total Material Removed: {total_material_removed_mm3:.0f} mm³")
+        results.append(f"• Total Material Removed: {total_material_removed_m3:.9f} m³")
         
         if tools_with_data:
-            results.append(f"• Average MRR across all tools: {avg_mrr:.0f} mm³/min")
-            results.append(f"• Most Efficient Tool: T{max_mrr_tool.tool_number} ({max_mrr_tool.material_removal_rate:.0f} mm³/min)")
-            results.append(f"• Least Efficient Tool: T{min_mrr_tool.tool_number} ({min_mrr_tool.material_removal_rate:.0f} mm³/min)")
+            results.append(f"• Average MRR across all tools: {avg_mrr_mm3:.0f} mm³/min")
+            results.append(f"• Average MRR across all tools: {avg_mrr_m3:.6f} m³/min")
+            results.append(f"• Most Efficient Tool: T{max_mrr_tool.tool_number} ({max_mrr_tool.average_mrr_mm3_per_min:.0f} mm³/min)")
+            results.append(f"• Least Efficient Tool: T{min_mrr_tool.tool_number} ({min_mrr_tool.average_mrr_mm3_per_min:.0f} mm³/min)")
             
             # Categorize tools
-            high_mrr_tools = [r for r in tools_with_data if r.material_removal_rate > 5000]
-            low_mrr_tools = [r for r in tools_with_data if r.material_removal_rate < 1000]
+            high_mrr_tools = [r for r in tools_with_data if r.average_mrr_mm3_per_min > 5000]
+            low_mrr_tools = [r for r in tools_with_data if r.average_mrr_mm3_per_min < 1000]
             
             if high_mrr_tools:
                 tool_list = ", ".join([f"T{t.tool_number}" for t in high_mrr_tools])

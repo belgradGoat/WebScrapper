@@ -4122,3 +4122,404 @@ TypeError: Can't instantiate abstract class TabModuleInterface without an implem
 2025-07-03 08:57:04,608 - ui.jms_config_dialog - INFO - Testing JMS connection
 2025-07-03 08:57:04,608 - ui.jms_config_dialog - INFO - Connection test result: True
 2025-07-03 08:57:04,608 - ui.jms_config_dialog - INFO - Starting JMS polling
+2025-07-05 15:47:45,112 - main - INFO - Python version: 3.9.6 (default, Mar 12 2025, 20:22:46) 
+[Clang 17.0.0 (clang-1700.0.13.3)]
+2025-07-05 15:47:45,113 - main - INFO - Python executable: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/.venv/bin/python
+2025-07-05 15:47:45,113 - main - INFO - Python path: ['/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS', '/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python39.zip', '/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9', '/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/lib-dynload', '/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/.venv/lib/python3.9/site-packages']
+2025-07-05 15:47:45,113 - main - INFO - Found requests module spec at: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/.venv/lib/python3.9/site-packages/requests/__init__.py
+2025-07-05 15:47:45,313 - main - INFO - Successfully imported requests module from: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/.venv/lib/python3.9/site-packages/requests/__init__.py
+2025-07-05 15:47:45,313 - main - INFO - Requests version: 2.32.4
+2025-07-05 15:47:45,313 - main - INFO - Starting application
+2025-07-05 15:47:45,333 - main - INFO - Initializing application core
+2025-07-05 15:47:45,334 - module_system.config_manager - INFO - Loaded configuration from /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/config.json
+2025-07-05 15:47:45,334 - module_system.service_registry - INFO - Registering service: service_registry (ServiceRegistry)
+2025-07-05 15:47:45,334 - module_system.service_registry - INFO - Registering service: module_registry (ModuleRegistry)
+2025-07-05 15:47:45,334 - module_system.service_registry - INFO - Registering service: config_manager (ConfigManager)
+2025-07-05 15:47:45,334 - module_system.service_registry - INFO - Registering service: extension_registry (ExtensionRegistry)
+2025-07-05 15:47:45,334 - module_system.service_registry - INFO - Registering service: app_core (ApplicationCore)
+2025-07-05 15:47:45,334 - module_system.extension_registry - INFO - Registered extension point: app.startup
+2025-07-05 15:47:45,334 - module_system.extension_registry - INFO - Registered extension point: app.shutdown
+2025-07-05 15:47:45,334 - module_system.extension_registry - INFO - Registered extension point: ui.menu.file
+2025-07-05 15:47:45,334 - module_system.extension_registry - INFO - Registered extension point: ui.menu.tools
+2025-07-05 15:47:45,334 - module_system.extension_registry - INFO - Registered extension point: ui.menu.help
+2025-07-05 15:47:45,334 - module_system.extension_registry - INFO - Registered extension point: ui.toolbar
+2025-07-05 15:47:45,334 - module_system.extension_registry - INFO - Registered extension point: ui.statusbar
+2025-07-05 15:47:45,334 - main - INFO - Module path: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules
+2025-07-05 15:47:45,334 - main - INFO - Module path: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/modules
+2025-07-05 15:47:45,334 - application_core - INFO - Discovering modules...
+2025-07-05 15:47:45,334 - module_system.module_registry - INFO - Discovering modules in 2 paths
+2025-07-05 15:47:45,334 - module_system.module_registry - INFO - Scanning module path: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules
+2025-07-05 15:47:45,334 - module_system.module_registry - INFO - Discovering modules in /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules
+2025-07-05 15:47:45,334 - module_system.module_registry - INFO - Loading module from file: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules/tabs/machine_tab_module.py
+2025-07-05 15:47:45,334 - module_system.module_registry - DEBUG - Generated module name: dynamic_module_-3192275282208166043
+2025-07-05 15:47:45,334 - module_system.module_registry - DEBUG - Creating module spec from file location
+2025-07-05 15:47:45,334 - module_system.module_registry - DEBUG - Creating module from spec
+2025-07-05 15:47:45,334 - module_system.module_registry - DEBUG - Executing module
+2025-07-05 15:47:45,339 - module_system.module_registry - DEBUG - Searching for module classes
+2025-07-05 15:47:45,339 - module_system.module_registry - INFO - Found module class: MachineTabModule
+2025-07-05 15:47:45,339 - module_system.module_registry - DEBUG - Instantiating module class: MachineTabModule
+2025-07-05 15:47:45,339 - module_system.module_registry - INFO - Module instance created with name: machine_tab_module
+2025-07-05 15:47:45,339 - module_system.module_registry - INFO - Registered module: machine_tab_module (version 1.0.0)
+2025-07-05 15:47:45,339 - module_system.module_registry - INFO - Found module class: TabModuleInterface
+2025-07-05 15:47:45,339 - module_system.module_registry - DEBUG - Instantiating module class: TabModuleInterface
+2025-07-05 15:47:45,339 - module_system.module_registry - ERROR - Error instantiating module class TabModuleInterface: Can't instantiate abstract class TabModuleInterface with abstract methods get_description, get_name, get_required_services, get_tab, get_tab_name, get_version, initialize
+2025-07-05 15:47:45,340 - module_system.module_registry - ERROR - Traceback: Traceback (most recent call last):
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/module_system/module_registry.py", line 100, in _load_module_from_file
+    module_instance = obj()
+TypeError: Can't instantiate abstract class TabModuleInterface with abstract methods get_description, get_name, get_required_services, get_tab, get_tab_name, get_version, initialize
+
+2025-07-05 15:47:45,340 - module_system.module_registry - INFO - Loading module from file: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules/tabs/analysis_tab_module.py
+2025-07-05 15:47:45,340 - module_system.module_registry - DEBUG - Generated module name: dynamic_module_3975096709455803250
+2025-07-05 15:47:45,340 - module_system.module_registry - DEBUG - Creating module spec from file location
+2025-07-05 15:47:45,340 - module_system.module_registry - DEBUG - Creating module from spec
+2025-07-05 15:47:45,340 - module_system.module_registry - DEBUG - Executing module
+2025-07-05 15:47:45,356 - module_system.module_registry - DEBUG - Searching for module classes
+2025-07-05 15:47:45,356 - module_system.module_registry - INFO - Found module class: AnalysisTabModule
+2025-07-05 15:47:45,356 - module_system.module_registry - DEBUG - Instantiating module class: AnalysisTabModule
+2025-07-05 15:47:45,356 - module_system.module_registry - INFO - Module instance created with name: analysis_tab_module
+2025-07-05 15:47:45,356 - module_system.module_registry - INFO - Registered module: analysis_tab_module (version 1.0.0)
+2025-07-05 15:47:45,356 - module_system.module_registry - INFO - Found module class: TabModuleInterface
+2025-07-05 15:47:45,356 - module_system.module_registry - DEBUG - Instantiating module class: TabModuleInterface
+2025-07-05 15:47:45,356 - module_system.module_registry - ERROR - Error instantiating module class TabModuleInterface: Can't instantiate abstract class TabModuleInterface with abstract methods get_description, get_name, get_required_services, get_tab, get_tab_name, get_version, initialize
+2025-07-05 15:47:45,356 - module_system.module_registry - ERROR - Traceback: Traceback (most recent call last):
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/module_system/module_registry.py", line 100, in _load_module_from_file
+    module_instance = obj()
+TypeError: Can't instantiate abstract class TabModuleInterface with abstract methods get_description, get_name, get_required_services, get_tab, get_tab_name, get_version, initialize
+
+2025-07-05 15:47:45,356 - module_system.module_registry - INFO - Loading module from file: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules/tabs/results_tab_module.py
+2025-07-05 15:47:45,356 - module_system.module_registry - DEBUG - Generated module name: dynamic_module_327879869720179973
+2025-07-05 15:47:45,356 - module_system.module_registry - DEBUG - Creating module spec from file location
+2025-07-05 15:47:45,356 - module_system.module_registry - DEBUG - Creating module from spec
+2025-07-05 15:47:45,356 - module_system.module_registry - DEBUG - Executing module
+2025-07-05 15:47:45,359 - module_system.module_registry - DEBUG - Searching for module classes
+2025-07-05 15:47:45,359 - module_system.module_registry - INFO - Found module class: ResultsTabModule
+2025-07-05 15:47:45,359 - module_system.module_registry - DEBUG - Instantiating module class: ResultsTabModule
+2025-07-05 15:47:45,359 - module_system.module_registry - INFO - Module instance created with name: results_tab_module
+2025-07-05 15:47:45,359 - module_system.module_registry - INFO - Registered module: results_tab_module (version 1.0.0)
+2025-07-05 15:47:45,359 - module_system.module_registry - INFO - Found module class: TabModuleInterface
+2025-07-05 15:47:45,359 - module_system.module_registry - DEBUG - Instantiating module class: TabModuleInterface
+2025-07-05 15:47:45,359 - module_system.module_registry - ERROR - Error instantiating module class TabModuleInterface: Can't instantiate abstract class TabModuleInterface with abstract methods get_description, get_name, get_required_services, get_tab, get_tab_name, get_version, initialize
+2025-07-05 15:47:45,359 - module_system.module_registry - ERROR - Traceback: Traceback (most recent call last):
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/module_system/module_registry.py", line 100, in _load_module_from_file
+    module_instance = obj()
+TypeError: Can't instantiate abstract class TabModuleInterface with abstract methods get_description, get_name, get_required_services, get_tab, get_tab_name, get_version, initialize
+
+2025-07-05 15:47:45,359 - module_system.module_registry - INFO - Loading module from file: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules/tabs/scheduler_tab_module.py
+2025-07-05 15:47:45,359 - module_system.module_registry - DEBUG - Generated module name: dynamic_module_5169028564949809131
+2025-07-05 15:47:45,359 - module_system.module_registry - DEBUG - Creating module spec from file location
+2025-07-05 15:47:45,359 - module_system.module_registry - DEBUG - Creating module from spec
+2025-07-05 15:47:45,359 - module_system.module_registry - DEBUG - Executing module
+2025-07-05 15:47:45,364 - module_system.module_registry - DEBUG - Searching for module classes
+2025-07-05 15:47:45,364 - module_system.module_registry - INFO - Found module class: SchedulerTabModule
+2025-07-05 15:47:45,364 - module_system.module_registry - DEBUG - Instantiating module class: SchedulerTabModule
+2025-07-05 15:47:45,364 - module_system.module_registry - INFO - Module instance created with name: scheduler_tab_module
+2025-07-05 15:47:45,364 - module_system.module_registry - INFO - Registered module: scheduler_tab_module (version 1.0.0)
+2025-07-05 15:47:45,364 - module_system.module_registry - INFO - Found module class: TabModuleInterface
+2025-07-05 15:47:45,364 - module_system.module_registry - DEBUG - Instantiating module class: TabModuleInterface
+2025-07-05 15:47:45,364 - module_system.module_registry - ERROR - Error instantiating module class TabModuleInterface: Can't instantiate abstract class TabModuleInterface with abstract methods get_description, get_name, get_required_services, get_tab, get_tab_name, get_version, initialize
+2025-07-05 15:47:45,364 - module_system.module_registry - ERROR - Traceback: Traceback (most recent call last):
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/module_system/module_registry.py", line 100, in _load_module_from_file
+    module_instance = obj()
+TypeError: Can't instantiate abstract class TabModuleInterface with abstract methods get_description, get_name, get_required_services, get_tab, get_tab_name, get_version, initialize
+
+2025-07-05 15:47:45,364 - module_system.module_registry - INFO - Loading module from file: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules/services/machine_service_module.py
+2025-07-05 15:47:45,364 - module_system.module_registry - DEBUG - Generated module name: dynamic_module_-5721567651722420784
+2025-07-05 15:47:45,364 - module_system.module_registry - DEBUG - Creating module spec from file location
+2025-07-05 15:47:45,364 - module_system.module_registry - DEBUG - Creating module from spec
+2025-07-05 15:47:45,364 - module_system.module_registry - DEBUG - Executing module
+2025-07-05 15:47:45,380 - services.jms.jms_auth - INFO - Successfully imported requests v2.32.4
+2025-07-05 15:47:45,390 - module_system.module_registry - ERROR - Error loading module from /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules/services/machine_service_module.py: cannot import name 'CuttingOperation' from 'services.material_removal_calculator' (/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/services/material_removal_calculator.py)
+2025-07-05 15:47:45,392 - module_system.module_registry - ERROR - Traceback: Traceback (most recent call last):
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/module_system/module_registry.py", line 84, in _load_module_from_file
+    spec.loader.exec_module(module)
+  File "<frozen importlib._bootstrap_external>", line 850, in exec_module
+  File "<frozen importlib._bootstrap>", line 228, in _call_with_frames_removed
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules/services/machine_service_module.py", line 9, in <module>
+    from services.machine_service import MachineService
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/services/__init__.py", line 11, in <module>
+    from .material_removal_calculator import MaterialRemovalCalculator, ToolMRRResult, CuttingOperation
+ImportError: cannot import name 'CuttingOperation' from 'services.material_removal_calculator' (/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/services/material_removal_calculator.py)
+
+2025-07-05 15:47:45,392 - module_system.module_registry - INFO - Loading module from file: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules/services/jms_tools_extension_module.py
+2025-07-05 15:47:45,392 - module_system.module_registry - DEBUG - Generated module name: dynamic_module_993194847424151766
+2025-07-05 15:47:45,392 - module_system.module_registry - DEBUG - Creating module spec from file location
+2025-07-05 15:47:45,392 - module_system.module_registry - DEBUG - Creating module from spec
+2025-07-05 15:47:45,392 - module_system.module_registry - DEBUG - Executing module
+2025-07-05 15:47:45,393 - module_system.module_registry - ERROR - Error loading module from /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules/services/jms_tools_extension_module.py: Can't instantiate abstract class JMSToolsExtensionModule with abstract methods get_description, get_name, get_required_services, get_version
+2025-07-05 15:47:45,394 - module_system.module_registry - ERROR - Traceback: Traceback (most recent call last):
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/module_system/module_registry.py", line 84, in _load_module_from_file
+    spec.loader.exec_module(module)
+  File "<frozen importlib._bootstrap_external>", line 850, in exec_module
+  File "<frozen importlib._bootstrap>", line 228, in _call_with_frames_removed
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules/services/jms_tools_extension_module.py", line 208, in <module>
+    module_instance = JMSToolsExtensionModule()
+TypeError: Can't instantiate abstract class JMSToolsExtensionModule with abstract methods get_description, get_name, get_required_services, get_version
+
+2025-07-05 15:47:45,394 - module_system.module_registry - INFO - Loading module from file: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules/services/analysis_service_module.py
+2025-07-05 15:47:45,394 - module_system.module_registry - DEBUG - Generated module name: dynamic_module_-5388516856803880980
+2025-07-05 15:47:45,394 - module_system.module_registry - DEBUG - Creating module spec from file location
+2025-07-05 15:47:45,394 - module_system.module_registry - DEBUG - Creating module from spec
+2025-07-05 15:47:45,394 - module_system.module_registry - DEBUG - Executing module
+2025-07-05 15:47:45,395 - module_system.module_registry - DEBUG - Searching for module classes
+2025-07-05 15:47:45,395 - module_system.module_registry - INFO - Found module class: AnalysisServiceModule
+2025-07-05 15:47:45,395 - module_system.module_registry - DEBUG - Instantiating module class: AnalysisServiceModule
+2025-07-05 15:47:45,395 - module_system.module_registry - INFO - Module instance created with name: analysis_service_module
+2025-07-05 15:47:45,395 - module_system.module_registry - INFO - Registered module: analysis_service_module (version 1.0.0)
+2025-07-05 15:47:45,395 - module_system.module_registry - INFO - Found module class: ServiceModuleInterface
+2025-07-05 15:47:45,395 - module_system.module_registry - DEBUG - Instantiating module class: ServiceModuleInterface
+2025-07-05 15:47:45,395 - module_system.module_registry - ERROR - Error instantiating module class ServiceModuleInterface: Can't instantiate abstract class ServiceModuleInterface with abstract methods get_description, get_name, get_provided_services, get_required_services, get_version, initialize
+2025-07-05 15:47:45,395 - module_system.module_registry - ERROR - Traceback: Traceback (most recent call last):
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/module_system/module_registry.py", line 100, in _load_module_from_file
+    module_instance = obj()
+TypeError: Can't instantiate abstract class ServiceModuleInterface with abstract methods get_description, get_name, get_provided_services, get_required_services, get_version, initialize
+
+2025-07-05 15:47:45,395 - module_system.module_registry - INFO - Loading module from file: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules/services/jms_service_module.py
+2025-07-05 15:47:45,395 - module_system.module_registry - DEBUG - Generated module name: dynamic_module_5384795098577536971
+2025-07-05 15:47:45,395 - module_system.module_registry - DEBUG - Creating module spec from file location
+2025-07-05 15:47:45,395 - module_system.module_registry - DEBUG - Creating module from spec
+2025-07-05 15:47:45,395 - module_system.module_registry - DEBUG - Executing module
+2025-07-05 15:47:45,397 - dynamic_module_5384795098577536971 - INFO - Attempting to import JMS modules...
+2025-07-05 15:47:45,397 - dynamic_module_5384795098577536971 - INFO - Successfully imported JMS modules using absolute imports
+2025-07-05 15:47:45,397 - dynamic_module_5384795098577536971 - INFO - JMS auth module imported, REQUESTS_AVAILABLE=True
+2025-07-05 15:47:45,397 - module_system.module_registry - DEBUG - Searching for module classes
+2025-07-05 15:47:45,397 - module_system.module_registry - INFO - Found module class: JMSServiceModule
+2025-07-05 15:47:45,397 - module_system.module_registry - DEBUG - Instantiating module class: JMSServiceModule
+2025-07-05 15:47:45,397 - module_system.module_registry - INFO - Module instance created with name: jms_service_module
+2025-07-05 15:47:45,397 - module_system.module_registry - INFO - Registered module: jms_service_module (version 1.0.0)
+2025-07-05 15:47:45,397 - module_system.module_registry - INFO - Found module class: ServiceModuleInterface
+2025-07-05 15:47:45,397 - module_system.module_registry - DEBUG - Instantiating module class: ServiceModuleInterface
+2025-07-05 15:47:45,397 - module_system.module_registry - ERROR - Error instantiating module class ServiceModuleInterface: Can't instantiate abstract class ServiceModuleInterface with abstract methods get_description, get_name, get_provided_services, get_required_services, get_version, initialize
+2025-07-05 15:47:45,397 - module_system.module_registry - ERROR - Traceback: Traceback (most recent call last):
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/module_system/module_registry.py", line 100, in _load_module_from_file
+    module_instance = obj()
+TypeError: Can't instantiate abstract class ServiceModuleInterface with abstract methods get_description, get_name, get_provided_services, get_required_services, get_version, initialize
+
+2025-07-05 15:47:45,397 - module_system.module_registry - INFO - Loading module from file: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules/services/scheduler_service_module.py
+2025-07-05 15:47:45,397 - module_system.module_registry - DEBUG - Generated module name: dynamic_module_3220267557284455921
+2025-07-05 15:47:45,397 - module_system.module_registry - DEBUG - Creating module spec from file location
+2025-07-05 15:47:45,397 - module_system.module_registry - DEBUG - Creating module from spec
+2025-07-05 15:47:45,397 - module_system.module_registry - DEBUG - Executing module
+2025-07-05 15:47:45,398 - module_system.module_registry - DEBUG - Searching for module classes
+2025-07-05 15:47:45,398 - module_system.module_registry - INFO - Found module class: SchedulerServiceModule
+2025-07-05 15:47:45,398 - module_system.module_registry - DEBUG - Instantiating module class: SchedulerServiceModule
+2025-07-05 15:47:45,398 - module_system.module_registry - INFO - Module instance created with name: scheduler_service_module
+2025-07-05 15:47:45,398 - module_system.module_registry - INFO - Registered module: scheduler_service_module (version 1.0.0)
+2025-07-05 15:47:45,398 - module_system.module_registry - INFO - Found module class: ServiceModuleInterface
+2025-07-05 15:47:45,398 - module_system.module_registry - DEBUG - Instantiating module class: ServiceModuleInterface
+2025-07-05 15:47:45,398 - module_system.module_registry - ERROR - Error instantiating module class ServiceModuleInterface: Can't instantiate abstract class ServiceModuleInterface with abstract methods get_description, get_name, get_provided_services, get_required_services, get_version, initialize
+2025-07-05 15:47:45,398 - module_system.module_registry - ERROR - Traceback: Traceback (most recent call last):
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/module_system/module_registry.py", line 100, in _load_module_from_file
+    module_instance = obj()
+TypeError: Can't instantiate abstract class ServiceModuleInterface with abstract methods get_description, get_name, get_provided_services, get_required_services, get_version, initialize
+
+2025-07-05 15:47:45,398 - module_system.module_registry - INFO - Loading module from file: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules/services/jms_menu_extension_module.py
+2025-07-05 15:47:45,398 - module_system.module_registry - DEBUG - Generated module name: dynamic_module_2137029737155996038
+2025-07-05 15:47:45,398 - module_system.module_registry - DEBUG - Creating module spec from file location
+2025-07-05 15:47:45,398 - module_system.module_registry - DEBUG - Creating module from spec
+2025-07-05 15:47:45,398 - module_system.module_registry - DEBUG - Executing module
+2025-07-05 15:47:45,399 - dynamic_module_2137029737155996038 - INFO - Attempting to import JMS config dialog...
+2025-07-05 15:47:45,401 - dynamic_module_2137029737155996038 - INFO - Successfully imported JMSConfigDialog using absolute import
+2025-07-05 15:47:45,401 - module_system.module_registry - DEBUG - Searching for module classes
+2025-07-05 15:47:45,401 - module_system.module_registry - INFO - Found module class: JMSMenuExtensionModule
+2025-07-05 15:47:45,401 - module_system.module_registry - DEBUG - Instantiating module class: JMSMenuExtensionModule
+2025-07-05 15:47:45,401 - module_system.module_registry - INFO - Module instance created with name: jms_menu_extension_module
+2025-07-05 15:47:45,401 - module_system.module_registry - INFO - Registered module: jms_menu_extension_module (version 1.0.0)
+2025-07-05 15:47:45,401 - module_system.module_registry - INFO - Scanning module path: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/modules
+2025-07-05 15:47:45,401 - module_system.module_registry - INFO - Discovering modules in /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/modules
+2025-07-05 15:47:45,401 - module_system.module_registry - INFO - Loading module from file: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/modules/example_module.py
+2025-07-05 15:47:45,401 - module_system.module_registry - DEBUG - Generated module name: dynamic_module_-6761189624141391370
+2025-07-05 15:47:45,401 - module_system.module_registry - DEBUG - Creating module spec from file location
+2025-07-05 15:47:45,401 - module_system.module_registry - DEBUG - Creating module from spec
+2025-07-05 15:47:45,402 - module_system.module_registry - DEBUG - Executing module
+2025-07-05 15:47:45,403 - module_system.module_registry - DEBUG - Searching for module classes
+2025-07-05 15:47:45,403 - module_system.module_registry - INFO - Found module class: ExampleModule
+2025-07-05 15:47:45,403 - module_system.module_registry - DEBUG - Instantiating module class: ExampleModule
+2025-07-05 15:47:45,403 - module_system.module_registry - INFO - Module instance created with name: example_module
+2025-07-05 15:47:45,403 - module_system.module_registry - INFO - Registered module: example_module (version 1.0.0)
+2025-07-05 15:47:45,403 - module_system.module_registry - INFO - Found module class: TabModuleInterface
+2025-07-05 15:47:45,403 - module_system.module_registry - DEBUG - Instantiating module class: TabModuleInterface
+2025-07-05 15:47:45,403 - module_system.module_registry - ERROR - Error instantiating module class TabModuleInterface: Can't instantiate abstract class TabModuleInterface with abstract methods get_description, get_name, get_required_services, get_tab, get_tab_name, get_version, initialize
+2025-07-05 15:47:45,403 - module_system.module_registry - ERROR - Traceback: Traceback (most recent call last):
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/module_system/module_registry.py", line 100, in _load_module_from_file
+    module_instance = obj()
+TypeError: Can't instantiate abstract class TabModuleInterface with abstract methods get_description, get_name, get_required_services, get_tab, get_tab_name, get_version, initialize
+
+2025-07-05 15:47:45,403 - module_system.module_registry - INFO - Module discovery complete. Found 9 modules
+2025-07-05 15:47:45,403 - application_core - INFO - Initializing modules...
+2025-07-05 15:47:45,403 - module_system.module_registry - INFO - Initializing 9 modules
+2025-07-05 15:47:45,403 - module_system.module_registry - INFO - Resolving module dependencies
+2025-07-05 15:47:45,403 - dynamic_module_5384795098577536971 - WARNING - No JMS service available to provide
+2025-07-05 15:47:45,403 - dynamic_module_5384795098577536971 - WARNING - No JMS service available to provide
+2025-07-05 15:47:45,403 - dynamic_module_5384795098577536971 - WARNING - No JMS service available to provide
+2025-07-05 15:47:45,403 - dynamic_module_5384795098577536971 - WARNING - No JMS service available to provide
+2025-07-05 15:47:45,403 - dynamic_module_5384795098577536971 - WARNING - No JMS service available to provide
+2025-07-05 15:47:45,403 - dynamic_module_5384795098577536971 - WARNING - No JMS service available to provide
+2025-07-05 15:47:45,403 - dynamic_module_5384795098577536971 - WARNING - No JMS service available to provide
+2025-07-05 15:47:45,403 - dynamic_module_5384795098577536971 - WARNING - No JMS service available to provide
+2025-07-05 15:47:45,403 - dynamic_module_5384795098577536971 - WARNING - No JMS service available to provide
+2025-07-05 15:47:45,403 - dynamic_module_5384795098577536971 - WARNING - No JMS service available to provide
+2025-07-05 15:47:45,403 - dynamic_module_5384795098577536971 - WARNING - No JMS service available to provide
+2025-07-05 15:47:45,403 - dynamic_module_5384795098577536971 - WARNING - No JMS service available to provide
+2025-07-05 15:47:45,403 - dynamic_module_5384795098577536971 - WARNING - No JMS service available to provide
+2025-07-05 15:47:45,403 - module_system.module_registry - INFO - Module initialization order: machine_tab_module, scheduler_service_module, analysis_service_module, analysis_tab_module, results_tab_module, scheduler_tab_module, jms_service_module, jms_menu_extension_module, example_module
+2025-07-05 15:47:45,403 - module_system.module_registry - INFO - Initializing module: machine_tab_module
+2025-07-05 15:47:45,403 - module_system.module_registry - INFO - Module machine_tab_module requires services: machine_service
+2025-07-05 15:47:45,403 - dynamic_module_-3192275282208166043 - INFO - Initializing machine tab module
+2025-07-05 15:47:45,403 - module_system.service_registry - WARNING - Service not found: machine_service
+2025-07-05 15:47:45,403 - module_system.service_registry - DEBUG - Available services: service_registry, module_registry, config_manager, extension_registry, app_core
+2025-07-05 15:47:45,403 - module_system.module_registry - ERROR - Error initializing module machine_tab_module: Machine service not found
+2025-07-05 15:47:45,404 - module_system.module_registry - ERROR - Traceback: Traceback (most recent call last):
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/module_system/module_registry.py", line 173, in initialize_modules
+    module.initialize(service_registry)
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules/tabs/machine_tab_module.py", line 44, in initialize
+    raise ValueError("Machine service not found")
+ValueError: Machine service not found
+
+2025-07-05 15:47:45,404 - module_system.module_registry - INFO - Initializing module: scheduler_service_module
+2025-07-05 15:47:45,404 - module_system.module_registry - INFO - Module scheduler_service_module requires services: machine_service
+2025-07-05 15:47:45,404 - dynamic_module_3220267557284455921 - INFO - Initializing scheduler service module
+2025-07-05 15:47:45,404 - module_system.service_registry - WARNING - Service not found: machine_service
+2025-07-05 15:47:45,404 - module_system.service_registry - DEBUG - Available services: service_registry, module_registry, config_manager, extension_registry, app_core
+2025-07-05 15:47:45,404 - module_system.module_registry - ERROR - Error initializing module scheduler_service_module: Machine service not found
+2025-07-05 15:47:45,404 - module_system.module_registry - ERROR - Traceback: Traceback (most recent call last):
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/module_system/module_registry.py", line 173, in initialize_modules
+    module.initialize(service_registry)
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules/services/scheduler_service_module.py", line 44, in initialize
+    raise ValueError("Machine service not found")
+ValueError: Machine service not found
+
+2025-07-05 15:47:45,404 - module_system.module_registry - INFO - Initializing module: analysis_service_module
+2025-07-05 15:47:45,404 - module_system.module_registry - INFO - Module analysis_service_module requires services: machine_service
+2025-07-05 15:47:45,404 - dynamic_module_-5388516856803880980 - INFO - Initializing analysis service module
+2025-07-05 15:47:45,404 - module_system.service_registry - WARNING - Service not found: machine_service
+2025-07-05 15:47:45,404 - module_system.service_registry - DEBUG - Available services: service_registry, module_registry, config_manager, extension_registry, app_core
+2025-07-05 15:47:45,404 - module_system.module_registry - ERROR - Error initializing module analysis_service_module: Machine service not found
+2025-07-05 15:47:45,405 - module_system.module_registry - ERROR - Traceback: Traceback (most recent call last):
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/module_system/module_registry.py", line 173, in initialize_modules
+    module.initialize(service_registry)
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules/services/analysis_service_module.py", line 44, in initialize
+    raise ValueError("Machine service not found")
+ValueError: Machine service not found
+
+2025-07-05 15:47:45,405 - module_system.module_registry - INFO - Initializing module: analysis_tab_module
+2025-07-05 15:47:45,405 - module_system.module_registry - INFO - Module analysis_tab_module requires services: analysis_service, machine_service, scheduler_service
+2025-07-05 15:47:45,405 - dynamic_module_3975096709455803250 - INFO - Initializing analysis tab module
+2025-07-05 15:47:45,405 - module_system.service_registry - WARNING - Service not found: analysis_service
+2025-07-05 15:47:45,405 - module_system.service_registry - DEBUG - Available services: service_registry, module_registry, config_manager, extension_registry, app_core
+2025-07-05 15:47:45,405 - module_system.module_registry - ERROR - Error initializing module analysis_tab_module: Analysis service not found
+2025-07-05 15:47:45,405 - module_system.module_registry - ERROR - Traceback: Traceback (most recent call last):
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/module_system/module_registry.py", line 173, in initialize_modules
+    module.initialize(service_registry)
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules/tabs/analysis_tab_module.py", line 44, in initialize
+    raise ValueError("Analysis service not found")
+ValueError: Analysis service not found
+
+2025-07-05 15:47:45,405 - module_system.module_registry - INFO - Initializing module: results_tab_module
+2025-07-05 15:47:45,405 - module_system.module_registry - INFO - Module results_tab_module requires services: analysis_service
+2025-07-05 15:47:45,405 - dynamic_module_327879869720179973 - INFO - Initializing results tab module
+2025-07-05 15:47:45,405 - module_system.service_registry - WARNING - Service not found: analysis_service
+2025-07-05 15:47:45,405 - module_system.service_registry - DEBUG - Available services: service_registry, module_registry, config_manager, extension_registry, app_core
+2025-07-05 15:47:45,405 - module_system.module_registry - ERROR - Error initializing module results_tab_module: Analysis service not found
+2025-07-05 15:47:45,405 - module_system.module_registry - ERROR - Traceback: Traceback (most recent call last):
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/module_system/module_registry.py", line 173, in initialize_modules
+    module.initialize(service_registry)
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules/tabs/results_tab_module.py", line 44, in initialize
+    raise ValueError("Analysis service not found")
+ValueError: Analysis service not found
+
+2025-07-05 15:47:45,405 - module_system.module_registry - INFO - Initializing module: scheduler_tab_module
+2025-07-05 15:47:45,405 - module_system.module_registry - INFO - Module scheduler_tab_module requires services: scheduler_service, machine_service
+2025-07-05 15:47:45,405 - dynamic_module_5169028564949809131 - INFO - Initializing scheduler tab module
+2025-07-05 15:47:45,405 - module_system.service_registry - WARNING - Service not found: scheduler_service
+2025-07-05 15:47:45,405 - module_system.service_registry - DEBUG - Available services: service_registry, module_registry, config_manager, extension_registry, app_core
+2025-07-05 15:47:45,405 - module_system.module_registry - ERROR - Error initializing module scheduler_tab_module: Scheduler service not found
+2025-07-05 15:47:45,406 - module_system.module_registry - ERROR - Traceback: Traceback (most recent call last):
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/module_system/module_registry.py", line 173, in initialize_modules
+    module.initialize(service_registry)
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules/tabs/scheduler_tab_module.py", line 44, in initialize
+    raise ValueError("Scheduler service not found")
+ValueError: Scheduler service not found
+
+2025-07-05 15:47:45,406 - module_system.module_registry - INFO - Initializing module: jms_service_module
+2025-07-05 15:47:45,406 - module_system.module_registry - INFO - Module jms_service_module requires services: scheduler_service
+2025-07-05 15:47:45,406 - dynamic_module_5384795098577536971 - INFO - Initializing JMS service module
+2025-07-05 15:47:45,406 - dynamic_module_5384795098577536971 - INFO - Looking for scheduler_service in service registry
+2025-07-05 15:47:45,406 - module_system.service_registry - WARNING - Service not found: scheduler_service
+2025-07-05 15:47:45,406 - module_system.service_registry - DEBUG - Available services: service_registry, module_registry, config_manager, extension_registry, app_core
+2025-07-05 15:47:45,406 - dynamic_module_5384795098577536971 - ERROR - Scheduler service not found in service registry
+2025-07-05 15:47:45,406 - dynamic_module_5384795098577536971 - ERROR - Error initializing JMS service: Scheduler service not found
+2025-07-05 15:47:45,406 - dynamic_module_5384795098577536971 - ERROR - Exception details: ValueError
+2025-07-05 15:47:45,406 - dynamic_module_5384795098577536971 - ERROR - Traceback: Traceback (most recent call last):
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules/services/jms_service_module.py", line 91, in initialize
+    raise ValueError("Scheduler service not found")
+ValueError: Scheduler service not found
+
+2025-07-05 15:47:45,406 - module_system.module_registry - INFO - Module jms_service_module initialized successfully
+2025-07-05 15:47:45,406 - module_system.module_registry - INFO - Module jms_service_module provides services
+2025-07-05 15:47:45,406 - dynamic_module_5384795098577536971 - WARNING - No JMS service available to provide
+2025-07-05 15:47:45,406 - module_system.module_registry - INFO - Initializing module: jms_menu_extension_module
+2025-07-05 15:47:45,406 - module_system.module_registry - INFO - Module jms_menu_extension_module requires services: jms_service_module, extension_registry
+2025-07-05 15:47:45,406 - dynamic_module_2137029737155996038 - INFO - Initializing JMS menu extension module
+2025-07-05 15:47:45,406 - dynamic_module_2137029737155996038 - INFO - Looking for jms_service_module in service registry
+2025-07-05 15:47:45,406 - module_system.service_registry - WARNING - Service not found: jms_service_module
+2025-07-05 15:47:45,406 - module_system.service_registry - DEBUG - Available services: service_registry, module_registry, config_manager, extension_registry, app_core
+2025-07-05 15:47:45,406 - dynamic_module_2137029737155996038 - ERROR - JMS service module not found in service registry
+2025-07-05 15:47:45,406 - dynamic_module_2137029737155996038 - ERROR - Available services: service_registry, module_registry, config_manager, extension_registry, app_core
+2025-07-05 15:47:45,406 - module_system.module_registry - INFO - Module jms_menu_extension_module initialized successfully
+2025-07-05 15:47:45,406 - module_system.module_registry - INFO - Module jms_menu_extension_module does not provide services
+2025-07-05 15:47:45,406 - module_system.module_registry - INFO - Initializing module: example_module
+2025-07-05 15:47:45,406 - module_system.module_registry - INFO - Module example_module requires services: machine_service
+2025-07-05 15:47:45,406 - dynamic_module_-6761189624141391370 - INFO - Initializing example module
+2025-07-05 15:47:45,406 - module_system.service_registry - WARNING - Service not found: machine_service
+2025-07-05 15:47:45,406 - module_system.service_registry - DEBUG - Available services: service_registry, module_registry, config_manager, extension_registry, app_core
+2025-07-05 15:47:45,406 - module_system.module_registry - ERROR - Error initializing module example_module: Machine service not found
+2025-07-05 15:47:45,407 - module_system.module_registry - ERROR - Traceback: Traceback (most recent call last):
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/module_system/module_registry.py", line 173, in initialize_modules
+    module.initialize(service_registry)
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/modules/example_module.py", line 46, in initialize
+    raise ValueError("Machine service not found")
+ValueError: Machine service not found
+
+2025-07-05 15:47:45,407 - application_core - INFO - Invoking startup extensions...
+2025-07-05 15:47:45,407 - application_core - INFO - Application core initialized successfully
+2025-07-05 15:47:45,407 - main - INFO - Loaded 9 modules:
+2025-07-05 15:47:45,407 - main - INFO -   - machine_tab_module (v1.0.0)
+2025-07-05 15:47:45,407 - main - INFO -   - analysis_tab_module (v1.0.0)
+2025-07-05 15:47:45,407 - main - INFO -   - results_tab_module (v1.0.0)
+2025-07-05 15:47:45,407 - main - INFO -   - scheduler_tab_module (v1.0.0)
+2025-07-05 15:47:45,407 - main - INFO -   - analysis_service_module (v1.0.0)
+2025-07-05 15:47:45,407 - main - INFO -   - jms_service_module (v1.0.0)
+2025-07-05 15:47:45,407 - main - INFO -   - scheduler_service_module (v1.0.0)
+2025-07-05 15:47:45,407 - main - INFO -   - jms_menu_extension_module (v1.0.0)
+2025-07-05 15:47:45,407 - main - INFO -   - example_module (v1.0.0)
+2025-07-05 15:47:45,407 - main - INFO - Creating main window
+2025-07-05 15:47:45,542 - ui.main_window - INFO - Loading core tabs
+2025-07-05 15:47:45,542 - ui.main_window - INFO - Loading tab from module: machine_tab_module
+2025-07-05 15:47:45,542 - dynamic_module_-3192275282208166043 - INFO - Creating machine tab
+2025-07-05 15:47:45,552 - ui.main_window - ERROR - Error loading tab from module machine_tab_module: 'NoneType' object has no attribute 'get_all_machines'
+2025-07-05 15:47:45,552 - ui.main_window - INFO - Loading tab from module: analysis_tab_module
+2025-07-05 15:47:45,552 - dynamic_module_3975096709455803250 - INFO - Creating analysis tab
+2025-07-05 15:47:45,552 - ui.main_window - ERROR - Error loading tab from module analysis_tab_module: 'AnalysisTabModule' object has no attribute 'machine_service'
+2025-07-05 15:47:45,552 - ui.main_window - INFO - Loading tab from module: results_tab_module
+2025-07-05 15:47:45,552 - dynamic_module_327879869720179973 - INFO - Creating results tab
+2025-07-05 15:47:45,558 - ui.main_window - INFO - Loading tab from module: scheduler_tab_module
+2025-07-05 15:47:45,558 - dynamic_module_5169028564949809131 - INFO - Creating scheduler tab
+2025-07-05 15:47:45,558 - ui.main_window - ERROR - Error loading tab from module scheduler_tab_module: 'SchedulerTabModule' object has no attribute 'machine_service'
+2025-07-05 15:47:45,558 - ui.main_window - INFO - Loading tab from module: example_module
+2025-07-05 15:47:45,558 - dynamic_module_-6761189624141391370 - INFO - Creating example tab
+2025-07-05 15:47:45,561 - ui.main_window - ERROR - Error loading tab from module example_module: 'NoneType' object has no attribute 'get_all_machines'
+2025-07-05 15:47:45,562 - ui.main_window - INFO - Creating application menu
+2025-07-05 15:47:45,575 - ui.main_window - INFO - Creating File menu
+2025-07-05 15:47:45,575 - ui.main_window - INFO - Getting ui.menu.file extension point
+2025-07-05 15:47:45,575 - ui.main_window - INFO - Invoking ui.menu.file extension point
+2025-07-05 15:47:45,575 - ui.main_window - INFO - Creating Tools menu
+2025-07-05 15:47:45,575 - ui.main_window - INFO - Adding Settings menu item
+2025-07-05 15:47:45,575 - ui.main_window - INFO - Checking for JMS service
+2025-07-05 15:47:45,575 - module_system.service_registry - WARNING - Service not found: jms_service
+2025-07-05 15:47:45,575 - module_system.service_registry - DEBUG - Available services: service_registry, module_registry, config_manager, extension_registry, app_core
+2025-07-05 15:47:45,575 - ui.main_window - WARNING - JMS service not found, skipping JMS Configuration menu item
+2025-07-05 15:47:45,575 - module_system.service_registry - WARNING - Service not found: jms_service_module
+2025-07-05 15:47:45,575 - module_system.service_registry - DEBUG - Available services: service_registry, module_registry, config_manager, extension_registry, app_core
+2025-07-05 15:47:45,575 - ui.main_window - INFO - Getting ui.menu.tools extension point
+2025-07-05 15:47:45,575 - ui.main_window - INFO - Invoking ui.menu.tools extension point
+2025-07-05 15:47:45,575 - main - INFO - Running application
