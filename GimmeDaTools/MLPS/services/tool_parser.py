@@ -104,15 +104,24 @@ class ToolCommentParser:
             tool_info.tool_holder = holder
             tool_info.material_code = material
             
-            # Parse parameters (L19O25, etc.)
+            # Parse parameters (L19O25_0.00AL3, etc.)
             if parameters:
                 self._parse_parameters(parameters, tool_info)
             
-            # Extract flute count from material code (AL3 = 3 flute)
+            # Parse material code and flute count from format: 0.00AL3
+            # 0.00 = corner radius, AL = material, 3 = flute count
             if material:
-                flute_match = re.search(r'(\d+)$', material)
-                if flute_match:
-                    tool_info.flute_count = int(flute_match.group(1))
+                material_match = re.search(r'(\d+\.?\d*)([A-Z]+)(\d+)$', material)
+                if material_match:
+                    tool_info.corner_radius = float(material_match.group(1))
+                    tool_info.material_code = material_match.group(2)
+                    tool_info.flute_count = int(material_match.group(3))
+                else:
+                    # Fallback for simpler formats
+                    flute_match = re.search(r'(\d+)$', material)
+                    if flute_match:
+                        tool_info.flute_count = int(flute_match.group(1))
+                        tool_info.material_code = material[:-len(flute_match.group(1))]
             
             return True
         

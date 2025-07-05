@@ -929,15 +929,18 @@ class AnalysisTab:
         results.append("")
         
         # Calculate summary statistics
-        total_material_removed = sum(result.total_material_removed for result in mrr_results.values())
-        tools_with_data = [r for r in mrr_results.values() if r.total_material_removed > 0]
+        total_material_removed_mm3 = sum(result.total_material_removed_mm3 for result in mrr_results.values())
+        total_material_removed_m3 = sum(result.total_material_removed_m3 for result in mrr_results.values())
+        tools_with_data = [r for r in mrr_results.values() if r.total_material_removed_mm3 > 0]
         
         if tools_with_data:
-            avg_mrr = sum(r.material_removal_rate for r in tools_with_data) / len(tools_with_data)
-            max_mrr_tool = max(tools_with_data, key=lambda x: x.material_removal_rate)
-            min_mrr_tool = min(tools_with_data, key=lambda x: x.material_removal_rate)
+            avg_mrr_mm3 = sum(r.average_mrr_mm3_per_min for r in tools_with_data) / len(tools_with_data)
+            avg_mrr_m3 = sum(r.average_mrr_m3_per_min for r in tools_with_data) / len(tools_with_data)
+            max_mrr_tool = max(tools_with_data, key=lambda x: x.average_mrr_mm3_per_min)
+            min_mrr_tool = min(tools_with_data, key=lambda x: x.average_mrr_mm3_per_min)
         else:
-            avg_mrr = 0
+            avg_mrr_mm3 = 0
+            avg_mrr_m3 = 0
             max_mrr_tool = None
             min_mrr_tool = None
         
@@ -959,6 +962,8 @@ class AnalysisTab:
                     results.append(f"  Tool Holder: {tool_info.tool_holder}")
                 if tool_info.flute_length:
                     results.append(f"  Flute Length: {tool_info.flute_length:.1f} mm")
+                if tool_info.corner_radius:
+                    results.append(f"  Corner Radius: {tool_info.corner_radius:.2f} mm")
                 if tool_info.material_code:
                     results.append(f"  Material: {tool_info.material_code}")
                 if tool_info.flute_count:
@@ -972,12 +977,19 @@ class AnalysisTab:
             if result.total_cutting_distance > 0:
                 results.append(f"  • Total Cutting Distance: {result.total_cutting_distance:.1f} mm")
                 results.append(f"  • Average Feed Rate: {result.average_feed_rate:.0f} mm/min")
-                results.append(f"  • Average Depth of Cut: {result.average_depth_of_cut:.2f} mm")
-                results.append(f"  • Average Width of Cut: {result.average_width_of_cut:.2f} mm")
-                results.append(f"  • Material Removal Rate: {result.material_removal_rate:.0f} mm³/min")
-                results.append(f"  • Cutting Time: {result.total_cutting_time:.1f} seconds")
-                results.append(f"  • Material Removed: {result.total_material_removed:.0f} mm³")
-                results.append(f"  • Number of Operations: {len(result.operations)}")
+                results.append(f"  • Average Depth of Cut: {result.average_doc:.2f} mm")
+                results.append(f"  • Average Width of Cut: {result.average_woc:.2f} mm")
+                results.append(f"  • Material Removal Rate: {result.average_mrr_mm3_per_min:.0f} mm³/min")
+                results.append(f"  • Material Removal Rate: {result.average_mrr_m3_per_min:.6f} m³/min")
+                results.append(f"  • Cutting Time: {result.total_cutting_time:.1f} minutes")
+                results.append(f"  • Material Removed: {result.total_material_removed_mm3:.0f} mm³")
+                results.append(f"  • Material Removed: {result.total_material_removed_m3:.9f} m³")
+                results.append(f"  • Number of Operations: {len(result.cutting_moves)}")
+                
+                # Show machining strategies
+                if result.machining_strategies:
+                    strategy_list = [f"{strategy}({count})" for strategy, count in result.machining_strategies.items()]
+                    results.append(f"  • Machining Strategies: {', '.join(strategy_list)}")
                 
                 # Show warnings if any
                 if result.warnings:
