@@ -34,6 +34,10 @@
             "enabled": true
         }
     },
+    "ui": {
+        "tab_order": [],
+        "hidden_tabs": []
+    },
     "paths": {
         "module_paths": [
             "core_modules",
