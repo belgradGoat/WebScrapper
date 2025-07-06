@@ -1,0 +1,67 @@
+{
+  "activity_types": [
+    {
+      "id": 1,
+      "name": "Setup",
+      "category": "preparation",
+      "color": "#FFA500",
+      "description": "Machine setup and preparation",
+      "blocking_rule": "complete",
+      "default_duration": 30,
+      "can_overlap": false,
+      "requires_operator": true,
+      "created_at": "2025-01-07T17:37:00Z"
+    },
+    {
+      "id": 2,
+      "name": "Maintenance",
+      "category": "maintenance",
+      "color": "#DC143C",
+      "description": "Scheduled maintenance activities",
+      "blocking_rule": "complete",
+      "default_duration": 120,
+      "can_overlap": false,
+      "requires_operator": true,
+      "created_at": "2025-01-07T17:37:00Z"
+    },
+    {
+      "id": 3,
+      "name": "Tool Change",
+      "category": "tooling",
+      "color": "#4169E1",
+      "description": "Tool changeover operations",
+      "blocking_rule": "flexible",
+      "default_duration": 15,
+      "can_overlap": true,
+      "requires_operator": true,
+      "created_at": "2025-01-07T17:37:00Z"
+    },
+    {
+      "id": 4,
+      "name": "Inspection",
+      "category": "quality",
+      "color": "#32CD32",
+      "description": "Quality inspection activities",
+      "blocking_rule": "none",
+      "default_duration": 20,
+      "can_overlap": true,
+      "requires_operator": false,
+      "created_at": "2025-01-07T17:37:00Z"
+    },
+    {
+      "id": 5,
+      "name": "Coolant Change",
+      "category": "maintenance",
+      "color": "#00CED1",
+      "description": "Coolant system maintenance",
+      "blocking_rule": "complete",
+      "default_duration": 45,
+      "can_overlap": false,
+      "requires_operator": true,
+      "created_at": "2025-01-07T17:37:00Z"
+    }
+  ],
+  "next_id": 6,
+  "created_at": "2025-01-07T17:37:00Z",
+  "version": "1.0.0"
+}

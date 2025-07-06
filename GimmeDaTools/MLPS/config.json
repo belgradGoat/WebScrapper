@@ -34,6 +34,17 @@
             "enabled": true
         }
     },
+    "scheduler": {
+        "default_granularity": "1hr",
+        "enable_booking_conflicts": true,
+        "auto_resolve_conflicts": false,
+        "default_polling_interval": 10,
+        "time_granularities": ["5min", "15min", "30min", "1hr"],
+        "max_lock_duration": 24,
+        "auto_cleanup_expired_locks": true,
+        "priority_sync_enabled": true,
+        "booking_overlap_tolerance": 5
+    },
     "ui": {
         "tab_order": [],
         "hidden_tabs": []

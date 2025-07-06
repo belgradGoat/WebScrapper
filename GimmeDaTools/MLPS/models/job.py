@@ -18,7 +18,11 @@ class Job:
         cycle_time: float = 1.0,
         color: Optional[str] = None,
         created_at: Optional[int] = None,
-        status: Literal['active', 'locked', 'error', 'completed', 'paused'] = 'active'
+        status: Literal['active', 'locked', 'error', 'completed', 'paused'] = 'active',
+        scheduler_locked: bool = False,
+        workpiece_priority: int = 50,  # 1-100 scale
+        priority_level: Literal['critical', 'high', 'normal', 'low'] = 'normal',
+        rush_order: bool = False
     ):
         """
         Initialize a job with its properties
@@ -31,6 +35,10 @@ class Job:
             color: Color for visual representation
             created_at: Creation timestamp
             status: Job status (active, locked, error, completed, paused)
+            scheduler_locked: Whether job is locked by scheduler (independent from JMS lock)
+            workpiece_priority: Priority score for production scheduling (1-100)
+            priority_level: Priority level category
+            rush_order: Whether this is a rush/urgent order
         """
         self.job_id = job_id or f"job-{uuid.uuid4()}"
         self.name = name
@@ -39,6 +47,10 @@ class Job:
         self.color = color or self._generate_color()
         self.created_at = created_at or int(datetime.now().timestamp() * 1000)
         self.status = status
+        self.scheduler_locked = scheduler_locked
+        self.workpiece_priority = max(1, min(100, workpiece_priority))  # Clamp to 1-100
+        self.priority_level = priority_level
+        self.rush_order = rush_order
         
     def _generate_color(self) -> str:
         """
@@ -86,7 +98,11 @@ class Job:
             'cycleTime': self.cycle_time,
             'color': self.color,
             'createdAt': self.created_at,
-            'status': self.status
+            'status': self.status,
+            'schedulerLocked': self.scheduler_locked,
+            'workpiecePriority': self.workpiece_priority,
+            'priorityLevel': self.priority_level,
+            'rushOrder': self.rush_order
         }
     
     @classmethod
@@ -107,5 +123,9 @@ class Job:
             cycle_time=data.get('cycleTime', 1.0),
             color=data.get('color'),
             created_at=data.get('createdAt'),
-            status=data.get('status', 'active')
+            status=data.get('status', 'active'),
+            scheduler_locked=data.get('schedulerLocked', False),
+            workpiece_priority=data.get('workpiecePriority', 50),
+            priority_level=data.get('priorityLevel', 'normal'),
+            rush_order=data.get('rushOrder', False)
         )

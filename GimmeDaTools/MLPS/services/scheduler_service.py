@@ -1,5 +1,5 @@
 """
-Scheduler Service for Machine Shop Scheduler
+Enhanced Scheduler Service for Machine Shop Scheduler
 """
 import os
 from datetime import datetime
@@ -8,6 +8,10 @@ from typing import Dict, List, Tuple, Any, Optional
 from models.job import Job
 from models.part import Part
 from models.machine import Machine
+from models.workpiece_priority import WorkpiecePriority
+from services.machine_booking_service import MachineBookingService
+from services.locking_service import LockingService
+from services.time_granularity_manager import TimeGranularityManager
 from utils.event_system import event_system
 from utils.file_utils import load_json_file, save_json_file
 
@@ -17,10 +21,11 @@ class SchedulerService:
     Service for managing jobs and parts scheduling
     """
     def __init__(
-        self, 
+        self,
         machine_service,
         jobs_database_path: str = "scheduler_jobs.json",
-        parts_database_path: str = "scheduler_parts.json"
+        parts_database_path: str = "scheduler_parts.json",
+        priorities_database_path: str = "workpiece_priorities.json"
     ):
         """
         Initialize the scheduler service
@@ -29,13 +34,21 @@ class SchedulerService:
             machine_service: MachineService instance for accessing machine data
             jobs_database_path: Path to the jobs database JSON file
             parts_database_path: Path to the parts database JSON file
+            priorities_database_path: Path to the workpiece priorities database JSON file
         """
         self.machine_service = machine_service
         self.jobs_database_path = jobs_database_path
         self.parts_database_path = parts_database_path
+        self.priorities_database_path = priorities_database_path
         
         self.jobs: Dict[str, Job] = {}
         self.parts: Dict[str, Part] = {}
+        self.priorities: Dict[str, WorkpiecePriority] = {}
+        
+        # Initialize enhanced services
+        self.booking_service = MachineBookingService()
+        self.locking_service = LockingService()
+        self.time_granularity_manager = TimeGranularityManager()
         
         self.load_database()
         
@@ -51,8 +64,15 @@ class SchedulerService:
         parts_data = load_json_file(self.parts_database_path, default={})
         self.parts = {part_id: Part.from_dict(part_data) for part_id, part_data in parts_data.items()}
         
+        # Load priorities
+        priorities_data = load_json_file(self.priorities_database_path, default={})
+        self.priorities = {
+            priority_id: WorkpiecePriority.from_dict(priority_data)
+            for priority_id, priority_data in priorities_data.items()
+        }
+        
         # Notify listeners that data was loaded
-        event_system.publish("scheduler_data_loaded", self.jobs, self.parts)
+        event_system.publish("scheduler_data_loaded", self.jobs, self.parts, self.priorities)
         
     def save_database(self) -> None:
         """
@@ -66,9 +86,16 @@ class SchedulerService:
         parts_data = {part_id: part.to_dict() for part_id, part in self.parts.items()}
         parts_saved = save_json_file(self.parts_database_path, parts_data)
         
-        if jobs_saved and parts_saved:
+        # Save priorities
+        priorities_data = {
+            priority_id: priority.to_dict()
+            for priority_id, priority in self.priorities.items()
+        }
+        priorities_saved = save_json_file(self.priorities_database_path, priorities_data)
+        
+        if jobs_saved and parts_saved and priorities_saved:
             # Notify listeners that data was saved
-            event_system.publish("scheduler_data_saved", self.jobs, self.parts)
+            event_system.publish("scheduler_data_saved", self.jobs, self.parts, self.priorities)
         else:
             event_system.publish("error", "Failed to save scheduler data")
             
@@ -532,3 +559,351 @@ class SchedulerService:
         self.save_database()
         event_system.publish("part_duplicated", new_part, original_part)
         return new_part
+    
+    # Enhanced Methods for New Features
+    
+    # Priority Management
+    def set_job_priority(
+        self,
+        job_id: str,
+        priority_level: str,
+        priority_score: Optional[int] = None,
+        rush_order: bool = False,
+        due_date: Optional[int] = None,
+        notes: str = ""
+    ) -> WorkpiecePriority:
+        """
+        Set or update job priority
+        
+        Args:
+            job_id: ID of the job
+            priority_level: Priority level (critical, high, normal, low)
+            priority_score: Optional custom priority score
+            rush_order: Whether this is a rush order
+            due_date: Optional due date timestamp
+            notes: Priority notes
+            
+        Returns:
+            WorkpiecePriority object
+        """
+        # Update job priority fields
+        job = self.get_job(job_id)
+        if job:
+            job.priority_level = priority_level
+            job.rush_order = rush_order
+            if priority_score is not None:
+                job.workpiece_priority = priority_score
+            self.update_job(job)
+        
+        # Create or update priority record
+        existing_priority = self.get_job_priority(job_id)
+        if existing_priority:
+            existing_priority.priority_level = priority_level
+            existing_priority.rush_order = rush_order
+            existing_priority.due_date = due_date
+            existing_priority.notes = notes
+            if priority_score is not None:
+                existing_priority.priority_score = priority_score
+            existing_priority.updated_at = int(datetime.now().timestamp() * 1000)
+            priority = existing_priority
+        else:
+            priority = WorkpiecePriority(
+                job_id=job_id,
+                priority_level=priority_level,
+                priority_score=priority_score or 50,
+                rush_order=rush_order,
+                due_date=due_date,
+                notes=notes
+            )
+        
+        self.priorities[priority.priority_id] = priority
+        self.save_database()
+        
+        event_system.publish("job_priority_updated", job_id, priority)
+        return priority
+    
+    def get_job_priority(self, job_id: str) -> Optional[WorkpiecePriority]:
+        """Get priority for a job"""
+        for priority in self.priorities.values():
+            if priority.job_id == job_id:
+                return priority
+        return None
+    
+    def get_jobs_by_priority(self, priority_level: str = None) -> List[Job]:
+        """
+        Get jobs filtered by priority level
+        
+        Args:
+            priority_level: Optional priority level filter
+            
+        Returns:
+            List of jobs sorted by effective priority score (highest first)
+        """
+        job_priorities = []
+        
+        for job in self.jobs.values():
+            priority = self.get_job_priority(job.job_id)
+            if priority_level and job.priority_level != priority_level:
+                continue
+                
+            effective_score = priority.get_effective_priority_score() if priority else job.workpiece_priority
+            job_priorities.append((job, effective_score))
+        
+        # Sort by effective priority score (descending)
+        job_priorities.sort(key=lambda x: x[1], reverse=True)
+        return [job for job, _ in job_priorities]
+    
+    # Machine Booking Integration
+    def check_booking_conflicts(self, job_id: str) -> List[Dict[str, Any]]:
+        """
+        Check if a job has conflicts with machine bookings
+        
+        Args:
+            job_id: ID of the job to check
+            
+        Returns:
+            List of conflict descriptions
+        """
+        conflicts = []
+        job_parts = self.get_job_parts(job_id)
+        
+        for part in job_parts:
+            if not part.machine_id:
+                continue
+                
+            job = self.get_job(part.job_id)
+            if not job:
+                continue
+                
+            part_end = part.start_time + (job.cycle_time * 60 * 1000)
+            
+            # Get bookings for this machine during this time
+            machine_bookings = self.booking_service.get_machine_bookings(
+                part.machine_id,
+                part.start_time,
+                part_end
+            )
+            
+            for booking in machine_bookings:
+                if booking.conflicts_with_production():
+                    activity_type = self.booking_service.get_activity_type(booking.activity_type_id)
+                    conflicts.append({
+                        'part_id': part.part_id,
+                        'part_number': part.part_number,
+                        'booking_id': booking.booking_id,
+                        'activity_name': activity_type.name if activity_type else booking.activity_type_id,
+                        'booking_start': booking.start_time,
+                        'booking_end': booking.get_end_time(),
+                        'description': f"Part {part.part_number} conflicts with {activity_type.name if activity_type else 'activity'}"
+                    })
+        
+        return conflicts
+    
+    def resolve_booking_conflicts_for_job(self, job_id: str) -> List[str]:
+        """
+        Automatically resolve booking conflicts for a job
+        
+        Args:
+            job_id: ID of the job
+            
+        Returns:
+            List of resolution descriptions
+        """
+        conflicts = self.check_booking_conflicts(job_id)
+        resolutions = []
+        
+        for conflict in conflicts:
+            part = self.get_part(conflict['part_id'])
+            if not part:
+                continue
+                
+            # Find next available slot after the conflicting booking
+            next_slot = self.booking_service.find_next_available_slot(
+                part.machine_id,
+                self.get_job(part.job_id).cycle_time,
+                conflict['booking_end']
+            )
+            
+            if next_slot:
+                old_time = datetime.fromtimestamp(part.start_time / 1000)
+                new_time = datetime.fromtimestamp(next_slot / 1000)
+                
+                self.move_part(part.part_id, part.machine_id, next_slot)
+                resolutions.append(
+                    f"Moved part {part.part_number} from {old_time.strftime('%Y-%m-%d %H:%M')} to {new_time.strftime('%Y-%m-%d %H:%M')}"
+                )
+        
+        return resolutions
+    
+    # Locking Integration
+    def can_move_part(self, part_id: str) -> Tuple[bool, str]:
+        """
+        Check if a part can be moved considering locks
+        
+        Args:
+            part_id: ID of the part
+            
+        Returns:
+            Tuple of (can_move, reason)
+        """
+        part = self.get_part(part_id)
+        if not part:
+            return False, "Part not found"
+        
+        # Check if job is locked by scheduler
+        if not self.locking_service.can_rearrange_job(part.job_id):
+            lock = self.locking_service.get_job_lock(part.job_id)
+            return False, f"Job locked by scheduler ({lock.reason if lock else 'unknown reason'})"
+        
+        return True, "OK"
+    
+    def move_part_with_lock_check(
+        self,
+        part_id: str,
+        machine_id: str,
+        start_time: int,
+        force: bool = False
+    ) -> Tuple[bool, str]:
+        """
+        Move part with lock checking
+        
+        Args:
+            part_id: ID of the part to move
+            machine_id: Target machine ID
+            start_time: New start time
+            force: Force move even if locked (admin override)
+            
+        Returns:
+            Tuple of (success, message)
+        """
+        if not force:
+            can_move, reason = self.can_move_part(part_id)
+            if not can_move:
+                return False, reason
+        
+        success = self.move_part(part_id, machine_id, start_time)
+        return success, "Part moved successfully" if success else "Failed to move part"
+    
+    # Time Granularity Integration
+    def snap_part_to_granularity(self, part_id: str, granularity: str = None) -> bool:
+        """
+        Snap a part's start time to the current granularity grid
+        
+        Args:
+            part_id: ID of the part
+            granularity: Optional granularity override
+            
+        Returns:
+            True if part was snapped
+        """
+        part = self.get_part(part_id)
+        if not part:
+            return False
+        
+        # Check if part can be moved
+        can_move, _ = self.can_move_part(part_id)
+        if not can_move:
+            return False
+        
+        # Snap to granularity
+        snapped_time = self.time_granularity_manager.snap_to_grid(
+            part.start_time,
+            granularity
+        )
+        
+        if snapped_time != part.start_time:
+            return self.move_part(part_id, part.machine_id, snapped_time)
+        
+        return True
+    
+    def get_optimal_granularity_for_job(self, job_id: str) -> str:
+        """
+        Get optimal time granularity for displaying a job
+        
+        Args:
+            job_id: ID of the job
+            
+        Returns:
+            Optimal granularity string
+        """
+        job = self.get_job(job_id)
+        if not job:
+            return '1hr'
+        
+        return self.time_granularity_manager.get_optimal_granularity_for_duration(
+            job.cycle_time
+        )
+    
+    # Enhanced conflict resolution with booking awareness
+    def move_part_enhanced(
+        self,
+        part_id: str,
+        machine_id: str,
+        start_time: int,
+        respect_bookings: bool = True,
+        snap_to_granularity: bool = True
+    ) -> bool:
+        """
+        Enhanced part moving with booking and granularity awareness
+        
+        Args:
+            part_id: ID of the part to move
+            machine_id: Target machine ID
+            start_time: New start time
+            respect_bookings: Whether to avoid conflicting with bookings
+            snap_to_granularity: Whether to snap to current granularity
+            
+        Returns:
+            True if part was moved successfully
+        """
+        part = self.get_part(part_id)
+        job = self.get_job(part.job_id) if part else None
+        if not part or not job:
+            return False
+        
+        # Check locks
+        can_move, _ = self.can_move_part(part_id)
+        if not can_move:
+            return False
+        
+        # Snap to granularity if requested
+        if snap_to_granularity:
+            start_time = self.time_granularity_manager.snap_to_grid(start_time)
+        
+        # Check for booking conflicts if requested
+        if respect_bookings:
+            part_end = start_time + (job.cycle_time * 60 * 1000)
+            bookings = self.booking_service.get_machine_bookings(
+                machine_id,
+                start_time,
+                part_end
+            )
+            
+            blocking_bookings = [b for b in bookings if b.conflicts_with_production()]
+            if blocking_bookings:
+                # Find next available slot
+                next_slot = self.booking_service.find_next_available_slot(
+                    machine_id,
+                    job.cycle_time,
+                    start_time
+                )
+                if next_slot:
+                    start_time = next_slot
+                else:
+                    return False  # No available slot found
+        
+        # Perform the move
+        return self.move_part(part_id, machine_id, start_time)
+    
+    # Service accessors for UI
+    def get_booking_service(self) -> MachineBookingService:
+        """Get the machine booking service"""
+        return self.booking_service
+    
+    def get_locking_service(self) -> LockingService:
+        """Get the locking service"""
+        return self.locking_service
+    
+    def get_time_granularity_manager(self) -> TimeGranularityManager:
+        """Get the time granularity manager"""
+        return self.time_granularity_manager
