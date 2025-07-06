@@ -81,6 +81,7 @@
       "998",
       "999",
       "1000",
+      "2001",
       "2005",
       "2009",
       "2010",
@@ -179,12 +180,12 @@
         "usage_percentage": null
       },
       "8": {
-        "current_time": 891.48,
+        "current_time": 22.63,
         "max_time": null,
         "usage_percentage": null
       },
       "9": {
-        "current_time": 14.93,
+        "current_time": 59.18,
         "max_time": null,
         "usage_percentage": null
       },
@@ -194,7 +195,7 @@
         "usage_percentage": null
       },
       "13": {
-        "current_time": 140.52,
+        "current_time": 273.4,
         "max_time": null,
         "usage_percentage": null
       },
@@ -359,7 +360,7 @@
         "usage_percentage": null
       },
       "472": {
-        "current_time": 360.95,
+        "current_time": 520.68,
         "max_time": null,
         "usage_percentage": null
       },
@@ -419,7 +420,7 @@
         "usage_percentage": null
       },
       "998": {
-        "current_time": 7584.4,
+        "current_time": 7586.97,
         "max_time": null,
         "usage_percentage": null
       },
@@ -434,7 +435,7 @@
         "usage_percentage": null
       }
     },
-    "last_updated": "2025-07-03 06:28:26"
+    "last_updated": "2025-07-05 16:59:15"
   },
   "2": {
     "id": "2",
@@ -476,6 +477,7 @@
       "313",
       "318",
       "321",
+      "322",
       "323",
       "324",
       "325",
@@ -509,6 +511,7 @@
       "475",
       "476",
       "478",
+      "479",
       "483",
       "486",
       "487",
@@ -528,6 +531,7 @@
       "999",
       "1000",
       "1207",
+      "1328",
       "2001",
       "2003",
       "2004",
@@ -547,7 +551,6 @@
       "2021",
       "2026",
       "2028",
-      "2030",
       "2033",
       "2034",
       "2035",
@@ -565,7 +568,6 @@
       "2060",
       "2074",
       "2075",
-      "2082",
       "2089",
       "2090",
       "2093",
@@ -586,12 +588,12 @@
         "usage_percentage": null
       },
       "2": {
-        "current_time": 283.15,
+        "current_time": 290.75,
         "max_time": null,
         "usage_percentage": null
       },
       "3": {
-        "current_time": 926.77,
+        "current_time": 944.35,
         "max_time": null,
         "usage_percentage": null
       },
@@ -601,7 +603,7 @@
         "usage_percentage": null
       },
       "5": {
-        "current_time": 990.05,
+        "current_time": 994.13,
         "max_time": null,
         "usage_percentage": null
       },
@@ -616,12 +618,12 @@
         "usage_percentage": null
       },
       "8": {
-        "current_time": 1207.9,
+        "current_time": 1254.0,
         "max_time": null,
         "usage_percentage": null
       },
       "9": {
-        "current_time": 1740.53,
+        "current_time": 1780.48,
         "max_time": null,
         "usage_percentage": null
       },
@@ -656,7 +658,7 @@
         "usage_percentage": null
       },
       "25": {
-        "current_time": 106.38,
+        "current_time": 110.13,
         "max_time": null,
         "usage_percentage": null
       },
@@ -666,7 +668,7 @@
         "usage_percentage": null
       },
       "28": {
-        "current_time": 411.38,
+        "current_time": 446.4,
         "max_time": null,
         "usage_percentage": null
       },
@@ -701,7 +703,7 @@
         "usage_percentage": null
       },
       "125": {
-        "current_time": 127.87,
+        "current_time": 199.73,
         "max_time": null,
         "usage_percentage": null
       },
@@ -730,23 +732,28 @@
         "max_time": null,
         "usage_percentage": null
       },
+      "322": {
+        "current_time": 0.17,
+        "max_time": null,
+        "usage_percentage": null
+      },
       "323": {
-        "current_time": 16.53,
+        "current_time": 17.28,
         "max_time": null,
         "usage_percentage": null
       },
       "324": {
-        "current_time": 42.68,
+        "current_time": 45.18,
         "max_time": null,
         "usage_percentage": null
       },
       "325": {
-        "current_time": 28.08,
+        "current_time": 29.78,
         "max_time": null,
         "usage_percentage": null
       },
       "326": {
-        "current_time": 55.12,
+        "current_time": 59.23,
         "max_time": null,
         "usage_percentage": null
       },
@@ -786,12 +793,12 @@
         "usage_percentage": null
       },
       "352": {
-        "current_time": 136.75,
+        "current_time": 151.77,
         "max_time": null,
         "usage_percentage": null
       },
       "353": {
-        "current_time": 1560.05,
+        "current_time": 1817.78,
         "max_time": null,
         "usage_percentage": null
       },
@@ -856,7 +863,7 @@
         "usage_percentage": null
       },
       "471": {
-        "current_time": 1273.5,
+        "current_time": 1499.17,
         "max_time": null,
         "usage_percentage": null
       },
@@ -890,13 +897,18 @@
         "max_time": null,
         "usage_percentage": null
       },
+      "479": {
+        "current_time": 36.07,
+        "max_time": null,
+        "usage_percentage": null
+      },
       "483": {
-        "current_time": 24.4,
+        "current_time": 26.03,
         "max_time": null,
         "usage_percentage": null
       },
       "487": {
-        "current_time": 385.1,
+        "current_time": 387.52,
         "max_time": null,
         "usage_percentage": null
       },
@@ -926,7 +938,7 @@
         "usage_percentage": null
       },
       "590": {
-        "current_time": 705.62,
+        "current_time": 719.05,
         "max_time": null,
         "usage_percentage": null
       },
@@ -946,7 +958,7 @@
         "usage_percentage": null
       },
       "997": {
-        "current_time": 5216.55,
+        "current_time": 5236.02,
         "max_time": null,
         "usage_percentage": null
       },
@@ -966,12 +978,12 @@
         "usage_percentage": null
       },
       "1207": {
-        "current_time": 243.83,
+        "current_time": 36.87,
         "max_time": null,
         "usage_percentage": null
       }
     },
-    "last_updated": "2025-07-03 06:28:28"
+    "last_updated": "2025-07-05 16:59:16"
   },
   "3": {
     "id": "3",
@@ -1072,7 +1084,6 @@
       "997",
       "998",
       "999",
-      "1328",
       "2001",
       "2004",
       "2005",
@@ -1111,7 +1122,6 @@
       "2105",
       "2107",
       "%00000000",
-      "BLUM",
       "TOOL_P.TCH"
     ],
     "locked_tools": [
@@ -1124,7 +1134,7 @@
         "usage_percentage": null
       },
       "2": {
-        "current_time": 368.5,
+        "current_time": 375.9,
         "max_time": null,
         "usage_percentage": null
       },
@@ -1139,7 +1149,7 @@
         "usage_percentage": null
       },
       "5": {
-        "current_time": 1599.1,
+        "current_time": 1615.3,
         "max_time": null,
         "usage_percentage": null
       },
@@ -1154,7 +1164,7 @@
         "usage_percentage": null
       },
       "8": {
-        "current_time": 659.08,
+        "current_time": 703.88,
         "max_time": null,
         "usage_percentage": null
       },
@@ -1209,7 +1219,7 @@
         "usage_percentage": null
       },
       "25": {
-        "current_time": 479.58,
+        "current_time": 486.12,
         "max_time": null,
         "usage_percentage": null
       },
@@ -1329,27 +1339,27 @@
         "usage_percentage": null
       },
       "322": {
-        "current_time": 127.22,
+        "current_time": 127.88,
         "max_time": null,
         "usage_percentage": null
       },
       "323": {
-        "current_time": 282.23,
+        "current_time": 285.23,
         "max_time": null,
         "usage_percentage": null
       },
       "324": {
-        "current_time": 58.8,
+        "current_time": 64.33,
         "max_time": null,
         "usage_percentage": null
       },
       "325": {
-        "current_time": 93.23,
+        "current_time": 102.43,
         "max_time": null,
         "usage_percentage": null
       },
       "326": {
-        "current_time": 148.77,
+        "current_time": 151.9,
         "max_time": null,
         "usage_percentage": null
       },
@@ -1469,7 +1479,7 @@
         "usage_percentage": null
       },
       "474": {
-        "current_time": 51.98,
+        "current_time": 54.12,
         "max_time": null,
         "usage_percentage": null
       },
@@ -1489,7 +1499,7 @@
         "usage_percentage": null
       },
       "479": {
-        "current_time": 510.43,
+        "current_time": 514.9,
         "max_time": null,
         "usage_percentage": null
       },
@@ -1509,12 +1519,12 @@
         "usage_percentage": null
       },
       "524": {
-        "current_time": 498.22,
+        "current_time": 521.88,
         "max_time": null,
         "usage_percentage": null
       },
       "529": {
-        "current_time": 6.7,
+        "current_time": 9.7,
         "max_time": null,
         "usage_percentage": null
       },
@@ -1524,7 +1534,7 @@
         "usage_percentage": null
       },
       "543": {
-        "current_time": 11.65,
+        "current_time": 16.78,
         "max_time": null,
         "usage_percentage": null
       },
@@ -1534,7 +1544,7 @@
         "usage_percentage": null
       },
       "997": {
-        "current_time": 6218.23,
+        "current_time": 6223.37,
         "max_time": null,
         "usage_percentage": null
       },
@@ -1549,7 +1559,7 @@
         "usage_percentage": null
       }
     },
-    "last_updated": "2025-07-03 06:28:29"
+    "last_updated": "2025-07-05 16:59:18"
   },
   "4": {
     "id": "4",
@@ -1709,7 +1719,7 @@
         "usage_percentage": null
       },
       "3": {
-        "current_time": 394.97,
+        "current_time": 415.87,
         "max_time": null,
         "usage_percentage": null
       },
@@ -1729,12 +1739,12 @@
         "usage_percentage": null
       },
       "7": {
-        "current_time": 277.18,
+        "current_time": 331.28,
         "max_time": null,
         "usage_percentage": null
       },
       "8": {
-        "current_time": 154.2,
+        "current_time": 175.55,
         "max_time": null,
         "usage_percentage": null
       },
@@ -1749,7 +1759,7 @@
         "usage_percentage": null
       },
       "13": {
-        "current_time": 103.4,
+        "current_time": 214.73,
         "max_time": null,
         "usage_percentage": null
       },
@@ -1989,7 +1999,7 @@
         "usage_percentage": null
       },
       "471": {
-        "current_time": 181.25,
+        "current_time": 1053.18,
         "max_time": null,
         "usage_percentage": null
       },
@@ -2069,7 +2079,7 @@
         "usage_percentage": null
       },
       "997": {
-        "current_time": 6132.28,
+        "current_time": 6142.42,
         "max_time": null,
         "usage_percentage": null
       },
@@ -2084,7 +2094,7 @@
         "usage_percentage": null
       }
     },
-    "last_updated": "2025-07-03 06:28:31"
+    "last_updated": "2025-07-05 16:59:19"
   },
   "5": {
     "id": "5",
@@ -2226,7 +2236,6 @@
       "2109",
       "2117",
       "%00000000",
-      "BLUM",
       "TOOL_P.TCH"
     ],
     "locked_tools": [
@@ -2234,7 +2243,7 @@
     ],
     "tool_life_data": {
       "1": {
-        "current_time": 583.38,
+        "current_time": 592.28,
         "max_time": null,
         "usage_percentage": null
       },
@@ -2244,7 +2253,7 @@
         "usage_percentage": null
       },
       "3": {
-        "current_time": 430.77,
+        "current_time": 436.77,
         "max_time": null,
         "usage_percentage": null
       },
@@ -2259,7 +2268,7 @@
         "usage_percentage": null
       },
       "6": {
-        "current_time": 1062.97,
+        "current_time": 1064.17,
         "max_time": null,
         "usage_percentage": null
       },
@@ -2274,7 +2283,7 @@
         "usage_percentage": null
       },
       "9": {
-        "current_time": 1761.08,
+        "current_time": 1825.8,
         "max_time": null,
         "usage_percentage": null
       },
@@ -2459,7 +2468,7 @@
         "usage_percentage": null
       },
       "470": {
-        "current_time": 1715.57,
+        "current_time": 1721.27,
         "max_time": null,
         "usage_percentage": null
       },
@@ -2519,7 +2528,7 @@
         "usage_percentage": null
       },
       "536": {
-        "current_time": 134.7,
+        "current_time": 177.6,
         "max_time": null,
         "usage_percentage": null
       },
@@ -2554,7 +2563,7 @@
         "usage_percentage": null
       },
       "997": {
-        "current_time": 7274.9,
+        "current_time": 7282.6,
         "max_time": null,
         "usage_percentage": null
       },
@@ -2569,7 +2578,7 @@
         "usage_percentage": null
       }
     },
-    "last_updated": "2025-07-03 06:28:32"
+    "last_updated": "2025-07-05 16:59:21"
   },
   "6": {
     "id": "6",
@@ -2711,17 +2720,17 @@
     ],
     "tool_life_data": {
       "1": {
-        "current_time": 313.37,
+        "current_time": 337.28,
         "max_time": null,
         "usage_percentage": null
       },
       "2": {
-        "current_time": 1233.42,
+        "current_time": 1417.13,
         "max_time": null,
         "usage_percentage": null
       },
       "3": {
-        "current_time": 1068.72,
+        "current_time": 1121.68,
         "max_time": null,
         "usage_percentage": null
       },
@@ -2731,12 +2740,12 @@
         "usage_percentage": null
       },
       "5": {
-        "current_time": 1044.38,
+        "current_time": 1056.22,
         "max_time": null,
         "usage_percentage": null
       },
       "6": {
-        "current_time": 1149.43,
+        "current_time": 1322.42,
         "max_time": null,
         "usage_percentage": null
       },
@@ -2776,7 +2785,7 @@
         "usage_percentage": null
       },
       "19": {
-        "current_time": 48.47,
+        "current_time": 48.75,
         "max_time": null,
         "usage_percentage": null
       },
@@ -2786,7 +2795,7 @@
         "usage_percentage": null
       },
       "24": {
-        "current_time": 30.23,
+        "current_time": 39.4,
         "max_time": null,
         "usage_percentage": null
       },
@@ -2961,7 +2970,7 @@
         "usage_percentage": null
       },
       "474": {
-        "current_time": 903.27,
+        "current_time": 917.85,
         "max_time": null,
         "usage_percentage": null
       },
@@ -2976,7 +2985,7 @@
         "usage_percentage": null
       },
       "478": {
-        "current_time": 1120.53,
+        "current_time": 1276.67,
         "max_time": null,
         "usage_percentage": null
       },
@@ -3021,12 +3030,12 @@
         "usage_percentage": null
       },
       "757": {
-        "current_time": 45.55,
+        "current_time": 48.38,
         "max_time": null,
         "usage_percentage": null
       },
       "997": {
-        "current_time": 7976.12,
+        "current_time": 7991.52,
         "max_time": null,
         "usage_percentage": null
       },
@@ -3041,6 +3050,6 @@
         "usage_percentage": null
       }
     },
-    "last_updated": "2025-07-03 06:28:34"
+    "last_updated": "2025-07-05 16:59:22"
   }
 }

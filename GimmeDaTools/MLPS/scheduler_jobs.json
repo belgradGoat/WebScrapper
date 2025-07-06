@@ -5,6 +5,61 @@
     "totalParts": 10,
     "cycleTime": 100.0,
     "color": "#0ea5e9",
-    "createdAt": 1751544675092
+    "createdAt": 1751544675092,
+    "status": "active"
+  },
+  "job-9c7faebd-b959-4929-8b01-170673b527aa": {
+    "id": "job-9c7faebd-b959-4929-8b01-170673b527aa",
+    "name": "SS_499091_Su1",
+    "totalParts": 5,
+    "cycleTime": 8.598977700478052,
+    "color": "#3b82f6",
+    "createdAt": 1751657298784,
+    "status": "active"
+  },
+  "job-902559ac-4df4-4931-890d-948296ba9290": {
+    "id": "job-902559ac-4df4-4931-890d-948296ba9290",
+    "name": "SS_499091_Su1",
+    "totalParts": 1,
+    "cycleTime": 8.598977700478052,
+    "color": "#06b6d4",
+    "createdAt": 1751658170036,
+    "status": "locked"
+  },
+  "job-eb320813-caf9-4198-93c6-fa7c6f1635f2": {
+    "id": "job-eb320813-caf9-4198-93c6-fa7c6f1635f2",
+    "name": "SS_499091_Su1",
+    "totalParts": 1,
+    "cycleTime": 8.598977700478052,
+    "color": "#ec4899",
+    "createdAt": 1751658178254,
+    "status": "locked"
+  },
+  "job-32f1fc84-5fbb-408b-9575-0d17c1935dee": {
+    "id": "job-32f1fc84-5fbb-408b-9575-0d17c1935dee",
+    "name": "SS_499091_Su3",
+    "totalParts": 3,
+    "cycleTime": 403.29011588189826,
+    "color": "#d946ef",
+    "createdAt": 1751658338888,
+    "status": "locked"
+  },
+  "job-e5f9de22-21a5-4603-bff0-dab6daf179e2": {
+    "id": "job-e5f9de22-21a5-4603-bff0-dab6daf179e2",
+    "name": "SS_499091_Su2",
+    "totalParts": 10,
+    "cycleTime": 144.53186458608977,
+    "color": "#a855f7",
+    "createdAt": 1751660222968,
+    "status": "active"
+  },
+  "job-7dea51e2-8cc2-4155-bfda-f31e605e1549": {
+    "id": "job-7dea51e2-8cc2-4155-bfda-f31e605e1549",
+    "name": "SS_499091_Su2",
+    "totalParts": 5,
+    "cycleTime": 144.53186458608977,
+    "color": "#3b82f6",
+    "createdAt": 1751660559213,
+    "status": "active"
   }
 }
