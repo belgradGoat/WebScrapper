@@ -4,7 +4,7 @@ Service for integrating JMS API with the scheduler
 import threading
 import time
 import json
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Tuple
 from datetime import datetime
 
 from models.job import Job

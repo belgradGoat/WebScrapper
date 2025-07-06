@@ -36,10 +36,23 @@ class LockingService:
     def load_database(self) -> None:
         """Load scheduler locks from database file"""
         locks_data = load_json_file(self.locks_database_path, default={})
-        self.locks = {
-            lock_id: SchedulerLock.from_dict(lock_data)
-            for lock_id, lock_data in locks_data.items()
-        }
+        
+        # Handle both old flat structure and new nested structure
+        if isinstance(locks_data, dict) and 'scheduler_locks' in locks_data:
+            # New nested structure
+            locks_list = locks_data.get('scheduler_locks', [])
+            self.locks = {
+                lock['id']: SchedulerLock.from_dict(lock)
+                for lock in locks_list
+                if isinstance(lock, dict) and 'id' in lock
+            }
+        else:
+            # Old flat structure (backwards compatibility)
+            self.locks = {
+                lock_id: SchedulerLock.from_dict(lock_data)
+                for lock_id, lock_data in locks_data.items()
+                if isinstance(lock_data, dict)
+            }
         
         # Clean up expired locks on load
         self._cleanup_expired_locks()

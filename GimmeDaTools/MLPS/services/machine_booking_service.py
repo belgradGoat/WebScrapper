@@ -41,10 +41,23 @@ class MachineBookingService:
         """Load bookings and activity types from database files"""
         # Load bookings
         bookings_data = load_json_file(self.bookings_database_path, default={})
-        self.bookings = {
-            booking_id: MachineBooking.from_dict(booking_data)
-            for booking_id, booking_data in bookings_data.items()
-        }
+        
+        # Handle both old flat structure and new nested structure
+        if isinstance(bookings_data, dict) and 'machine_bookings' in bookings_data:
+            # New nested structure
+            booking_list = bookings_data.get('machine_bookings', [])
+            self.bookings = {
+                booking['id']: MachineBooking.from_dict(booking)
+                for booking in booking_list
+                if isinstance(booking, dict) and 'id' in booking
+            }
+        else:
+            # Old flat structure (backwards compatibility)
+            self.bookings = {
+                booking_id: MachineBooking.from_dict(booking_data)
+                for booking_id, booking_data in bookings_data.items()
+                if isinstance(booking_data, dict)
+            }
         
         # Load activity types
         activity_types_data = load_json_file(self.activity_types_database_path, default={})
@@ -53,10 +66,22 @@ class MachineBookingService:
             self.activity_types = ActivityType.create_default_types()
             self.save_activity_types()
         else:
-            self.activity_types = {
-                type_id: ActivityType.from_dict(type_data)
-                for type_id, type_data in activity_types_data.items()
-            }
+            # Handle both old flat structure and new nested structure
+            if isinstance(activity_types_data, dict) and 'activity_types' in activity_types_data:
+                # New nested structure
+                activity_list = activity_types_data.get('activity_types', [])
+                self.activity_types = {
+                    str(activity['id']): ActivityType.from_dict(activity)
+                    for activity in activity_list
+                    if isinstance(activity, dict) and 'id' in activity
+                }
+            else:
+                # Old flat structure (backwards compatibility)
+                self.activity_types = {
+                    type_id: ActivityType.from_dict(type_data)
+                    for type_id, type_data in activity_types_data.items()
+                    if isinstance(type_data, dict)
+                }
         
         event_system.publish("booking_data_loaded", self.bookings, self.activity_types)
         

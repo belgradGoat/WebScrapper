@@ -66,10 +66,23 @@ class SchedulerService:
         
         # Load priorities
         priorities_data = load_json_file(self.priorities_database_path, default={})
-        self.priorities = {
-            priority_id: WorkpiecePriority.from_dict(priority_data)
-            for priority_id, priority_data in priorities_data.items()
-        }
+        
+        # Handle both old flat structure and new nested structure
+        if isinstance(priorities_data, dict) and 'workpiece_priorities' in priorities_data:
+            # New nested structure
+            priorities_list = priorities_data.get('workpiece_priorities', [])
+            self.priorities = {
+                priority['id']: WorkpiecePriority.from_dict(priority)
+                for priority in priorities_list
+                if isinstance(priority, dict) and 'id' in priority
+            }
+        else:
+            # Old flat structure (backwards compatibility)
+            self.priorities = {
+                priority_id: WorkpiecePriority.from_dict(priority_data)
+                for priority_id, priority_data in priorities_data.items()
+                if isinstance(priority_data, dict)
+            }
         
         # Notify listeners that data was loaded
         event_system.publish("scheduler_data_loaded", self.jobs, self.parts, self.priorities)

@@ -15,8 +15,12 @@
             "enabled": true
         },
         "jms_service_module": {
-            "enabled": true,
-            "base_url": "http://localhost:8080"
+            "enabled": false,
+            "base_url": "http://localhost:8080",
+            "username": null,
+            "password": null,
+            "client_id": "EsbusciClient",
+            "client_secret": "DefaultEsbusciClientSecret"
         },
         "analysis_tab_module": {
             "enabled": true
@@ -39,7 +43,12 @@
         "enable_booking_conflicts": true,
         "auto_resolve_conflicts": false,
         "default_polling_interval": 10,
-        "time_granularities": ["5min", "15min", "30min", "1hr"],
+        "time_granularities": [
+            "5min",
+            "15min",
+            "30min",
+            "1hr"
+        ],
         "max_lock_duration": 24,
         "auto_cleanup_expired_locks": true,
         "priority_sync_enabled": true,
