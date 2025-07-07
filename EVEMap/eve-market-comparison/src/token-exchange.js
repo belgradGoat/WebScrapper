@@ -33,19 +33,16 @@ const CLIENT_SECRET = 'vqVoMi6dRfgRJh03GSH77q2boukqqUgIb99tkeho'; // Replace wit
 app.post('/api/token', async (req, res) => {
     const { code } = req.body;
     
-    console.log('Token exchange request received (V2 only)');
-    console.log('Code:', code ? 'Present' : 'Missing');
+    console.log('Token exchange request received');
     
     if (!code) {
         return res.status(400).json({ error: 'Authorization code is required' });
     }
     
     try {
-        // Use V2 OAuth endpoint only
-        console.log('Using V2 token endpoint exclusively...');
-        
-        const v2TokenUrl = 'https://login.eveonline.com/v2/oauth/token';
-        const v2Body = new URLSearchParams({
+        // Only use V2 endpoint
+        const tokenUrl = 'https://login.eveonline.com/v2/oauth/token';
+        const body = new URLSearchParams({
             grant_type: 'authorization_code',
             code: code,
             client_id: CLIENT_ID,
@@ -53,94 +50,32 @@ app.post('/api/token', async (req, res) => {
             redirect_uri: 'http://localhost:8085/callback'
         });
         
-        const response = await fetch(v2TokenUrl, {
+        const response = await fetch(tokenUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
-                'User-Agent': 'EVE-Market-Comparison/2.0',
-                'Host': 'login.eveonline.com',
-                'Accept': 'application/json'
+                'Host': 'login.eveonline.com'
             },
-            body: v2Body.toString()
+            body: body.toString()
         });
         
-        console.log('V2 Response Status:', response.status);
-        console.log('V2 Response Headers:', JSON.stringify([...response.headers.entries()]));
-        
-        const responseText = await response.text();
-        console.log('V2 Raw response:', responseText);
-        
-        let data;
-        try {
-            data = JSON.parse(responseText);
-        } catch (e) {
-            console.error('Failed to parse V2 response as JSON:', e);
-            return res.status(500).json({
-                error: 'Invalid response from EVE OAuth V2 server',
-                details: 'Response was not valid JSON'
-            });
-        }
-        
         if (!response.ok) {
-            console.error('EVE OAuth V2 Error Response:', data);
-            return res.status(response.status).json({
-                error: data.error || 'V2 Token exchange failed',
-                error_description: data.error_description || 'Unknown V2 OAuth error'
-            });
+            throw new Error(`Token exchange failed: ${response.status}`);
         }
         
-        // Strict validation of V2 JWT token
-        const validateJWTToken = (token) => {
-            if (!token) {
-                throw new Error('No token provided');
-            }
-            
-            // Check JWT token format
-            if (!token.startsWith('eyJ')) {
-                throw new Error('Invalid token format: Not a JWT');
-            }
-            
-            // Basic JWT structure validation
-            const parts = token.split('.');
-            if (parts.length !== 3) {
-                throw new Error('Invalid JWT: Incorrect number of parts');
-            }
-            
-            // Optional: Base64 decoding validation (without revealing sensitive info)
-            try {
-                const header = JSON.parse(Buffer.from(parts[0], 'base64').toString('utf-8'));
-                if (header.typ !== 'JWT') {
-                    throw new Error('Invalid JWT header');
-                }
-            } catch (e) {
-                throw new Error('JWT header validation failed');
-            }
-            
-            return true;
-        };
+        const data = await response.json();
         
-        try {
-            // Validate access token
-            validateJWTToken(data.access_token);
-        } catch (validationError) {
-            console.error('JWT Token Validation Error:', validationError.message);
-            return res.status(401).json({
-                error: 'Invalid V2 JWT Token',
-                details: validationError.message
-            });
+        // Verify it's a V2 token
+        if (!data.access_token?.startsWith('eyJ')) {
+            throw new Error('Received non-V2 token format');
         }
-        
-        console.log('V2 Token exchange successful');
-        console.log('Token type:', data.token_type);
-        console.log('Token format check - starts with eyJ (JWT)?:', data.access_token?.startsWith('eyJ'));
-        console.log('Token length:', data.access_token?.length);
         
         res.json(data);
         
     } catch (error) {
-        console.error('V2 Token exchange error:', error);
+        console.error('Token exchange error:', error);
         res.status(500).json({
-            error: 'V2 Token exchange failed',
+            error: 'Token exchange failed',
             details: error.message
         });
     }
@@ -150,46 +85,153 @@ app.post('/api/token', async (req, res) => {
 app.get('/api/markets/:regionId/orders', async (req, res) => {
     try {
         const { regionId } = req.params;
-        console.log(`Fetching ALL orders for region ${regionId}...`);
+        const { type_ids } = req.query; // Get type_ids from query params
+        console.log(`Fetching orders for region ${regionId}${type_ids ? ` with type_ids: ${type_ids}` : ''}...`);
         
         let allOrders = [];
         let page = 1;
         let hasMorePages = true;
         
+        // Process typeIds parameter properly
+        let processedTypeIds = null;
+        if (type_ids) {
+            // Check if it's a comma-separated list
+            if (type_ids.includes(',')) {
+                // Split and handle as multiple IDs
+                processedTypeIds = type_ids.split(',').map(id => id.trim());
+                console.log(`Processing multiple type_ids: ${processedTypeIds.length} IDs`);
+                console.log(`Sample IDs: ${processedTypeIds.slice(0, 5).join(', ')}${processedTypeIds.length > 5 ? '...' : ''}`);
+            } else {
+                // Single ID
+                processedTypeIds = [type_ids];
+                console.log(`Processing single type_id: ${type_ids}`);
+            }
+        }
+        
         while (hasMorePages) {
-            const url = `https://esi.evetech.net/latest/markets/${regionId}/orders/?page=${page}`;
-            console.log(`Fetching page ${page}...`);
+            let baseUrl = `https://esi.evetech.net/latest/markets/${regionId}/orders/?page=${page}`;
             
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                    'User-Agent': 'EVE-Market-Comparison/2.0'
+            // Add type_ids filter if provided - note that ESI expects type_id (singular)
+            // For multiple types, we need to make separate requests for each
+            
+            if (processedTypeIds && processedTypeIds.length > 0) {
+                // For multiple IDs, we need to do separate requests
+                // Process in smaller batches to avoid too many parallel requests
+                const batchSize = 10; // Process 10 type IDs at a time
+                const typeIdBatches = [];
+                
+                for (let i = 0; i < processedTypeIds.length; i += batchSize) {
+                    typeIdBatches.push(processedTypeIds.slice(i, i + batchSize));
                 }
-            });
-            
-            if (!response.ok) {
-                if (response.status === 404 && page > 1) {
-                    // No more pages
+                
+                console.log(`Dividing ${processedTypeIds.length} type IDs into ${typeIdBatches.length} batches of ${batchSize}`);
+                
+                let allPageData = [];
+                
+                for (const batchTypeIds of typeIdBatches) {
+                    const pagePromises = batchTypeIds.map(typeId => {
+                        // EVE ESI API expects "type_id" (singular), not "type_ids"
+                        const url = `${baseUrl}&type_id=${typeId}`;
+                        
+                        // Logging only for the first few requests to avoid console flood
+                        if (batchTypeIds.indexOf(typeId) < 2) {
+                            console.log(`Fetching page ${page} for type_id ${typeId} with URL: ${url}...`);
+                        }
+                        
+                        return fetch(url, {
+                            method: 'GET',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                                'User-Agent': 'EVE-Market-Comparison/2.0'
+                            }
+                        })
+                        .then(response => {
+                            if (!response.ok && !(response.status === 404 && page > 1)) {
+                                throw new Error(`ESI returned status ${response.status} for type_id ${typeId}`);
+                            }
+                            return response.ok ? response.json() : [];
+                        })
+                        .catch(err => {
+                            console.error(`Error fetching type_id ${typeId}:`, err);
+                            return []; // Return empty array on error for this type
+                        });
+                    });
+                    
+                    const batchResults = await Promise.all(pagePromises);
+                    // Flatten the batch results and add to all data
+                    const batchData = batchResults.flat();
+                    allPageData = allPageData.concat(batchData);
+                    
+                    // Add a small delay between batches to avoid rate limiting
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+                
+                // Use all collected data as this page's data, but first validate it
+                const pageData = allPageData.filter(order => {
+                    // Filter out invalid orders
+                    if (!order || typeof order !== 'object') {
+                        console.error('Invalid order object received', order);
+                        return false;
+                    }
+                    if (!('type_id' in order) || !('price' in order) || !('is_buy_order' in order)) {
+                        console.error('Order missing required fields', order);
+                        return false;
+                    }
+                    return true;
+                });
+                
+                console.log(`Received ${allPageData.length} orders, ${pageData.length} are valid`);
+                
+                if (pageData.length === 0 && page > 1) {
+                    // No more data for any type
                     hasMorePages = false;
                     break;
                 }
-                return res.status(response.status).json({
-                    error: 'Failed to fetch market data',
-                    details: `ESI returned status ${response.status} on page ${page}`
-                });
-            }
-            
-            const pageData = await response.json();
-            allOrders = allOrders.concat(pageData);
-            
-            // Check if there are more pages (ESI sends X-Pages header)
-            const totalPages = parseInt(response.headers.get('x-pages') || '1');
-            if (page >= totalPages) {
-                hasMorePages = false;
+                
+                allOrders = allOrders.concat(pageData);
+                // For multi-type requests, we don't reliably know if there are more pages
+                // so we'll just check if we got any data back
+                if (pageData.length === 0) {
+                    hasMorePages = false;
+                } else {
+                    page++;
+                }
             } else {
-                page++;
+                // No type filter, get all orders for the region
+                console.log(`Fetching page ${page} with URL: ${baseUrl}...`);
+                
+                const response = await fetch(baseUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'User-Agent': 'EVE-Market-Comparison/2.0'
+                    }
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 404 && page > 1) {
+                        // No more pages
+                        hasMorePages = false;
+                        break;
+                    }
+                    return res.status(response.status).json({
+                        error: 'Failed to fetch market data',
+                        details: `ESI returned status ${response.status} on page ${page}`
+                    });
+                }
+                
+                const pageData = await response.json();
+                allOrders = allOrders.concat(pageData);
+                
+                // Check if there are more pages (ESI sends X-Pages header)
+                const totalPages = parseInt(response.headers.get('x-pages') || '1');
+                if (page >= totalPages) {
+                    hasMorePages = false;
+                } else {
+                    page++;
+                }
             }
             
             // Add small delay to avoid rate limiting
@@ -208,91 +250,91 @@ app.get('/api/markets/:regionId/orders', async (req, res) => {
     }
 });
 
-// Update structure endpoint to fetch all pages too:
+// Add health check endpoint
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok' });
+});
+
+// Update structure endpoint with better error handling
 app.get('/api/markets/structures/:structureId', async (req, res) => {
     try {
         const { structureId } = req.params;
+        const page = parseInt(req.query.page) || 1;
         const authHeader = req.headers.authorization;
-        console.log('Structure request - Auth header:', authHeader ? 'Present' : 'Missing');
         
-        const token = authHeader?.replace('Bearer ', '');
-        
-        if (!token) {
-            return res.status(401).json({ error: 'No authorization token provided' });
+        if (!authHeader) {
+            return res.status(401).json({ error: 'Authentication required' });
         }
 
+        console.log(`Fetching structure ${structureId} page ${page}...`);
+
+        const token = authHeader.replace('Bearer ', '');
+        
+        // Validate V2 token
         if (!token.startsWith('eyJ')) {
-            console.error('Invalid token format: Not a V2 JWT');
             return res.status(401).json({
-                error: 'Invalid authentication token',
-                details: 'Only V2 JWT tokens are supported'
+                error: 'Invalid token format',
+                details: 'V2 JWT token required'
             });
         }
+
+        const url = `https://esi.evetech.net/latest/markets/structures/${structureId}/`;
+        console.log(`Fetching structure page ${page}...`);
         
-        console.log(`Fetching ALL orders for structure ${structureId}...`);
-        
-        let allOrders = [];
-        let page = 1;
-        let hasMorePages = true;
-        
-        while (hasMorePages) {
-            const url = `https://esi.evetech.net/latest/markets/structures/${structureId}/?page=${page}`;
-            console.log(`Fetching structure page ${page}...`);
-            
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                    'User-Agent': 'EVE-Market-Comparison/2.0'
-                }
-            });
-            
-            console.log(`Structure page ${page} response status:`, response.status);
-            
-            if (response.ok) {
-                const pageData = await response.json();
-                allOrders = allOrders.concat(pageData);
-                
-                // Check if there are more pages
-                const totalPages = parseInt(response.headers.get('x-pages') || '1');
-                if (page >= totalPages) {
-                    hasMorePages = false;
-                } else {
-                    page++;
-                }
-                
-                // Add small delay to avoid rate limiting
-                await new Promise(resolve => setTimeout(resolve, 100));
-            } else if (response.status === 404 && page > 1) {
-                // No more pages
-                hasMorePages = false;
-            } else {
-                // Error on first page or auth error
-                const errorText = await response.text();
-                console.error('Structure market error:', errorText);
-                
-                if (response.status === 401) {
-                    return res.status(401).json({
-                        error: 'Failed to authenticate with ESI',
-                        details: 'V2 JWT token authentication failed. Please re-login.'
-                    });
-                }
-                
-                return res.status(response.status).json({
-                    error: 'Failed to fetch structure market data',
-                    details: `ESI returned status ${response.status}`
-                });
+        const response = await fetch(`${url}?page=${page}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+                'User-Agent': 'EVE-Market-Comparison/2.0'
             }
+        });
+
+        console.log(`Structure page ${page} response status:`, response.status);
+
+        // Handle specific error cases
+        if (response.status === 403) {
+            return res.status(403).json({
+                error: 'Access forbidden',
+                details: 'You do not have access to this structure'
+            });
         }
+
+        if (response.status === 404 && page > 1) {
+            // No more pages - return empty array
+            return res.json([]);
+        }
+
+        if (!response.ok) {
+            throw new Error(`ESI returned status ${response.status}`);
+        }
+
+        const data = await response.json();
         
-        console.log(`Fetched ${allOrders.length} total structure orders from ${page-1} pages`);
-        return res.json(allOrders);
-        
+        // Validate response data
+        if (!Array.isArray(data)) {
+            console.error('Invalid response data:', data);
+            throw new Error('Invalid response format from ESI');
+        }
+
+        // Log success
+        console.log(`Page ${page}: Received ${data.length} orders, ${data.filter(o => o && o.type_id).length} valid`);
+
+        // Add delay based on remaining error limit
+        const errorLimit = parseInt(response.headers.get('x-esi-error-limit-remain') || '100');
+        const waitTime = errorLimit < 50 ? 1000 : 500;
+        console.log(`Waiting ${waitTime}ms before next request (error limit: ${errorLimit}, reset: ${response.headers.get('x-esi-error-limit-reset')}s)`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+
+        res.json(data);
+
     } catch (error) {
         console.error('Structure market error:', error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({
+            error: 'Structure market data retrieval failed',
+            details: error.message,
+            structureId: req.params.structureId,
+            page: req.query.page
+        });
     }
 });
 
@@ -363,28 +405,113 @@ app.get('/api/verify-token', async (req, res) => {
 app.get('/api/universe/types/:typeId', async (req, res) => {
     try {
         const { typeId } = req.params;
-        const url = `https://esi.evetech.net/latest/universe/types/${typeId}/`;
         
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-                'User-Agent': 'EVE-Market-Comparison/2.0'
+        // Check if this is a force refresh request
+        const forceRefresh = req.query.refresh === 'true';
+        
+        // Check cache first to reduce API calls and improve reliability (unless force refresh)
+        const cacheKey = `item_type_${typeId}`;
+        const cachedData = forceRefresh ? null : getFromCache(cacheKey);
+        
+        if (cachedData) {
+            // If this is a placeholder item and it's been in cache for a while, try to refresh
+            if (cachedData.name === `Item ${typeId}` || cachedData.name === `Unknown Item (${typeId})`) {
+                const cacheTimeLeft = getCacheTimeLeft(cacheKey);
+                // Only refresh if the cache is older than 1 hour
+                if (cacheTimeLeft < 23 * 60 * 60 * 1000) { // If less than 23 hours left in 24 hour cache
+                    console.log(`Refreshing stale placeholder data for item ${typeId}`);
+                    // We'll continue with the fetch, but still return the cached data if fetch fails
+                } else {
+                    return res.json(cachedData);
+                }
+            } else {
+                // Valid item data, return from cache
+                return res.json(cachedData);
             }
-        });
-        
-        if (!response.ok) {
-            return res.status(response.status).json({
-                error: 'Failed to fetch item info',
-                details: `ESI returned status ${response.status}`
-            });
         }
         
-        const data = await response.json();
-        res.json(data);
+        // Not in cache or refreshing, fetch from ESI API
+        const url = `https://esi.evetech.net/latest/universe/types/${typeId}/`;
+        
+        // Add retry logic for improved reliability
+        const maxRetries = 3;
+        let retryCount = 0;
+        let lastError = null;
+        
+        while (retryCount < maxRetries) {
+            try {
+                console.log(`Fetching item data for ${typeId} from ESI (attempt ${retryCount + 1}/${maxRetries})`);
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'User-Agent': 'EVE-Market-Comparison/2.0',
+                        'Cache-Control': 'no-cache'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Enhanced validation
+                    if (!data || typeof data !== 'object') {
+                        throw new Error('Invalid item data received - not an object');
+                    }
+                    
+                    if (!data.name) {
+                        throw new Error('Invalid item data received - missing name property');
+                    }
+                    
+                    if (!data.type_id) {
+                        // Add type_id if it's missing
+                        data.type_id = parseInt(typeId);
+                    }
+                    
+                    // Store in cache for 24 hours (items rarely change)
+                    setInCache(cacheKey, data, 24 * 60 * 60 * 1000);
+                    
+                    return res.json(data);
+                }
+                
+                // Special case for 404 - item doesn't exist
+                if (response.status === 404) {
+                    console.log(`Item ${typeId} not found in ESI database`);
+                    // Create a more user-friendly placeholder item
+                    const placeholderItem = {
+                        type_id: parseInt(typeId),
+                        name: `Unknown Item (${typeId})`,
+                        description: 'This item ID is not available in the EVE ESI API. It might be a new item or a restricted item.',
+                        group_id: 0
+                    };
+                    
+                    // Cache the placeholder to prevent repeated lookups, but for less time
+                    setInCache(cacheKey, placeholderItem, 1 * 60 * 60 * 1000); // 1 hour
+                    return res.json(placeholderItem);
+                }
+                
+                // For other errors, try again
+                lastError = new Error(`ESI returned status ${response.status}`);
+                
+            } catch (fetchError) {
+                console.error(`Retry ${retryCount + 1}/${maxRetries} failed for item ${typeId}:`, fetchError);
+                lastError = fetchError;
+            }
+            
+            retryCount++;
+            if (retryCount < maxRetries) {
+                // Add exponential backoff
+                const delay = 500 * Math.pow(2, retryCount);
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+        
+        // All retries failed
+        throw lastError || new Error('Failed to fetch item info after retries');
+        
     } catch (error) {
-        console.error('Item info error:', error);
+        console.error(`Item info error for typeId ${req.params.typeId}:`, error);
         res.status(500).json({
             error: 'Item information retrieval failed',
             details: error.message
@@ -896,12 +1023,154 @@ function getFromCache(key) {
     return item.data;
 }
 
+function getCacheTimeLeft(key) {
+    const item = cache[key];
+    if (!item) return 0;
+    
+    const timeLeft = item.expiry - Date.now();
+    return timeLeft > 0 ? timeLeft : 0;
+}
+
 function setInCache(key, data, ttlMs) {
     cache[key] = {
         data,
         expiry: Date.now() + ttlMs
     };
 }
+
+// Add this route to your server
+
+app.get('/api/universe/groups/:groupId/types', async (req, res) => {
+    try {
+        const { groupId } = req.params;
+        
+        // Use ESI endpoint to get all types in a group
+        const url = `https://esi.evetech.net/latest/universe/groups/${groupId}/`;
+        
+        const response = await fetch(url, {
+            headers: {
+                'User-Agent': 'EVE Market Comparison Tool/2.0'
+            }
+        });
+        
+        if (!response.ok) {
+            return res.status(response.status).json({
+                error: 'Failed to fetch group info',
+                details: `ESI returned status ${response.status}`
+            });
+        }
+        
+        const groupInfo = await response.json();
+        
+        // Return the types array from the group info
+        if (!groupInfo.types || !Array.isArray(groupInfo.types)) {
+            console.error('Invalid group info structure:', groupInfo);
+            return res.json([]);
+        }
+        
+        console.log(`Group ${groupId} has ${groupInfo.types.length} types`);
+        res.json(groupInfo.types.map(typeId => ({ type_id: typeId })));
+        
+    } catch (error) {
+        console.error('Error fetching group types:', error);
+        res.status(500).json({
+            error: 'Failed to fetch group types',
+            details: error.message
+        });
+    }
+});
+
+// Add this route to handle individual category details
+app.get('/api/universe/categories/:categoryId', async (req, res) => {
+    try {
+        const { categoryId } = req.params;
+        
+        // Check cache first
+        const cacheKey = `category_${categoryId}`;
+        const cachedData = getFromCache(cacheKey);
+        
+        if (cachedData) {
+            return res.json(cachedData);
+        }
+        
+        const url = `https://esi.evetech.net/latest/universe/categories/${categoryId}/`;
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'User-Agent': 'EVE-Market-Comparison/2.0'
+            }
+        });
+        
+        if (!response.ok) {
+            return res.status(response.status).json({
+                error: 'Failed to fetch category details',
+                details: `ESI returned status ${response.status}`
+            });
+        }
+        
+        const data = await response.json();
+        
+        // Store in cache
+        setInCache(cacheKey, data, 24 * 60 * 60 * 1000); // 24 hours
+        
+        res.json(data);
+    } catch (error) {
+        console.error('Category details error:', error);
+        res.status(500).json({
+            error: 'Category details retrieval failed',
+            details: error.message
+        });
+    }
+});
+
+// Add this route after the /api/universe/groups/:categoryId route
+app.get('/api/universe/groups/:groupId', async (req, res) => {
+    try {
+        const { groupId } = req.params;
+        
+        // Check cache first
+        const cacheKey = `group_${groupId}`;
+        const cachedData = getFromCache(cacheKey);
+        
+        if (cachedData) {
+            return res.json(cachedData);
+        }
+        
+        const url = `https://esi.evetech.net/latest/universe/groups/${groupId}/`;
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'User-Agent': 'EVE-Market-Comparison/2.0'
+            }
+        });
+        
+        if (!response.ok) {
+            return res.status(response.status).json({
+                error: 'Failed to fetch group details',
+                details: `ESI returned status ${response.status}`
+            });
+        }
+        
+        const data = await response.json();
+        
+        // Store in cache
+        setInCache(cacheKey, data, 24 * 60 * 60 * 1000); // 24 hours
+        
+        res.json(data);
+    } catch (error) {
+        console.error('Group details error:', error);
+        res.status(500).json({
+            error: 'Group details retrieval failed',
+            details: error.message
+        });
+    }
+});
 
 app.listen(8085, () => {
     console.log('Server running on http://localhost:8085');

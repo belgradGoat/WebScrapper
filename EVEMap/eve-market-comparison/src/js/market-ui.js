@@ -2,8 +2,14 @@
 
 // Initialize UI components when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize market filters (loads excluded categories)
+    if (window.initializeMarketFilters) {
+        window.initializeMarketFilters();
+    }
+    
     initializeFilterUI();
     initializeResultsUI();
+    initializeLocationDropdowns();
     
     // Check login status
     const token = localStorage.getItem('eveAccessToken');
@@ -44,6 +50,7 @@ function buildFilterUI(container) {
             <h3>Advanced Filters</h3>
             <button id="toggleFiltersBtn" class="toggle-btn">▼</button>
         </div>
+
         
         <div class="filter-content">
             <div class="filter-section">
@@ -58,6 +65,8 @@ function buildFilterUI(container) {
                         <option value="">Select Group...</option>
                         <!-- Groups will be loaded dynamically -->
                     </select>
+                    <button id="fullCategoryBtn" class="filter-btn primary-btn" title="Compare all items in the selected category" style="margin-left: 10px;" disabled>Full Category Compare</button>
+                    <button id="downloadCategoryBtn" class="filter-btn" title="Download all items in the selected category from the buy location" style="margin-left: 10px;" disabled>Download Category</button>
                 </div>
                 
                 <div class="filter-row">
@@ -70,6 +79,27 @@ function buildFilterUI(container) {
                 </div>
             </div>
             
+            <div class="filter-section">
+                <h4>Excluded Categories</h4>
+                <div class="filter-row">
+                    <select id="excludeCategorySelect" class="filter-select">
+                        <option value="">Select Category to Exclude...</option>
+                        <!-- Categories will be loaded dynamically -->
+                    </select>
+                    <button id="addExcludedCategoryBtn" class="filter-btn">Add</button>
+                </div>
+                <div id="excludedCategoriesList" class="excluded-categories-list">
+                    <!-- Excluded categories will appear here -->
+                    <p class="info-text">No categories excluded. Items from all categories will be included in searches.</p>
+                </div>
+                <div class="filter-info">
+                    <div class="tooltip">
+                        <span class="tooltip-icon">?</span>
+                        <span class="tooltip-text">Excluded categories will be skipped during searches and comparisons. This can save bandwidth and processing time by ignoring categories you're not interested in.</span>
+                    </div>
+                </div>
+            </div>
+
             <div class="filter-section">
                 <h4>Price Filters</h4>
                 <div class="filter-row">
@@ -86,6 +116,17 @@ function buildFilterUI(container) {
                     
                     <label>Min Profit %:</label>
                     <input type="number" id="minProfitPercentInput" class="filter-input" value="5">
+                </div>
+                
+                <div class="filter-row">
+                    <div class="checkbox-container">
+                        <input type="checkbox" id="showMissingItemsCheckbox" class="filter-checkbox" checked>
+                        <label for="showMissingItemsCheckbox">Show items available only in buy location</label>
+                        <div class="tooltip">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Show items that are available for purchase in the first location but have no buy orders in the second location. These could be potential opportunities to be the first seller in that market.</span>
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -133,6 +174,8 @@ function setupFilterEventListeners() {
             }
         });
     }
+
+    // Market ID input listeners are now handled in initializeLocationDropdowns()
     
     // Category selection
     const categorySelect = document.getElementById('categorySelect');
@@ -141,22 +184,39 @@ function setupFilterEventListeners() {
             const categoryId = categorySelect.value;
             if (categoryId) {
                 await loadGroups(categoryId);
-                setFilter('categoryId', categoryId);
-                
-                // Enable group select
-                const groupSelect = document.getElementById('groupSelect');
-                if (groupSelect) {
-                    groupSelect.disabled = false;
+                if (window.setFilter) {
+                    window.setFilter('categoryId', categoryId);
+                } else {
+                    window.marketFilters.categoryId = categoryId;
                 }
-            } else {
-                setFilter('categoryId', null);
                 
-                // Disable and reset group select
+                // Enable group select and category buttons
                 const groupSelect = document.getElementById('groupSelect');
+                const fullCategoryBtn = document.getElementById('fullCategoryBtn');
+                const downloadCategoryBtn = document.getElementById('downloadCategoryBtn');
+
+                if (groupSelect) groupSelect.disabled = false;
+                if (fullCategoryBtn) fullCategoryBtn.disabled = false;
+                if (downloadCategoryBtn) downloadCategoryBtn.disabled = false;
+
+            } else {
+                if (window.setFilter) {
+                    window.setFilter('categoryId', null);
+                } else {
+                    window.marketFilters.categoryId = null;
+                }
+                
+                // Disable and reset group select and category buttons
+                const groupSelect = document.getElementById('groupSelect');
+                const fullCategoryBtn = document.getElementById('fullCategoryBtn');
+                const downloadCategoryBtn = document.getElementById('downloadCategoryBtn');
+
                 if (groupSelect) {
                     groupSelect.disabled = true;
                     groupSelect.innerHTML = '<option value="">Select Group...</option>';
                 }
+                if (fullCategoryBtn) fullCategoryBtn.disabled = true;
+                if (downloadCategoryBtn) downloadCategoryBtn.disabled = true;
             }
         });
     }
@@ -166,8 +226,66 @@ function setupFilterEventListeners() {
     if (groupSelect) {
         groupSelect.addEventListener('change', () => {
             const groupId = groupSelect.value;
-            setFilter('groupId', groupId ? groupId : null);
+            if (window.setFilter) {
+                window.setFilter('groupId', groupId ? groupId : null);
+            } else {
+                window.marketFilters.groupId = groupId ? groupId : null;
+            }
         });
+    }
+    
+    const fullCategoryBtn = document.getElementById('fullCategoryBtn');
+    if (fullCategoryBtn) {
+        fullCategoryBtn.addEventListener('click', () => {
+    const categoryId = document.getElementById('categorySelect').value;
+    const buyLocationId = document.getElementById('buyLocationInput').value;
+    const sellLocationId = document.getElementById('sellLocationInput').value;
+    
+    if (categoryId && buyLocationId && sellLocationId) {
+        window.compareCategoryMarkets(buyLocationId, sellLocationId, categoryId);
+    } else {
+        alert('Please select a category and enter both market locations');
+    }
+});
+    }
+
+    const downloadCategoryBtn = document.getElementById('downloadCategoryBtn');
+    if (downloadCategoryBtn) {
+        downloadCategoryBtn.addEventListener('click', () => {
+            const categoryId = document.getElementById('categorySelect').value;
+            const buyLocationId = document.getElementById('buyLocationInput').value;
+            
+            if (categoryId && buyLocationId) {
+                downloadCategoryData(buyLocationId, categoryId);
+            } else {
+                alert('Please select a category and enter a buy market location');
+            }
+        });
+    }
+    
+    // Excluded categories handling
+    const excludeCategorySelect = document.getElementById('excludeCategorySelect');
+    const addExcludedCategoryBtn = document.getElementById('addExcludedCategoryBtn');
+    
+    if (excludeCategorySelect && addExcludedCategoryBtn) {
+        // Load the same categories as in the main category select
+        loadCategories(excludeCategorySelect);
+        
+        // Add event listener for the add button
+        addExcludedCategoryBtn.addEventListener('click', () => {
+            const categoryId = excludeCategorySelect.value;
+            const categoryName = excludeCategorySelect.options[excludeCategorySelect.selectedIndex].text;
+            
+            if (categoryId) {
+                addExcludedCategory(categoryId, categoryName);
+                excludeCategorySelect.value = ''; // Reset selection
+            } else {
+                alert('Please select a category to exclude');
+            }
+        });
+        
+        // Update the display of excluded categories
+        updateExcludedCategoriesUI();
     }
     
     // Item search
@@ -212,6 +330,14 @@ function setupFilterEventListeners() {
         });
     }
     
+    // Missing items checkbox
+    const showMissingItemsCheckbox = document.getElementById('showMissingItemsCheckbox');
+    if (showMissingItemsCheckbox) {
+        showMissingItemsCheckbox.addEventListener('change', () => {
+            setFilter('showMissingItems', showMissingItemsCheckbox.checked);
+        });
+    }
+    
     // Saved filters
     const saveFilterBtn = document.getElementById('saveFilterBtn');
     const filterNameInput = document.getElementById('filterNameInput');
@@ -246,9 +372,9 @@ function setupFilterEventListeners() {
     const applyFiltersBtn = document.getElementById('applyFiltersBtn');
     if (applyFiltersBtn) {
         applyFiltersBtn.addEventListener('click', () => {
-            const publicMarketId = document.getElementById('publicMarketInput').value;
-            const privateMarketId = document.getElementById('privateMarketInput').value;
-            compareMarkets(publicMarketId, privateMarketId);
+            const buyLocationId = document.querySelector('#marketComparison .input-group #buyLocationInput').value;
+            const sellLocationId = document.querySelector('#marketComparison .input-group #sellLocationInput').value;
+            compareMarkets(buyLocationId, sellLocationId);
         });
     }
     
@@ -260,16 +386,212 @@ function setupFilterEventListeners() {
     }
 }
 
+// Add this to your market-ui.js file
+
+// Add after the initializeFilterUI() function
+function initializeLocationDropdowns() {
+    console.log('initializeLocationDropdowns called');
+    const marketInputs = [
+        {inputId: 'buyLocationInput', dropdownId: 'buyLocationDropdown', labelId: 'buyLocationTypeDisplay'},
+        {inputId: 'sellLocationInput', dropdownId: 'sellLocationDropdown', labelId: 'sellLocationTypeDisplay'}
+    ];
+    
+    marketInputs.forEach(({inputId, dropdownId, labelId}) => {
+        console.log(`Processing input: ${inputId}`);
+        // Get or create the input wrapper
+        const input = document.getElementById(inputId);
+        if (!input) {
+            console.warn(`Input element ${inputId} not found`);
+            return;
+        }
+        
+        const wrapper = input.parentElement;
+        if (!wrapper || !wrapper.classList.contains('market-input-wrapper')) {
+            console.warn(`Wrapper for ${inputId} not found or incorrect class`);
+            return;
+        }
+        
+        // Check if dropdown already exists
+        if (document.getElementById(dropdownId)) {
+            console.log(`Dropdown ${dropdownId} already exists`);
+            return;
+        }
+        
+        // Create dropdown structure
+        const dropdownHtml = `
+            <div class="location-dropdown-container">
+                <select id="${dropdownId}" class="location-dropdown">
+                    <option value="">Saved locations...</option>
+                </select>
+                <button id="${dropdownId}-save" class="location-save-btn" title="Save current location">+</button>
+            </div>
+        `;
+        
+        // Insert dropdown after input
+        wrapper.insertAdjacentHTML('beforeend', dropdownHtml);
+        console.log(`Dropdown ${dropdownId} created successfully`);
+        
+        // Load saved locations (using shared storage)
+        loadSavedLocations(dropdownId);
+        
+        // Add event listeners
+        const dropdown = document.getElementById(dropdownId);
+        const saveBtn = document.getElementById(`${dropdownId}-save`);
+        
+        if (dropdown) {
+            dropdown.addEventListener('change', () => {
+                if (dropdown.value) {
+                    const [locationId, locationType] = dropdown.value.split('|');
+                    if (locationId && locationType) {
+                        input.value = locationId;
+                        
+                        // Update the type display
+                        const typeDisplay = document.getElementById(labelId);
+                        if (typeDisplay) {
+                            typeDisplay.textContent = `Type: ${locationType}`;
+                            typeDisplay.className = 'market-type-display detected';
+                        }
+                        
+                        // Update placeholder
+                        updateMarketInputPlaceholder(locationType, input);
+                        
+                        // Trigger input event to update any other UI
+                        const event = new Event('input', { bubbles: true });
+                        input.dispatchEvent(event);
+                    }
+                }
+            });
+        }
+        
+        if (saveBtn) {
+            saveBtn.addEventListener('click', () => {
+                const locationId = input.value.trim();
+                if (!locationId) {
+                    alert('Please enter a location ID first');
+                    return;
+                }
+                
+                try {
+                    const marketInfo = window.getMarketIdInfo ? window.getMarketIdInfo(locationId) : getMarketIdInfo(locationId);
+                    const locationName = prompt('Enter a name for this location:', '');
+                    if (locationName) {
+                        // Use shared storage (dropdownId no longer matters)
+                        saveLocation(locationId, locationName, marketInfo.type);
+                        
+                        // Update all dropdowns to show the new location
+                        marketInputs.forEach(item => {
+                            loadSavedLocations(item.dropdownId);
+                        });
+                    }
+                } catch (error) {
+                    alert('Invalid location ID format');
+                }
+            });
+        }
+        
+        // Add structure type detection to input
+        input.addEventListener('input', () => {
+            const marketId = input.value.trim();
+            const typeDisplay = document.getElementById(labelId);
+            if (typeDisplay && marketId) {
+                try {
+                    const marketInfo = window.getMarketIdInfo ? window.getMarketIdInfo(marketId) : getMarketIdInfo(marketId);
+                    typeDisplay.textContent = `Type: ${marketInfo.type}`;
+                    typeDisplay.className = 'market-type-display detected';
+                    updateMarketInputPlaceholder(marketInfo.type, input);
+                } catch (error) {
+                    typeDisplay.textContent = 'Unknown Type';
+                    typeDisplay.className = 'market-type-display error';
+                }
+            }
+        });
+    });
+}
+
+// Save a location to localStorage (shared between dropdowns)
+function saveLocation(locationId, name, type) {
+    // Use a single storage key for all locations
+    const storageKey = 'eve-market-saved-locations';
+    
+    // Get existing locations
+    let savedLocations = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    
+    // Check if already exists
+    const existingIndex = savedLocations.findIndex(loc => loc.id === locationId);
+    if (existingIndex >= 0) {
+        // Update existing
+        savedLocations[existingIndex].name = name;
+        savedLocations[existingIndex].timestamp = Date.now(); // Update timestamp
+    } else {
+        // Add new
+        savedLocations.push({
+            id: locationId,
+            name: name,
+            type: type,
+            timestamp: Date.now()
+        });
+    }
+    
+    // Save back to localStorage
+    localStorage.setItem(storageKey, JSON.stringify(savedLocations));
+}
+
+// Load saved locations into dropdown
+function loadSavedLocations(dropdownId) {
+    const dropdown = document.getElementById(dropdownId);
+    if (!dropdown) return;
+    
+    // Use shared storage key
+    const storageKey = 'eve-market-saved-locations';
+    
+    // Get saved locations
+    const savedLocations = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    
+    // Clear existing options (except first)
+    while (dropdown.options.length > 1) {
+        dropdown.remove(1);
+    }
+    
+    // Add saved locations
+    if (savedLocations.length === 0) {
+        const option = document.createElement('option');
+        option.disabled = true;
+        option.text = 'No saved locations';
+        dropdown.add(option);
+    } else {
+        // Sort by most recently used
+        savedLocations.sort((a, b) => b.timestamp - a.timestamp);
+        
+        savedLocations.forEach(location => {
+            const option = document.createElement('option');
+            option.value = `${location.id}|${location.type}`;
+            option.text = `${location.name} (${location.type}: ${location.id})`;
+            dropdown.add(option);
+        });
+    }
+}
+
+// Helper to update all location dropdowns
+function updateAllLocationDropdowns() {
+    const dropdownIds = ['buyLocationDropdown', 'sellLocationDropdown'];
+    dropdownIds.forEach(dropdownId => {
+        loadSavedLocations(dropdownId);
+    });
+}
+
 // Load categories from API
-async function loadCategories() {
+async function loadCategories(excludeSelect) {
     try {
         const categories = await window.marketAPI.getCategories();
         const categorySelect = document.getElementById('categorySelect');
+        const excludeCategorySelect = excludeSelect || document.getElementById('excludeCategorySelect');
+        
+        // Sort categories by name once
+        if (categories) {
+            categories.sort((a, b) => a.name.localeCompare(b.name));
+        }
         
         if (categorySelect && categories) {
-            // Sort categories by name
-            categories.sort((a, b) => a.name.localeCompare(b.name));
-            
             // Add options
             let options = '<option value="">Select Category...</option>';
             categories.forEach(category => {
@@ -278,6 +600,27 @@ async function loadCategories() {
             
             categorySelect.innerHTML = options;
         }
+        
+        if (excludeCategorySelect && categories) {
+            // Add options for excluded categories
+            let excludeOptions = '<option value="">Select Category to Exclude...</option>';
+            
+            // Filter out already excluded categories for better UX
+            const excludedCategoryIds = window.marketFilters?.excludedCategoryIds || [];
+            
+            categories.forEach(category => {
+                // Skip already excluded categories
+                if (!excludedCategoryIds.includes(category.category_id.toString())) {
+                    excludeOptions += `<option value="${category.category_id}">${category.name}</option>`;
+                }
+            });
+            
+            excludeCategorySelect.innerHTML = excludeOptions;
+        }
+        
+        // Update the excluded categories UI to reflect current state
+        updateExcludedCategoriesUI();
+        
     } catch (error) {
         console.error('Failed to load categories:', error);
     }
@@ -376,7 +719,11 @@ function addSelectedItem(typeId, name) {
     const typeIds = [...window.marketFilters.typeIds];
     if (!typeIds.includes(typeId)) {
         typeIds.push(typeId);
-        setFilter('typeIds', typeIds);
+        if (window.setFilter) {
+            window.setFilter('typeIds', typeIds);
+        } else {
+            window.marketFilters.typeIds = typeIds;
+        }
         
         // Update UI
         updateSelectedItemsUI();
@@ -387,7 +734,11 @@ function addSelectedItem(typeId, name) {
 function removeSelectedItem(typeId) {
     // Update filter state
     const typeIds = window.marketFilters.typeIds.filter(id => id !== typeId);
-    setFilter('typeIds', typeIds);
+    if (window.setFilter) {
+        window.setFilter('typeIds', typeIds);
+    } else {
+        window.marketFilters.typeIds = typeIds;
+    }
     
     // Update UI
     updateSelectedItemsUI();
@@ -491,6 +842,11 @@ function updateFilterUIDisplay(filters) {
         });
     }
     
+    // Update excluded categories UI
+    if (filters.excludedCategoryIds) {
+        updateExcludedCategoriesUI();
+    }
+    
     // Update price inputs
     const minPriceInput = document.getElementById('minPriceInput');
     const maxPriceInput = document.getElementById('maxPriceInput');
@@ -513,6 +869,12 @@ function updateFilterUIDisplay(filters) {
         minProfitPercentInput.value = filters.minProfitPercent || 5;
     }
     
+    // Update missing items checkbox
+    const showMissingItemsCheckbox = document.getElementById('showMissingItemsCheckbox');
+    if (showMissingItemsCheckbox) {
+        showMissingItemsCheckbox.checked = filters.showMissingItems !== false; // Default to true if not specified
+    }
+    
     // Update selected items
     updateSelectedItemsUI();
     
@@ -531,15 +893,43 @@ function initializeResultsUI() {
 // Enhanced results display
 function displayComparisonResults(opportunities) {
     const resultsDiv = document.getElementById('comparisonResults');
-    
+
     if (!opportunities || opportunities.length === 0) {
         resultsDiv.innerHTML = '<div class="no-results">No profitable opportunities found</div>';
         return;
     }
+
+    // Update the live results display to show it's complete
+    const notice = document.querySelector('.partial-results-notice');
+    if (notice) {
+        notice.textContent = 'Analysis complete. Displaying final results.';
+        notice.classList.remove('active');
+    }
     
+    // Filter out items from excluded categories (extra check to ensure nothing is missed)
+    const excludedCategoryIds = window.marketFilters?.excludedCategoryIds || [];
+    const filteredOpportunities = opportunities.filter(opp => 
+        !opp.categoryId || !excludedCategoryIds.includes(opp.categoryId.toString())
+    );
+    
+    // Separate regular opportunities from missing items
+    const regularOpportunities = filteredOpportunities.filter(opp => !opp.isMissingInSellLocation);
+    const missingItems = filteredOpportunities.filter(opp => opp.isMissingInSellLocation);
+    
+    // Display missing items if enabled
+    if (window.marketFilters.showMissingItems && missingItems.length > 0) {
+        window.updateMissingItemsList(missingItems);
+    } else {
+        // Remove missing items section if not showing
+        const missingItemsSection = document.getElementById('missing-items-section');
+        if (missingItemsSection) {
+            missingItemsSection.remove();
+        }
+    }
+
     let html = `
         <div class="results-header">
-            <h3>Results (${opportunities.length} items)</h3>
+            <h3>Results (${regularOpportunities.length} items)</h3>
             <div class="results-controls">
                 <button id="exportResultsBtn" class="results-btn">Export CSV</button>
             </div>
@@ -549,61 +939,44 @@ function displayComparisonResults(opportunities) {
             <thead>
                 <tr>
                     <th>Item</th>
-                    <th>Public Station Trade</th>
-                    <th>Private Station Trade</th>
-                    <th>Buy Public, Sell Private</th>
-                    <th>Buy Private, Sell Public</th>
-                    <th>Volume</th>
+                    <th>Buy Price</th>
+                    <th>Sell Price</th>
+                    <th>Profit</th>
+                    <th>Profit %</th>
+                    <th>Volume (Buy/Sell)</th>
                 </tr>
             </thead>
             <tbody>
     `;
-    
-    opportunities.forEach(opp => {
+
+    regularOpportunities.forEach(opp => {
         const formatPrice = (price) => {
-            if (price === Infinity) return 'N/A';
-            if (price === 0) return 'N/A';
+            if (price === Infinity || price === null) return 'N/A';
             return price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         };
-        
-        const formatProfit = (profit, percent) => {
-            if (profit <= 0) return '-';
-            return `+${profit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${percent.toFixed(1)}%)`;
-        };
-        
+
         html += `
             <tr>
                 <td class="item-cell" title="${opp.description || ''}">
                     <div class="item-name">${opp.itemName || opp.typeId}</div>
                     <div class="item-category">${opp.categoryId || ''}</div>
                 </td>
-                <td class="${opp.stationTradePublicProfit > 0 ? 'profit' : ''}">
-                    ${formatProfit(opp.stationTradePublicProfit, opp.stationTradePublicProfitPercent)}
-                </td>
-                <td class="${opp.stationTradePrivateProfit > 0 ? 'profit' : ''}">
-                    ${formatProfit(opp.stationTradePrivateProfit, opp.stationTradePrivateProfitPercent)}
-                </td>
-                <td class="${opp.buyFromPublicProfit > 0 ? 'profit' : ''}">
-                    ${formatProfit(opp.buyFromPublicProfit, opp.buyFromPublicProfitPercent)}
-                </td>
-                <td class="${opp.buyFromPrivateProfit > 0 ? 'profit' : ''}">
-                    ${formatProfit(opp.buyFromPrivateProfit, opp.buyFromPrivateProfitPercent)}
-                </td>
-                <td>
-                    <div>Buy: ${opp.publicBuyVolume.toLocaleString()} / ${opp.privateBuyVolume.toLocaleString()}</div>
-                    <div>Sell: ${opp.publicSellVolume.toLocaleString()} / ${opp.privateSellVolume.toLocaleString()}</div>
-                </td>
+                <td>${formatPrice(opp.buyPrice)}</td>
+                <td>${formatPrice(opp.sellPrice)}</td>
+                <td class="profit">+${formatPrice(opp.profit)}</td>
+                <td class="profit">${opp.profitPercent ? opp.profitPercent.toFixed(1) + '%' : 'N/A'}</td>
+                <td>${opp.buyVolume.toLocaleString()} / ${opp.sellVolume.toLocaleString()}</td>
             </tr>
         `;
     });
-    
+
     html += `
             </tbody>
         </table>
     `;
-    
+
     resultsDiv.innerHTML = html;
-    
+
     // Add event listener for export button
     const exportBtn = document.getElementById('exportResultsBtn');
     if (exportBtn) {
@@ -615,24 +988,43 @@ function displayComparisonResults(opportunities) {
 
 // Export results to CSV
 function exportResultsToCSV(opportunities) {
-    // Create CSV content
-    let csv = 'Item,Public Buy,Public Sell,Private Buy,Private Sell,Buy from Public Profit,Buy from Public %,Buy from Private Profit,Buy from Private %\n';
+    // Separate regular opportunities from missing items
+    const regularOpportunities = opportunities.filter(opp => !opp.isMissingInSellLocation);
+    const missingItems = opportunities.filter(opp => opp.isMissingInSellLocation);
     
-    opportunities.forEach(opp => {
+    // Create CSV content for regular opportunities
+    let regularCsv = 'Item,Buy Price,Sell Price,Profit,Profit %,Buy Volume,Sell Volume\n';
+    regularOpportunities.forEach(opp => {
         const row = [
             `"${opp.itemName || opp.typeId}"`,
-            opp.publicBuyMax || 0,
-            opp.publicSellMin === Infinity ? 0 : opp.publicSellMin,
-            opp.privateBuyMax || 0,
-            opp.privateSellMin === Infinity ? 0 : opp.privateSellMin,
-            opp.buyFromPublicProfit || 0,
-            opp.buyFromPublicProfitPercent || 0,
-            opp.buyFromPrivateProfit || 0,
-            opp.buyFromPrivateProfitPercent || 0
+            opp.buyPrice,
+            opp.sellPrice,
+            opp.profit,
+            opp.profitPercent ? opp.profitPercent.toFixed(2) : 'N/A',
+            opp.buyVolume,
+            opp.sellVolume
         ];
-        
-        csv += row.join(',') + '\n';
+        regularCsv += row.join(',') + '\n';
     });
+    
+    // Create CSV content for missing items if they exist
+    let missingCsv = '';
+    if (missingItems.length > 0) {
+        missingCsv = '\n\nItems Available Only in Buy Location\n';
+        missingCsv += 'Item,Buy Price,Available Volume\n';
+        
+        missingItems.forEach(opp => {
+            const row = [
+                `"${opp.itemName || opp.typeId}"`,
+                opp.buyPrice,
+                opp.buyVolume
+            ];
+            missingCsv += row.join(',') + '\n';
+        });
+    }
+    
+    // Combine the CSVs
+    const csv = regularCsv + missingCsv;
     
     // Create download link
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -645,6 +1037,21 @@ function exportResultsToCSV(opportunities) {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+}
+
+// Update market input placeholder based on structure type
+function updateMarketInputPlaceholder(locationType, input) {
+    const placeholders = {
+        'region': 'Enter Region ID (e.g., 10000002 for The Forge)',
+        'station': 'Enter Station ID (e.g., 60003760 for Jita 4-4)',
+        'structure': 'Enter Structure ID',
+        'constellation': 'Enter Constellation ID (e.g., 20000001)',
+        'solar_system': 'Enter Solar System ID (e.g., 30000142)',
+        'corporation': 'Enter Corporation ID',
+        'alliance': 'Enter Alliance ID'
+    };
+
+    input.placeholder = placeholders[locationType] || 'Enter Market ID';
 }
 
 // Update login status
@@ -664,7 +1071,117 @@ function updateUIForLoggedInUser() {
     }
 }
 
-// Make functions available globally
-window.displayComparisonResults = displayComparisonResults;
-window.updateFilterUIDisplay = updateFilterUIDisplay;
-window.updateSavedFiltersDisplay = updateSavedFiltersDisplay;
+// Add a category to the excluded list
+function addExcludedCategory(categoryId, categoryName) {
+    // Ensure categoryId is a string for consistent comparison
+    categoryId = categoryId.toString();
+    
+    // Get current excluded categories
+    const excludedCategories = [...window.marketFilters.excludedCategoryIds];
+    
+    // Check if already excluded
+    if (excludedCategories.includes(categoryId)) {
+        alert(`Category "${categoryName}" is already excluded.`);
+        return;
+    }
+    
+    // Check if it matches the currently selected category
+    const currentCategoryId = window.marketFilters.categoryId?.toString();
+    if (currentCategoryId === categoryId) {
+        if (!confirm(`Warning: You're about to exclude the currently selected category "${categoryName}". This will prevent any searches or downloads for this category. Continue?`)) {
+            return;
+        }
+    }
+    
+    // Add to excluded list and persist
+    excludedCategories.push(categoryId);
+    window.setFilter('excludedCategoryIds', excludedCategories);
+    
+    // Update UI
+    updateExcludedCategoriesUI();
+}
+
+// Remove a category from the excluded list
+function removeExcludedCategory(categoryId) {
+    // Ensure categoryId is a string for consistent comparison
+    categoryId = categoryId.toString();
+    
+    // Get current excluded categories
+    const excludedCategories = window.marketFilters.excludedCategoryIds.filter(id => id !== categoryId);
+    
+    // Update filter and persist
+    window.setFilter('excludedCategoryIds', excludedCategories);
+    
+    // Update UI
+    updateExcludedCategoriesUI();
+    
+    // Refresh the exclude category select to show the newly available category
+    loadCategories();
+}
+
+// Update the excluded categories UI display
+function updateExcludedCategoriesUI() {
+    const container = document.getElementById('excludedCategoriesList');
+    if (!container) return;
+    
+    const excludedCategories = window.marketFilters.excludedCategoryIds;
+    
+    // If no excluded categories
+    if (!excludedCategories || excludedCategories.length === 0) {
+        container.innerHTML = '<p class="info-text">No categories excluded. Items from all categories will be included in searches.</p>';
+        return;
+    }
+    
+    // Get category names from both select boxes
+    const getCategoryName = (categoryId) => {
+        const mainSelect = document.getElementById('categorySelect');
+        const excludeSelect = document.getElementById('excludeCategorySelect');
+        
+        // Try to find in main select
+        if (mainSelect) {
+            for (const option of mainSelect.options) {
+                if (option.value === categoryId) {
+                    return option.text;
+                }
+            }
+        }
+        
+        // Try to find in exclude select
+        if (excludeSelect) {
+            for (const option of excludeSelect.options) {
+                if (option.value === categoryId) {
+                    return option.text;
+                }
+            }
+        }
+        
+        // Default if not found
+        return `Category ${categoryId}`;
+    };
+    
+    // Build HTML for excluded categories
+    let html = '';
+    for (const categoryId of excludedCategories) {
+        const categoryName = getCategoryName(categoryId);
+        html += `
+            <div class="excluded-category-item" data-category-id="${categoryId}">
+                <span class="excluded-category-name">${categoryName}</span>
+                <button class="remove-excluded-btn" title="Remove from exclusion list">×</button>
+            </div>
+        `;
+    }
+    
+    container.innerHTML = html;
+    
+    // Add event listeners to remove buttons
+    const removeButtons = container.querySelectorAll('.remove-excluded-btn');
+    removeButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            const item = e.target.closest('.excluded-category-item');
+            const categoryId = item.dataset.categoryId;
+            removeExcludedCategory(categoryId);
+        });
+    });
+}
+
+// Function to handle loading categories for different select elements

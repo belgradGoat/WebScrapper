@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EVE Market Comparison - Test Functionality</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <h1>EVE Market Comparison - Functionality Test</h1>
+    
+    <div class="test-section">
+        <h2>Script Loading Test</h2>
+        <div id="script-test-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Function Availability Test</h2>
+        <div id="function-test-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Market ID Detection Test</h2>
+        <input type="text" id="test-market-id" value="10000002" placeholder="Enter market ID">
+        <button onclick="testMarketIdDetection()">Test Detection</button>
+        <div id="market-id-test-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Storage Test</h2>
+        <button onclick="testStorage()">Test IndexedDB Storage</button>
+        <div id="storage-test-results"></div>
+    </div>
+
+    <!-- Load scripts in the same order as main app -->
+    <script src="js/market-storage.js"></script>
+    <script src="js/eve-market-api.js"></script>
+    <script src="js/eve-auth.js"></script>
+    <script src="js/market-comparison-optimized.js"></script>
+    <script src="js/market-ui.js"></script>
+
+    <script>
+        // Test script loading
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Test page loaded');
+            
+            setTimeout(() => {
+                testScriptLoading();
+                testFunctionAvailability();
+            }, 1000);
+        });
+
+        function testScriptLoading() {
+            const results = document.getElementById('script-test-results');
+            const tests = [
+                { name: 'MarketDataStorage', obj: window.MarketDataStorage },
+                { name: 'marketStorage', obj: window.marketStorage },
+                { name: 'EVEMarketAPI class', obj: window.EVEMarketAPI },
+                { name: 'marketAPI instance', obj: window.marketAPI },
+                { name: 'marketFilters', obj: window.marketFilters }
+            ];
+            
+            let html = '<ul>';
+            tests.forEach(test => {
+                const status = test.obj ? '✅ Loaded' : '❌ Missing';
+                const className = test.obj ? 'success' : 'error';
+                html += `<li class="${className}">${test.name}: ${status}</li>`;
+            });
+            html += '</ul>';
+            results.innerHTML = html;
+        }
+
+        function testFunctionAvailability() {
+            const results = document.getElementById('function-test-results');
+            const functions = [
+                'compareMarkets',
+                'compareCategoryMarkets', 
+                'initializeMarketFilters',
+                'setFilter',
+                'getMarketIdInfo'
+            ];
+            
+            let html = '<ul>';
+            functions.forEach(funcName => {
+                const func = window[funcName];
+                const status = typeof func === 'function' ? '✅ Available' : '❌ Missing';
+                const className = typeof func === 'function' ? 'success' : 'error';
+                html += `<li class="${className}">${funcName}: ${status}</li>`;
+            });
+            html += '</ul>';
+            results.innerHTML = html;
+        }
+
+        function testMarketIdDetection() {
+            const input = document.getElementById('test-market-id');
+            const results = document.getElementById('market-id-test-results');
+            const marketId = input.value.trim();
+            
+            if (!marketId) {
+                results.innerHTML = '<p class="error">Please enter a market ID</p>';
+                return;
+            }
+            
+            try {
+                const marketInfo = window.getMarketIdInfo ? window.getMarketIdInfo(marketId) : 'Function not available';
+                results.innerHTML = `
+                    <p class="success">✅ Detection successful</p>
+                    <p class="info">Market ID: ${marketId}</p>
+                    <p class="info">Type: ${marketInfo.type || 'Unknown'}</p>
+                `;
+            } catch (error) {
+                results.innerHTML = `
+                    <p class="error">❌ Detection failed: ${error.message}</p>
+                `;
+            }
+        }
+
+        async function testStorage() {
+            const results = document.getElementById('storage-test-results');
+            
+            if (!window.marketStorage) {
+                results.innerHTML = '<p class="error">❌ MarketStorage not available</p>';
+                return;
+            }
+            
+            try {
+                // Test storage operations
+                const testData = [
+                    { type_id: 34, price: 1000, volume_remain: 100 },
+                    { type_id: 35, price: 2000, volume_remain: 200 }
+                ];
+                
+                await window.marketStorage.storeMarketOrders('test-location', testData);
+                const retrieved = await window.marketStorage.getMarketOrders('test-location');
+                
+                if (retrieved && retrieved.length === 2) {
+                    results.innerHTML = `
+                        <p class="success">✅ Storage test passed</p>
+                        <p class="info">Stored and retrieved ${retrieved.length} orders</p>
+                    `;
+                } else {
+                    results.innerHTML = '<p class="error">❌ Storage test failed - data mismatch</p>';
+                }
+                
+                // Clean up
+                await window.marketStorage.clearAll();
+                
+            } catch (error) {
+                results.innerHTML = `<p class="error">❌ Storage test failed: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

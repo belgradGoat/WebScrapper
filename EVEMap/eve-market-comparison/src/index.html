@@ -5,10 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EVE Market Comparison Tool</title>
     <link rel="stylesheet" href="css/market-comparison.css">
-    <!-- Load scripts with defer to ensure they execute after HTML is parsed -->
-    <script src="js/eve-auth.js" defer></script>
+    <!-- Add global error handler -->
+    <script>
+    console.log('Index.html loaded at:', new Date().toLocaleTimeString());
+    
+    window.onerror = function(message, source, lineno, colno, error) {
+        console.error('Global error caught:', message, 'at', source, ':', lineno, ':', colno);
+        console.error('Error object:', error);
+        
+        // Create an error display on the page
+        const errorDiv = document.createElement('div');
+        errorDiv.style.position = 'fixed';
+        errorDiv.style.top = '10px';
+        errorDiv.style.right = '10px';
+        errorDiv.style.background = '#f8d7da';
+        errorDiv.style.color = '#721c24';
+        errorDiv.style.padding = '10px';
+        errorDiv.style.borderRadius = '5px';
+        errorDiv.style.zIndex = '9999';
+        errorDiv.style.maxWidth = '80%';
+        errorDiv.style.boxShadow = '0 0 10px rgba(0,0,0,0.2)';
+        errorDiv.innerHTML = `<strong>Error:</strong> ${message}<br>at ${source}:${lineno}:${colno}`;
+        document.body.appendChild(errorDiv);
+        
+        // Remove after 10 seconds
+        setTimeout(() => errorDiv.remove(), 10000);
+        
+        return true; // Prevent default error handling
+    };
+    </script>
+    
+    <!-- Load scripts in correct order with defer to ensure they execute after HTML is parsed -->
+    <script src="js/market-storage.js" defer></script>
     <script src="js/eve-market-api.js" defer></script>
-    <script src="js/market-comparison.js" defer></script>
+    <script src="js/eve-auth.js" defer></script>
+    <script src="js/market-comparison-optimized.js" defer></script>
     <script src="js/market-ui.js" defer></script>
 </head>
 <body>
@@ -21,8 +52,14 @@
             <section id="marketComparison">
                 <h2>Compare Markets</h2>
                 <div class="input-group">
-                    <input type="text" id="publicMarketInput" value="10000002" placeholder="Public Market ID (e.g., 10000002 for The Forge)">
-                    <input type="text" id="privateMarketInput" placeholder="Private Structure ID (e.g., 1035466617946)">
+                    <div class="market-input-wrapper">
+                        <input type="text" id="buyLocationInput" value="10000002" placeholder="Buy Location ID (e.g., Jita)">
+                        <span id="buyLocationTypeDisplay" class="market-type-display"></span>
+                    </div>
+                    <div class="market-input-wrapper">
+                        <input type="text" id="sellLocationInput" placeholder="Sell Location ID (e.g., Amarr)">
+                        <span id="sellLocationTypeDisplay" class="market-type-display"></span>
+                    </div>
                     <button id="compareBtn">Compare</button>
                 </div>
                 <!-- Filter panel will be inserted here by JavaScript -->
@@ -43,23 +80,84 @@
     <script>
         // Initialize the application
         document.addEventListener('DOMContentLoaded', () => {
-            // Add event listeners for the compare button
+            console.log('DOM content loaded');
+            
+            // Debug check for required functions
+            setTimeout(() => {
+                console.log('Checking for required functions...');
+                console.log('window.compareMarkets exists:', typeof window.compareMarkets === 'function');
+                console.log('window.marketAPI exists:', !!window.marketAPI);
+                console.log('window.marketStorage exists:', !!window.marketStorage);
+                
+                // Create status display
+                const statusDiv = document.createElement('div');
+                statusDiv.style.position = 'fixed';
+                statusDiv.style.bottom = '10px';
+                statusDiv.style.left = '10px';
+                statusDiv.style.background = '#d4edda';
+                statusDiv.style.color = '#155724';
+                statusDiv.style.padding = '10px';
+                statusDiv.style.borderRadius = '5px';
+                statusDiv.style.zIndex = '9999';
+                statusDiv.innerHTML = `
+                    <strong>Debug Info:</strong><br>
+                    compareMarkets: ${typeof window.compareMarkets === 'function' ? 'Available ✓' : 'Missing ✗'}<br>
+                    marketAPI: ${!!window.marketAPI ? 'Available ✓' : 'Missing ✗'}<br>
+                    marketStorage: ${!!window.marketStorage ? 'Available ✓' : 'Missing ✗'}<br>
+                `;
+                document.body.appendChild(statusDiv);
+            }, 1000);
+            
+            // Add event listeners for the compare button with enhanced error handling
             const compareBtn = document.getElementById('compareBtn');
             if (compareBtn) {
                 compareBtn.addEventListener('click', () => {
-                    // Fetch and compare market data
-                    const publicMarketId = document.getElementById('publicMarketInput').value;
-                    const privateMarketId = document.getElementById('privateMarketInput').value;
-                    compareMarkets(publicMarketId, privateMarketId);
+                    console.log('Compare button clicked');
+                    
+                    // Fetch input values
+                    const buyLocationInput = document.getElementById('buyLocationInput');
+                    const sellLocationInput = document.getElementById('sellLocationInput');
+                    
+                    if (!buyLocationInput || !sellLocationInput) {
+                        console.error('Could not find location input elements');
+                        alert('Error: Location input elements not found');
+                        return;
+                    }
+                    
+                    // Validate inputs
+                    const buyLocationId = buyLocationInput.value.trim();
+                    const sellLocationId = sellLocationInput.value.trim();
+                    
+                    if (!buyLocationId || !sellLocationId) {
+                        alert('Please enter both buy and sell location IDs');
+                        return;
+                    }
+                    
+                    // Check if the compare markets function is available
+                    if (typeof window.compareMarkets !== 'function') {
+                        console.error('compareMarkets function is not available!');
+                        alert('Error: Market comparison function is not available. Please check the console for errors and refresh the page.');
+                        return;
+                    }
+                    
+                    // Disable button while processing
+                    compareBtn.disabled = true;
+                    compareBtn.textContent = 'Processing...';
+                    
+                    try {
+                        console.log('Calling compareMarkets with:', buyLocationId, sellLocationId);
+                        window.compareMarkets(buyLocationId, sellLocationId);
+                    } catch (error) {
+                        console.error('Error calling compareMarkets:', error);
+                        alert('Error comparing markets: ' + error.message);
+                    } finally {
+                        // Re-enable button after a short delay
+                        setTimeout(() => {
+                            compareBtn.disabled = false;
+                            compareBtn.textContent = 'Compare';
+                        }, 1000);
+                    }
                 });
-            }
-            
-            // Login button is handled in market-ui.js
-            
-            // Set default values
-            const publicInput = document.getElementById('publicMarketInput');
-            if (publicInput && !publicInput.value) {
-                publicInput.value = '10000002'; // The Forge
             }
         });
     </script>
