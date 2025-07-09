@@ -36,6 +36,9 @@
         },
         "jms_menu_extension_module": {
             "enabled": true
+        },
+        "example_module": {
+            "enabled": true
         }
     },
     "scheduler": {
@@ -55,7 +58,13 @@
         "booking_overlap_tolerance": 5
     },
     "ui": {
-        "tab_order": [],
+        "tab_order": [
+            "analysis_tab_module",
+            "scheduler_tab_module",
+            "machine_tab_module",
+            "example_module",
+            "results_tab_module"
+        ],
         "hidden_tabs": []
     },
     "paths": {

@@ -1,48 +1,17 @@
 {
-  "workpiece_priorities": [],
-  "next_id": 1,
-  "created_at": "2025-01-07T17:37:00Z",
-  "version": "1.0.0",
-  "priority_levels": {
-    "critical": {
-      "name": "Critical",
-      "base_score": 90,
-      "color": "#DC143C",
-      "description": "Critical priority parts requiring immediate attention"
-    },
-    "high": {
-      "name": "High",
-      "base_score": 75,
-      "color": "#FF8C00",
-      "description": "High priority parts with elevated scheduling priority"
-    },
-    "normal": {
-      "name": "Normal",
-      "base_score": 50,
-      "color": "#32CD32",
-      "description": "Standard priority parts following normal scheduling"
-    },
-    "low": {
-      "name": "Low",
-      "base_score": 25,
-      "color": "#4169E1",
-      "description": "Low priority parts scheduled when capacity allows"
-    }
-  },
-  "scoring_rules": {
-    "rush_order_boost": 20,
-    "customer_priority_boost": 10,
-    "overdue_penalty_max": 20,
-    "overdue_calculation": "min(days_overdue * 2, 20)",
-    "effective_score_formula": "base_score + rush_boost + customer_boost + overdue_penalty"
-  },
-  "statistics": {
-    "total_priorities_assigned": 0,
-    "critical_count": 0,
-    "high_count": 0,
-    "normal_count": 0,
-    "low_count": 0,
-    "rush_orders_count": 0,
-    "overdue_count": 0
+  "priority-bd50da93-8513-4b95-87c2-4e31254a944b": {
+    "id": "priority-bd50da93-8513-4b95-87c2-4e31254a944b",
+    "jobId": "job-9c7faebd-b959-4929-8b01-170673b527aa",
+    "priorityLevel": "normal",
+    "priorityScore": 50,
+    "effectivePriorityScore": 70,
+    "rushOrder": true,
+    "dueDate": null,
+    "customerPriority": false,
+    "notes": "",
+    "updatedBy": "system",
+    "updatedAt": 1751765813418,
+    "isOverdue": false,
+    "daysUntilDue": null
   }
 }

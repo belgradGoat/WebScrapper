@@ -4,6 +4,7 @@ Service for integrating JMS API with the scheduler
 import threading
 import time
 import json
+import logging
 from typing import Dict, List, Any, Optional, Tuple
 from datetime import datetime
 
@@ -50,6 +51,11 @@ class JMSService:
             client_id: OAuth2 client ID (default: EsbusciClient)
             client_secret: OAuth2 client secret (default: DefaultEsbusciClientSecret)
         """
+        self.logger = logging.getLogger(__name__)
+        self.logger.info(f"=== JMS SERVICE INITIALIZATION ===")
+        self.logger.info(f"JMSService instance ID: {id(self)}")
+        self.logger.info(f"Constructor parameter base_url: {base_url}")
+        
         self.scheduler_service = scheduler_service
         self.polling_interval = polling_interval
         self.mapping_file = mapping_file
@@ -59,30 +65,60 @@ class JMSService:
         self.client_id = client_id
         self.client_secret = client_secret
         
+        self.logger.info(f"Initial base_url set to: {self.base_url}")
+        
+        # Load saved configuration (this will override defaults if config file exists)
+        self._load_config()
+        
+        self.logger.info(f"After _load_config, base_url is: {self.base_url}")
+        self.logger.info(f"=== JMS SERVICE INITIALIZATION COMPLETE ===")
+        
         # Thread for background polling
         self.polling_thread = None
         self.stop_polling_flag = threading.Event()
+        
+        # Initialize clients with loaded configuration
+        self._initialize_clients()
+        
+        # Load job-order mappings
+        self.job_order_mappings = self._load_mappings()
+    
+    def _initialize_clients(self):
+        """Initialize JMS client and auth client with current configuration"""
+        self.logger.info(f"=== INITIALIZING CLIENTS ===")
+        self.logger.info(f"Using base_url: {self.base_url}")
         
         # Initialize client if available
         self.client = None
         if JMS_AVAILABLE:
             try:
-                print(f"Initializing JMS client with URL: {base_url}")
-                if username and password:
-                    print(f"Using username authentication for JMS client")
-                    self.client = JMSClient(base_url, client_id, client_secret, username, password)
+                self.logger.info(f"Initializing JMS client with URL: {self.base_url}")
+                if self.username and self.password:
+                    self.logger.info(f"Using username authentication: {self.username}")
+                    self.client = JMSClient(self.base_url, self.client_id, self.client_secret, self.username, self.password)
                 else:
-                    print(f"Using client credentials authentication for JMS client")
-                    self.client = JMSClient(base_url, client_id, client_secret)
+                    self.logger.info(f"Using client credentials authentication")
+                    self.client = JMSClient(self.base_url, self.client_id, self.client_secret)
+                    
+                if self.client:
+                    self.logger.info(f"JMS client initialized successfully with ID: {id(self.client)}")
+                    self.logger.info(f"JMS client base_url: {self.client.base_url}")
+                    if hasattr(self.client, 'auth_client') and self.client.auth_client:
+                        self.logger.info(f"JMS auth client ID: {id(self.client.auth_client)}")
+                        self.logger.info(f"JMS auth client base_url: {self.client.auth_client.base_url}")
+                else:
+                    self.logger.warning("JMS client is None after initialization")
+                    
             except Exception as e:
                 error_msg = f"Failed to initialize JMS client: {str(e)}"
-                print(error_msg)
+                self.logger.error(error_msg)
                 import traceback
-                print(f"Traceback: {traceback.format_exc()}")
+                self.logger.error(f"Traceback: {traceback.format_exc()}")
                 event_system.publish("error", error_msg)
+        else:
+            self.logger.warning("JMS not available, client not initialized")
         
-        # Load job-order mappings
-        self.job_order_mappings = self._load_mappings()
+        self.logger.info(f"=== CLIENT INITIALIZATION COMPLETE ===")
     
     def _load_mappings(self) -> Dict[str, str]:
         """
@@ -420,26 +456,26 @@ class JMSService:
             True if connection is successful, False otherwise
         """
         if not JMS_AVAILABLE or not self.client:
-            print("JMS client not available for connection test")
+            self.logger.warning("JMS client not available for connection test")
             return False
             
         # If requests is not available, return True for mock functionality
         if not REQUESTS_AVAILABLE:
-            print("Using mock connection test")
+            self.logger.info("Using mock connection test")
             return True
             
         try:
-            print(f"Testing connection to JMS API at {self.base_url}")
+            self.logger.info(f"Testing connection to JMS API at {self.base_url}")
             result = self.client.test_connection()
             if result:
-                print("Connection test successful")
+                self.logger.info("Connection test successful")
             else:
-                print("Connection test failed")
+                self.logger.warning("Connection test failed")
             return result
         except Exception as e:
-            print(f"Connection test failed with exception: {str(e)}")
+            self.logger.error(f"Connection test failed with exception: {str(e)}")
             import traceback
-            print(f"Traceback: {traceback.format_exc()}")
+            self.logger.error(f"Traceback: {traceback.format_exc()}")
             return False
     
     # Enhanced Priority Management Methods
@@ -654,3 +690,174 @@ class JMSService:
             pass
         
         return stats
+    
+    def update_configuration(self, base_url: str, username: str = None, password: str = None):
+        """
+        Update JMS service configuration
+
+        Args:
+            base_url: New base URL
+            username: New username (optional)  
+            password: New password (optional)
+        """
+        import logging
+        logger = logging.getLogger(__name__)
+
+        logger.info(f"=== STARTING CONFIGURATION UPDATE ===")
+        logger.info(f"Current base_url: {self.base_url}")
+        logger.info(f"New base_url: {base_url}")
+        logger.info(f"Current client exists: {self.client is not None}")
+        if self.client:
+            logger.info(f"Current client base_url: {self.client.base_url}")
+            logger.info(f"Current client auth_client base_url: {self.client.auth_client.base_url}")
+
+        # Stop polling if it's running
+        if self.polling_thread and self.polling_thread.is_alive():
+            logger.info("Stopping current polling thread")
+            self.stop_polling()
+
+        # Clear existing client completely and force garbage collection
+        if self.client:
+            logger.info("Clearing existing JMS client")
+            old_client = self.client
+            self.client = None
+            del old_client
+            import gc
+            gc.collect()
+            logger.info("Old client cleared and garbage collected")
+
+        # Update configuration
+        logger.info(f"Updating base_url from {self.base_url} to {base_url}")
+        self.base_url = base_url
+        if username is not None:
+            self.username = username
+        if password is not None:
+            self.password = password
+
+        # Reinitialize client with new configuration
+        self._initialize_clients()
+
+        # Save configuration
+        try:
+            self._save_config()
+            logger.info("Configuration saved successfully")
+        except Exception as e:
+            logger.error(f"Failed to save configuration: {str(e)}")
+
+        logger.info(f"=== CONFIGURATION UPDATE COMPLETE ===")
+        
+        # Final verification
+        if self.client:
+            logger.info(f"Final verification - client base_url: {self.client.base_url}")
+            if hasattr(self.client, 'auth_client') and self.client.auth_client:
+                logger.info(f"Final verification - auth client base_url: {self.client.auth_client.base_url}")
+        
+
+    def _test_connection(self, jms_service, url, username=None, password=None, messagebox=None):
+        """Test JMS connection with provided settings and GUI feedback"""
+        import logging
+        logger = logging.getLogger(__name__)
+
+        if not JMS_AVAILABLE:
+            if messagebox:
+                messagebox.showerror("JMS Unavailable", "JMS integration is not available.")
+            return
+
+        try:
+            # Validate and normalize URL
+            url = url.strip()
+            if not url.startswith(('http://', 'https://')):
+                url = 'http://' + url
+
+            logger.info(f"Testing connection to JMS API at {url}")
+
+            # CRITICAL: Always update the configuration BEFORE testing
+            logger.info("Updating JMS service configuration before testing...")
+            if hasattr(jms_service, 'update_configuration'):
+                jms_service.update_configuration(url, username, password)
+                logger.info("Configuration updated successfully")
+            else:
+                logger.warning("update_configuration method not available")
+
+            # Now test the connection using the updated service
+            logger.info("Testing connection by requesting auth header")
+            if hasattr(jms_service, 'test_connection'):
+                connection_result = jms_service.test_connection()
+                if connection_result:
+                    if messagebox:
+                        messagebox.showinfo("Connection Test", "Connection to JMS API successful!")
+                else:
+                    if messagebox:
+                        messagebox.showwarning("Connection Test", "Connection to JMS API failed. Check the logs for details.")
+            else:
+                logger.warning("test_connection method not available")
+                if messagebox:
+                    messagebox.showwarning("Connection Test", "Test connection method not available")
+
+        except Exception as e:
+            logger.error(f"Connection test failed: {str(e)}")
+            if messagebox:
+                messagebox.showerror("Connection Test", f"Connection test failed: {str(e)}")
+
+    def _save_config(self):
+        """Save JMS configuration to file"""
+        config = {
+            'base_url': self.base_url,
+            'username': self.username,
+            'client_id': self.client_id,
+            'client_secret': self.client_secret,
+            'polling_interval': self.polling_interval
+        }
+        
+        try:
+            save_json_file('jms_config.json', config)
+            self.logger.info("JMS configuration saved to jms_config.json")
+        except Exception as e:
+            self.logger.error(f"Failed to save JMS configuration: {str(e)}")
+
+    def _load_config(self):
+        """Load JMS configuration from file"""
+        try:
+            self.logger.info(f"=== LOADING CONFIG FROM jms_config.json ===")
+            self.logger.info(f"Current base_url before loading: {self.base_url}")
+            
+            config = load_json_file('jms_config.json', default={})
+            
+            self.logger.info(f"Config loaded from jms_config.json: {config}")
+            
+            if config:
+                old_base_url = self.base_url
+                self.base_url = config.get('base_url', self.base_url)
+                self.username = config.get('username', self.username)
+                self.client_id = config.get('client_id', self.client_id)
+                self.client_secret = config.get('client_secret', self.client_secret)
+                self.polling_interval = config.get('polling_interval', self.polling_interval)
+                self.logger.info(f"Base URL changed from '{old_base_url}' to '{self.base_url}'")
+                self.logger.info(f"JMS configuration loaded from file: URL={self.base_url}")
+            else:
+                self.logger.info("No saved JMS configuration found, using defaults")
+                
+            # Also check if config.json exists and has JMS config
+            try:
+                with open("config.json", "r") as f:
+                    main_config = json.load(f)
+                    jms_config = main_config.get("jms", {})
+                    if jms_config:
+                        self.logger.info(f"Also found JMS config in config.json: {jms_config}")
+                        # Note: Not overriding here, just logging
+                    else:
+                        self.logger.info("No JMS config found in config.json")
+            except FileNotFoundError:
+                self.logger.info("config.json not found")
+            except Exception as e:
+                self.logger.error(f"Error reading config.json: {e}")
+                
+            self.logger.info(f"=== CONFIG LOADING COMPLETE ===")
+            self.logger.info(f"Final base_url: {self.base_url}")
+            
+        except Exception as e:
+            self.logger.error(f"Failed to load JMS configuration: {str(e)}")
+            import traceback
+            self.logger.error(f"Traceback: {traceback.format_exc()}")
+
+    # ...existing methods continue...

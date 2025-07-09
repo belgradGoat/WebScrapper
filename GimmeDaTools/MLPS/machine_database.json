@@ -155,7 +155,7 @@
         "usage_percentage": null
       },
       "3": {
-        "current_time": 98.82,
+        "current_time": 102.52,
         "max_time": null,
         "usage_percentage": null
       },
@@ -165,12 +165,12 @@
         "usage_percentage": null
       },
       "5": {
-        "current_time": 117.25,
+        "current_time": 151.0,
         "max_time": null,
         "usage_percentage": null
       },
       "6": {
-        "current_time": 948.62,
+        "current_time": 949.13,
         "max_time": null,
         "usage_percentage": null
       },
@@ -180,12 +180,12 @@
         "usage_percentage": null
       },
       "8": {
-        "current_time": 22.63,
+        "current_time": 36.42,
         "max_time": null,
         "usage_percentage": null
       },
       "9": {
-        "current_time": 59.18,
+        "current_time": 85.4,
         "max_time": null,
         "usage_percentage": null
       },
@@ -215,7 +215,7 @@
         "usage_percentage": null
       },
       "25": {
-        "current_time": 62.05,
+        "current_time": 68.48,
         "max_time": null,
         "usage_percentage": null
       },
@@ -225,7 +225,7 @@
         "usage_percentage": null
       },
       "30": {
-        "current_time": 200.12,
+        "current_time": 205.1,
         "max_time": null,
         "usage_percentage": null
       },
@@ -355,7 +355,7 @@
         "usage_percentage": null
       },
       "471": {
-        "current_time": 165.85,
+        "current_time": 205.38,
         "max_time": null,
         "usage_percentage": null
       },
@@ -375,7 +375,7 @@
         "usage_percentage": null
       },
       "475": {
-        "current_time": 573.72,
+        "current_time": 640.87,
         "max_time": null,
         "usage_percentage": null
       },
@@ -420,7 +420,7 @@
         "usage_percentage": null
       },
       "998": {
-        "current_time": 7586.97,
+        "current_time": 7602.67,
         "max_time": null,
         "usage_percentage": null
       },
@@ -435,7 +435,7 @@
         "usage_percentage": null
       }
     },
-    "last_updated": "2025-07-05 16:59:15"
+    "last_updated": "2025-07-08 16:21:58"
   },
   "2": {
     "id": "2",
@@ -588,7 +588,7 @@
         "usage_percentage": null
       },
       "2": {
-        "current_time": 290.75,
+        "current_time": 316.17,
         "max_time": null,
         "usage_percentage": null
       },
@@ -603,7 +603,7 @@
         "usage_percentage": null
       },
       "5": {
-        "current_time": 994.13,
+        "current_time": 1013.97,
         "max_time": null,
         "usage_percentage": null
       },
@@ -623,7 +623,7 @@
         "usage_percentage": null
       },
       "9": {
-        "current_time": 1780.48,
+        "current_time": 1957.15,
         "max_time": null,
         "usage_percentage": null
       },
@@ -703,7 +703,7 @@
         "usage_percentage": null
       },
       "125": {
-        "current_time": 199.73,
+        "current_time": 239.57,
         "max_time": null,
         "usage_percentage": null
       },
@@ -733,27 +733,27 @@
         "usage_percentage": null
       },
       "322": {
-        "current_time": 0.17,
+        "current_time": 1.67,
         "max_time": null,
         "usage_percentage": null
       },
       "323": {
-        "current_time": 17.28,
+        "current_time": 24.78,
         "max_time": null,
         "usage_percentage": null
       },
       "324": {
-        "current_time": 45.18,
+        "current_time": 67.68,
         "max_time": null,
         "usage_percentage": null
       },
       "325": {
-        "current_time": 29.78,
+        "current_time": 45.08,
         "max_time": null,
         "usage_percentage": null
       },
       "326": {
-        "current_time": 59.23,
+        "current_time": 68.53,
         "max_time": null,
         "usage_percentage": null
       },
@@ -898,12 +898,12 @@
         "usage_percentage": null
       },
       "479": {
-        "current_time": 36.07,
+        "current_time": 44.23,
         "max_time": null,
         "usage_percentage": null
       },
       "483": {
-        "current_time": 26.03,
+        "current_time": 29.03,
         "max_time": null,
         "usage_percentage": null
       },
@@ -958,7 +958,7 @@
         "usage_percentage": null
       },
       "997": {
-        "current_time": 5236.02,
+        "current_time": 5247.42,
         "max_time": null,
         "usage_percentage": null
       },
@@ -983,7 +983,7 @@
         "usage_percentage": null
       }
     },
-    "last_updated": "2025-07-05 16:59:16"
+    "last_updated": "2025-07-08 16:21:59"
   },
   "3": {
     "id": "3",
@@ -1134,12 +1134,12 @@
         "usage_percentage": null
       },
       "2": {
-        "current_time": 375.9,
+        "current_time": 392.27,
         "max_time": null,
         "usage_percentage": null
       },
       "3": {
-        "current_time": 1060.75,
+        "current_time": 1098.68,
         "max_time": null,
         "usage_percentage": null
       },
@@ -1149,7 +1149,7 @@
         "usage_percentage": null
       },
       "5": {
-        "current_time": 1615.3,
+        "current_time": 1651.7,
         "max_time": null,
         "usage_percentage": null
       },
@@ -1159,12 +1159,12 @@
         "usage_percentage": null
       },
       "7": {
-        "current_time": 227.42,
+        "current_time": 270.37,
         "max_time": null,
         "usage_percentage": null
       },
       "8": {
-        "current_time": 703.88,
+        "current_time": 777.58,
         "max_time": null,
         "usage_percentage": null
       },
@@ -1219,7 +1219,7 @@
         "usage_percentage": null
       },
       "25": {
-        "current_time": 486.12,
+        "current_time": 500.68,
         "max_time": null,
         "usage_percentage": null
       },
@@ -1339,27 +1339,27 @@
         "usage_percentage": null
       },
       "322": {
-        "current_time": 127.88,
+        "current_time": 129.25,
         "max_time": null,
         "usage_percentage": null
       },
       "323": {
-        "current_time": 285.23,
+        "current_time": 291.85,
         "max_time": null,
         "usage_percentage": null
       },
       "324": {
-        "current_time": 64.33,
+        "current_time": 76.65,
         "max_time": null,
         "usage_percentage": null
       },
       "325": {
-        "current_time": 102.43,
+        "current_time": 122.87,
         "max_time": null,
         "usage_percentage": null
       },
       "326": {
-        "current_time": 151.9,
+        "current_time": 158.82,
         "max_time": null,
         "usage_percentage": null
       },
@@ -1454,7 +1454,7 @@
         "usage_percentage": null
       },
       "458": {
-        "current_time": 248.75,
+        "current_time": 400.65,
         "max_time": null,
         "usage_percentage": null
       },
@@ -1479,7 +1479,7 @@
         "usage_percentage": null
       },
       "474": {
-        "current_time": 54.12,
+        "current_time": 58.92,
         "max_time": null,
         "usage_percentage": null
       },
@@ -1499,7 +1499,7 @@
         "usage_percentage": null
       },
       "479": {
-        "current_time": 514.9,
+        "current_time": 524.82,
         "max_time": null,
         "usage_percentage": null
       },
@@ -1519,12 +1519,12 @@
         "usage_percentage": null
       },
       "524": {
-        "current_time": 521.88,
+        "current_time": 575.1,
         "max_time": null,
         "usage_percentage": null
       },
       "529": {
-        "current_time": 9.7,
+        "current_time": 16.32,
         "max_time": null,
         "usage_percentage": null
       },
@@ -1534,7 +1534,7 @@
         "usage_percentage": null
       },
       "543": {
-        "current_time": 16.78,
+        "current_time": 28.2,
         "max_time": null,
         "usage_percentage": null
       },
@@ -1544,7 +1544,7 @@
         "usage_percentage": null
       },
       "997": {
-        "current_time": 6223.37,
+        "current_time": 6234.92,
         "max_time": null,
         "usage_percentage": null
       },
@@ -1559,7 +1559,7 @@
         "usage_percentage": null
       }
     },
-    "last_updated": "2025-07-05 16:59:18"
+    "last_updated": "2025-07-08 16:22:01"
   },
   "4": {
     "id": "4",
@@ -1739,7 +1739,7 @@
         "usage_percentage": null
       },
       "7": {
-        "current_time": 331.28,
+        "current_time": 383.33,
         "max_time": null,
         "usage_percentage": null
       },
@@ -1749,7 +1749,7 @@
         "usage_percentage": null
       },
       "9": {
-        "current_time": 628.58,
+        "current_time": 649.37,
         "max_time": null,
         "usage_percentage": null
       },
@@ -1794,17 +1794,17 @@
         "usage_percentage": null
       },
       "25": {
-        "current_time": 106.87,
+        "current_time": 112.15,
         "max_time": null,
         "usage_percentage": null
       },
       "28": {
-        "current_time": 193.67,
+        "current_time": 204.7,
         "max_time": null,
         "usage_percentage": null
       },
       "30": {
-        "current_time": 185.15,
+        "current_time": 187.48,
         "max_time": null,
         "usage_percentage": null
       },
@@ -1824,7 +1824,7 @@
         "usage_percentage": null
       },
       "36": {
-        "current_time": 0.25,
+        "current_time": 3.23,
         "max_time": null,
         "usage_percentage": null
       },
@@ -1839,7 +1839,7 @@
         "usage_percentage": null
       },
       "95": {
-        "current_time": 230.05,
+        "current_time": 251.58,
         "max_time": null,
         "usage_percentage": null
       },
@@ -1924,12 +1924,12 @@
         "usage_percentage": null
       },
       "396": {
-        "current_time": 568.73,
+        "current_time": 753.18,
         "max_time": null,
         "usage_percentage": null
       },
       "421": {
-        "current_time": 105.15,
+        "current_time": 141.02,
         "max_time": null,
         "usage_percentage": null
       },
@@ -1939,7 +1939,7 @@
         "usage_percentage": null
       },
       "428": {
-        "current_time": 156.33,
+        "current_time": 200.38,
         "max_time": null,
         "usage_percentage": null
       },
@@ -1949,12 +1949,12 @@
         "usage_percentage": null
       },
       "430": {
-        "current_time": 91.28,
+        "current_time": 97.2,
         "max_time": null,
         "usage_percentage": null
       },
       "434": {
-        "current_time": 61.03,
+        "current_time": 119.47,
         "max_time": null,
         "usage_percentage": null
       },
@@ -1994,7 +1994,7 @@
         "usage_percentage": null
       },
       "470": {
-        "current_time": 112.8,
+        "current_time": 123.15,
         "max_time": null,
         "usage_percentage": null
       },
@@ -2009,7 +2009,7 @@
         "usage_percentage": null
       },
       "473": {
-        "current_time": 599.23,
+        "current_time": 644.67,
         "max_time": null,
         "usage_percentage": null
       },
@@ -2024,12 +2024,12 @@
         "usage_percentage": null
       },
       "476": {
-        "current_time": 175.95,
+        "current_time": 177.53,
         "max_time": null,
         "usage_percentage": null
       },
       "478": {
-        "current_time": 8.45,
+        "current_time": 9.2,
         "max_time": null,
         "usage_percentage": null
       },
@@ -2059,7 +2059,7 @@
         "usage_percentage": null
       },
       "529": {
-        "current_time": 112.58,
+        "current_time": 115.45,
         "max_time": null,
         "usage_percentage": null
       },
@@ -2069,7 +2069,7 @@
         "usage_percentage": null
       },
       "590": {
-        "current_time": 21.82,
+        "current_time": 95.92,
         "max_time": null,
         "usage_percentage": null
       },
@@ -2079,7 +2079,7 @@
         "usage_percentage": null
       },
       "997": {
-        "current_time": 6142.42,
+        "current_time": 6157.58,
         "max_time": null,
         "usage_percentage": null
       },
@@ -2094,7 +2094,7 @@
         "usage_percentage": null
       }
     },
-    "last_updated": "2025-07-05 16:59:19"
+    "last_updated": "2025-07-08 16:22:02"
   },
   "5": {
     "id": "5",
@@ -2182,9 +2182,8 @@
       "997",
       "998",
       "999",
-      "1213",
-      "1214",
-      "1215",
+      "1201",
+      "1202",
       "1230",
       "1231",
       "2001",
@@ -2258,17 +2257,17 @@
         "usage_percentage": null
       },
       "4": {
-        "current_time": 1250.15,
+        "current_time": 1259.15,
         "max_time": null,
         "usage_percentage": null
       },
       "5": {
-        "current_time": 1842.27,
+        "current_time": 1855.0,
         "max_time": null,
         "usage_percentage": null
       },
       "6": {
-        "current_time": 1064.17,
+        "current_time": 1099.7,
         "max_time": null,
         "usage_percentage": null
       },
@@ -2278,12 +2277,12 @@
         "usage_percentage": null
       },
       "8": {
-        "current_time": 678.55,
+        "current_time": 680.08,
         "max_time": null,
         "usage_percentage": null
       },
       "9": {
-        "current_time": 1825.8,
+        "current_time": 1850.6,
         "max_time": null,
         "usage_percentage": null
       },
@@ -2317,6 +2316,11 @@
         "max_time": null,
         "usage_percentage": null
       },
+      "24": {
+        "current_time": 0.42,
+        "max_time": null,
+        "usage_percentage": null
+      },
       "25": {
         "current_time": 769.12,
         "max_time": null,
@@ -2333,7 +2337,7 @@
         "usage_percentage": null
       },
       "30": {
-        "current_time": 596.25,
+        "current_time": 610.12,
         "max_time": null,
         "usage_percentage": null
       },
@@ -2398,12 +2402,12 @@
         "usage_percentage": null
       },
       "325": {
-        "current_time": 69.13,
+        "current_time": 69.6,
         "max_time": null,
         "usage_percentage": null
       },
       "326": {
-        "current_time": 218.58,
+        "current_time": 221.05,
         "max_time": null,
         "usage_percentage": null
       },
@@ -2468,12 +2472,12 @@
         "usage_percentage": null
       },
       "470": {
-        "current_time": 1721.27,
+        "current_time": 1723.6,
         "max_time": null,
         "usage_percentage": null
       },
       "471": {
-        "current_time": 3894.92,
+        "current_time": 3915.73,
         "max_time": null,
         "usage_percentage": null
       },
@@ -2563,7 +2567,7 @@
         "usage_percentage": null
       },
       "997": {
-        "current_time": 7282.6,
+        "current_time": 7318.53,
         "max_time": null,
         "usage_percentage": null
       },
@@ -2578,7 +2582,7 @@
         "usage_percentage": null
       }
     },
-    "last_updated": "2025-07-05 16:59:21"
+    "last_updated": "2025-07-08 16:22:04"
   },
   "6": {
     "id": "6",
@@ -2656,6 +2660,8 @@
       "492",
       "536",
       "590",
+      "641",
+      "648",
       "757",
       "997",
       "998",
@@ -2730,7 +2736,7 @@
         "usage_percentage": null
       },
       "3": {
-        "current_time": 1121.68,
+        "current_time": 1134.77,
         "max_time": null,
         "usage_percentage": null
       },
@@ -2740,7 +2746,7 @@
         "usage_percentage": null
       },
       "5": {
-        "current_time": 1056.22,
+        "current_time": 1096.62,
         "max_time": null,
         "usage_percentage": null
       },
@@ -2760,7 +2766,7 @@
         "usage_percentage": null
       },
       "9": {
-        "current_time": 2201.05,
+        "current_time": 2331.07,
         "max_time": null,
         "usage_percentage": null
       },
@@ -2800,7 +2806,7 @@
         "usage_percentage": null
       },
       "25": {
-        "current_time": 597.0,
+        "current_time": 599.78,
         "max_time": null,
         "usage_percentage": null
       },
@@ -2935,7 +2941,7 @@
         "usage_percentage": null
       },
       "430": {
-        "current_time": 517.55,
+        "current_time": 667.43,
         "max_time": null,
         "usage_percentage": null
       },
@@ -2955,7 +2961,7 @@
         "usage_percentage": null
       },
       "470": {
-        "current_time": 1166.45,
+        "current_time": 1272.75,
         "max_time": null,
         "usage_percentage": null
       },
@@ -2970,7 +2976,7 @@
         "usage_percentage": null
       },
       "474": {
-        "current_time": 917.85,
+        "current_time": 1107.02,
         "max_time": null,
         "usage_percentage": null
       },
@@ -3029,13 +3035,23 @@
         "max_time": null,
         "usage_percentage": null
       },
+      "641": {
+        "current_time": 121.33,
+        "max_time": null,
+        "usage_percentage": null
+      },
+      "648": {
+        "current_time": 195.65,
+        "max_time": null,
+        "usage_percentage": null
+      },
       "757": {
         "current_time": 48.38,
         "max_time": null,
         "usage_percentage": null
       },
       "997": {
-        "current_time": 7991.52,
+        "current_time": 8006.93,
         "max_time": null,
         "usage_percentage": null
       },
@@ -3050,6 +3066,6 @@
         "usage_percentage": null
       }
     },
-    "last_updated": "2025-07-05 16:59:22"
+    "last_updated": "2025-07-08 16:22:05"
   }
 }

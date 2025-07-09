@@ -143,22 +143,13 @@
     "estimate": true,
     "status": "scheduled"
   },
-  "part-6ee3c465-7c6a-4592-8b79-4139e92759cf": {
-    "id": "part-6ee3c465-7c6a-4592-8b79-4139e92759cf",
-    "jobId": "job-eb320813-caf9-4198-93c6-fa7c6f1635f2",
-    "partNumber": 1,
-    "machineId": "3",
-    "startTime": 1751641200000,
-    "estimate": true,
-    "status": "scheduled"
-  },
   "part-b9305e80-734e-483f-9147-be6bf7b54a51": {
     "id": "part-b9305e80-734e-483f-9147-be6bf7b54a51",
     "jobId": "job-32f1fc84-5fbb-408b-9575-0d17c1935dee",
     "partNumber": 1,
     "machineId": "1",
     "startTime": 1751727600000,
-    "estimate": true,
+    "estimate": false,
     "status": "scheduled"
   },
   "part-773f0ac8-e3d5-4ca9-a89f-01abc3a7a664": {
@@ -311,6 +302,186 @@
     "partNumber": 5,
     "machineId": "1",
     "startTime": 1751695207644,
+    "estimate": true,
+    "status": "scheduled"
+  },
+  "part-c3ccc20b-48a6-46fb-a866-0339e2aad61b": {
+    "id": "part-c3ccc20b-48a6-46fb-a866-0339e2aad61b",
+    "jobId": "job-6e64cdae-e6a6-4685-afe8-dd3c1bc9e0e4",
+    "partNumber": 1,
+    "machineId": "2",
+    "startTime": 1751765340000,
+    "estimate": true,
+    "status": "scheduled"
+  },
+  "part-b7e8b692-5bdd-4741-a216-6c94069dfaeb": {
+    "id": "part-b7e8b692-5bdd-4741-a216-6c94069dfaeb",
+    "jobId": "job-45d0c534-e2b8-4510-94ec-79e845056e1f",
+    "partNumber": 1,
+    "machineId": "5",
+    "startTime": 1751900400000,
+    "estimate": true,
+    "status": "scheduled"
+  },
+  "part-282dd674-945d-4b39-9dcb-fcdfdb3e2157": {
+    "id": "part-282dd674-945d-4b39-9dcb-fcdfdb3e2157",
+    "jobId": "job-45d0c534-e2b8-4510-94ec-79e845056e1f",
+    "partNumber": 2,
+    "machineId": "5",
+    "startTime": 1751909071911,
+    "estimate": true,
+    "status": "scheduled"
+  },
+  "part-af95c803-a0b4-4fcd-be19-f460514eb7c9": {
+    "id": "part-af95c803-a0b4-4fcd-be19-f460514eb7c9",
+    "jobId": "job-45d0c534-e2b8-4510-94ec-79e845056e1f",
+    "partNumber": 3,
+    "machineId": "5",
+    "startTime": 1751917743822,
+    "estimate": true,
+    "status": "scheduled"
+  },
+  "part-78370124-a2c0-4462-843e-effc19abb6be": {
+    "id": "part-78370124-a2c0-4462-843e-effc19abb6be",
+    "jobId": "job-45d0c534-e2b8-4510-94ec-79e845056e1f",
+    "partNumber": 4,
+    "machineId": "5",
+    "startTime": 1751926415733,
+    "estimate": true,
+    "status": "scheduled"
+  },
+  "part-febebcb3-ffad-4255-b12d-36d21716c018": {
+    "id": "part-febebcb3-ffad-4255-b12d-36d21716c018",
+    "jobId": "job-45d0c534-e2b8-4510-94ec-79e845056e1f",
+    "partNumber": 5,
+    "machineId": "5",
+    "startTime": 1751935087644,
+    "estimate": true,
+    "status": "scheduled"
+  },
+  "part-bbabc774-45bc-4f42-a32b-e94a1828da7f": {
+    "id": "part-bbabc774-45bc-4f42-a32b-e94a1828da7f",
+    "jobId": "job-45d0c534-e2b8-4510-94ec-79e845056e1f",
+    "partNumber": 6,
+    "machineId": "5",
+    "startTime": 1751943759555,
+    "estimate": true,
+    "status": "scheduled"
+  },
+  "part-37fe7a45-8c07-426d-aa4c-5d18bd332645": {
+    "id": "part-37fe7a45-8c07-426d-aa4c-5d18bd332645",
+    "jobId": "job-7233e894-929a-48ee-9fd8-8d318079c0bb",
+    "partNumber": 1,
+    "machineId": "5",
+    "startTime": 1751900400000,
+    "estimate": true,
+    "status": "scheduled"
+  },
+  "part-37ba493d-220c-4dc6-b5aa-7c2c7926d834": {
+    "id": "part-37ba493d-220c-4dc6-b5aa-7c2c7926d834",
+    "jobId": "job-7233e894-929a-48ee-9fd8-8d318079c0bb",
+    "partNumber": 2,
+    "machineId": "5",
+    "startTime": 1751909071911,
+    "estimate": true,
+    "status": "scheduled"
+  },
+  "part-70be43e7-5dfb-48fb-b61d-10187de0e7fd": {
+    "id": "part-70be43e7-5dfb-48fb-b61d-10187de0e7fd",
+    "jobId": "job-7233e894-929a-48ee-9fd8-8d318079c0bb",
+    "partNumber": 3,
+    "machineId": "5",
+    "startTime": 1751917743822,
+    "estimate": true,
+    "status": "scheduled"
+  },
+  "part-5ec1aed0-f239-4406-a078-96a6f7afc58d": {
+    "id": "part-5ec1aed0-f239-4406-a078-96a6f7afc58d",
+    "jobId": "job-7233e894-929a-48ee-9fd8-8d318079c0bb",
+    "partNumber": 4,
+    "machineId": "5",
+    "startTime": 1751926415733,
+    "estimate": true,
+    "status": "scheduled"
+  },
+  "part-c85af992-1236-4be2-aee2-79a7f49c3035": {
+    "id": "part-c85af992-1236-4be2-aee2-79a7f49c3035",
+    "jobId": "job-7233e894-929a-48ee-9fd8-8d318079c0bb",
+    "partNumber": 5,
+    "machineId": "5",
+    "startTime": 1751935087644,
+    "estimate": true,
+    "status": "scheduled"
+  },
+  "part-53f1d716-7e4e-443a-9c5c-4681e6c599e0": {
+    "id": "part-53f1d716-7e4e-443a-9c5c-4681e6c599e0",
+    "jobId": "job-7233e894-929a-48ee-9fd8-8d318079c0bb",
+    "partNumber": 6,
+    "machineId": "5",
+    "startTime": 1751943759555,
+    "estimate": true,
+    "status": "scheduled"
+  },
+  "part-b74239de-f977-46bb-a0d6-7d81d341adfc": {
+    "id": "part-b74239de-f977-46bb-a0d6-7d81d341adfc",
+    "jobId": "job-2cffb7aa-c80d-493d-9a43-fd8a63a7dbe0",
+    "partNumber": 1,
+    "machineId": "1",
+    "startTime": 1751928300000,
+    "estimate": true,
+    "status": "scheduled"
+  },
+  "part-0df4bb18-1c43-45cd-b5a2-63274676afef": {
+    "id": "part-0df4bb18-1c43-45cd-b5a2-63274676afef",
+    "jobId": "job-2cffb7aa-c80d-493d-9a43-fd8a63a7dbe0",
+    "partNumber": 2,
+    "machineId": "1",
+    "startTime": 1751928815938,
+    "estimate": true,
+    "status": "scheduled"
+  },
+  "part-3a1cc756-1d32-4b6c-b8b7-d5e3f9817bcc": {
+    "id": "part-3a1cc756-1d32-4b6c-b8b7-d5e3f9817bcc",
+    "jobId": "job-2cffb7aa-c80d-493d-9a43-fd8a63a7dbe0",
+    "partNumber": 3,
+    "machineId": "1",
+    "startTime": 1751929331876,
+    "estimate": true,
+    "status": "scheduled"
+  },
+  "part-37f89a64-4ea8-4679-a055-06f4da619457": {
+    "id": "part-37f89a64-4ea8-4679-a055-06f4da619457",
+    "jobId": "job-2cffb7aa-c80d-493d-9a43-fd8a63a7dbe0",
+    "partNumber": 4,
+    "machineId": "1",
+    "startTime": 1751929847814,
+    "estimate": true,
+    "status": "scheduled"
+  },
+  "part-87107f2b-6155-429d-88db-4fb0965731c1": {
+    "id": "part-87107f2b-6155-429d-88db-4fb0965731c1",
+    "jobId": "job-2cffb7aa-c80d-493d-9a43-fd8a63a7dbe0",
+    "partNumber": 5,
+    "machineId": "1",
+    "startTime": 1751930363752,
+    "estimate": true,
+    "status": "scheduled"
+  },
+  "part-e34f1215-692e-4a51-ac3f-649b78ccff74": {
+    "id": "part-e34f1215-692e-4a51-ac3f-649b78ccff74",
+    "jobId": "job-a9079c0c-602f-4a7a-a6b4-f29b7b42dd4f",
+    "partNumber": 1,
+    "machineId": "5",
+    "startTime": 1751986800000,
+    "estimate": true,
+    "status": "scheduled"
+  },
+  "part-cbb92029-9979-4418-bb0e-d91e5dd9b1a7": {
+    "id": "part-cbb92029-9979-4418-bb0e-d91e5dd9b1a7",
+    "jobId": "job-0cde4049-268b-4057-9c25-82657611e981",
+    "partNumber": 1,
+    "machineId": "5",
+    "startTime": 1751986800000,
     "estimate": true,
     "status": "scheduled"
   }

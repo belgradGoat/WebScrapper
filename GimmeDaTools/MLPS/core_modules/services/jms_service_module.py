@@ -133,20 +133,34 @@ class JMSServiceModule(ServiceModuleInterface):
     def _load_config(self) -> None:
         """Load JMS configuration from config manager"""
         if not self.config_manager:
+            logger.warning("Config manager not available, cannot load JMS configuration")
             return
             
-        # Get JMS module configuration
-        jms_config = self.config_manager.get_module_config("jms_service_module")
-        
-        # Load values if they exist
-        self.base_url = jms_config.get("base_url", self.base_url)
-        self.username = jms_config.get("username", self.username)
-        self.password = jms_config.get("password", self.password)
-        self.client_id = jms_config.get("client_id", self.client_id)
-        self.client_secret = jms_config.get("client_secret", self.client_secret)
-        self.jms_enabled = jms_config.get("enabled", self.jms_enabled)
-        
-        logger.info(f"Loaded JMS configuration: URL={self.base_url}, Username={self.username is not None}")
+        try:
+            # Get JMS module configuration
+            jms_config = self.config_manager.get_module_config("jms_service_module")
+            
+            logger.info(f"=== LOADING JMS CONFIG FROM CONFIG MANAGER ===")
+            logger.info(f"Raw JMS config: {jms_config}")
+            
+            # Update values from config
+            old_base_url = self.base_url
+            self.base_url = jms_config.get("base_url", self.base_url)
+            self.username = jms_config.get("username", self.username)
+            self.password = jms_config.get("password", self.password)
+            self.client_id = jms_config.get("client_id", self.client_id)
+            self.client_secret = jms_config.get("client_secret", self.client_secret)
+            self.jms_enabled = jms_config.get("enabled", self.jms_enabled)
+            
+            logger.info(f"Base URL changed from '{old_base_url}' to '{self.base_url}'")
+            logger.info(f"JMS enabled: {self.jms_enabled}")
+            logger.info(f"Username provided: {self.username is not None}")
+            logger.info(f"=== JMS CONFIG LOADING COMPLETE ===")
+            
+        except Exception as e:
+            logger.error(f"Failed to load JMS configuration: {str(e)}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
     
     def _save_config(self) -> None:
         """Save JMS configuration to config manager"""
@@ -187,9 +201,14 @@ class JMSServiceModule(ServiceModuleInterface):
             
         if not self.jms_enabled:
             try:
+                logger.info(f"=== ENABLING JMS INTEGRATION ===")
+                logger.info(f"Provided base_url parameter: {base_url}")
+                logger.info(f"Current self.base_url: {self.base_url}")
+                
                 # Use provided values or current values
                 base_url = base_url or self.base_url
                 
+                logger.info(f"Final base_url to use: {base_url}")
                 logger.info(f"Enabling JMS integration with URL: {base_url}")
                 if username and password:
                     logger.info("Using username/password authentication")
@@ -197,10 +216,13 @@ class JMSServiceModule(ServiceModuleInterface):
                     self.password = password
                 
                 # Update base URL
+                old_base_url = self.base_url
                 self.base_url = base_url
+                logger.info(f"Updated self.base_url from '{old_base_url}' to '{self.base_url}'")
                 
                 # Create new JMS service with provided URL and credentials
                 scheduler_service = self.jms_service.scheduler_service
+                logger.info(f"Creating new JMSService with base_url: {base_url}")
                 self.jms_service = JMSService(
                     scheduler_service,
                     base_url,

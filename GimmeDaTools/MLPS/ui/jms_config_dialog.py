@@ -197,43 +197,28 @@ class JMSConfigDialog:
         
         if self.jms_enabled.get():
             # Enable JMS
-            if hasattr(self.jms_service, 'enable_jms'):
-                # Validate and normalize URL
-                url = self.jms_url.get().strip()
-                if not url.startswith(('http://', 'https://')):
-                    url = 'http://' + url
-                    self.jms_url.set(url)
-                
-                logger.info(f"Enabling JMS with URL: {url}")
-                
-                # Get username and password if provided
-                username = self.jms_username.get().strip() if self.jms_username.get() else None
-                password = self.jms_password.get() if self.jms_password.get() else None
-                
-                if username and password:
-                    logger.info(f"Using username authentication: {username}")
-                    success = self.jms_service.enable_jms(url, username, password)
+            # Validate and normalize URL
+            url = self.jms_url.get().strip()
+            if not url.startswith(('http://', 'https://')):
+                url = 'http://' + url
+                self.jms_url.set(url)
+            
+            logger.info(f"Enabling JMS with URL: {url}")
+            
+            # Get username and password if provided
+            username = self.jms_username.get().strip() if self.jms_username.get() else None
+            password = self.jms_password.get() if self.jms_password.get() else None
+            
+            # Use the new update_configuration method
+            try:
+                if hasattr(self.jms_service, 'update_configuration'):
+                    self.jms_service.update_configuration(url, username, password)
+                    logger.info("JMS service configuration updated successfully")
                 else:
-                    logger.info("Using client credentials authentication")
-                    success = self.jms_service.enable_jms(url)
-                    
-                logger.info(f"JMS enable result: {success}")
-            else:
-                # Fallback for direct JMSService instance
-                try:
-                    # Update the JMS service with the new URL, username, and password
-                    url = self.jms_url.get().strip()
-                    if not url.startswith(('http://', 'https://')):
-                        url = 'http://' + url
-                        self.jms_url.set(url)
-                    
-                    username = self.jms_username.get().strip() if self.jms_username.get() else None
-                    password = self.jms_password.get() if self.jms_password.get() else None
-                    
-                    # Update JMS service attributes if available
+                    # Fallback to manual update for older implementations
                     if hasattr(self.jms_service, 'base_url'):
                         self.jms_service.base_url = url
-                        logger.info(f"Updated JMS service base URL to: {url}")
+                        logger.info(f"Updated JMS service base_url to: {url}")
                     
                     if username and hasattr(self.jms_service, 'username'):
                         self.jms_service.username = username
@@ -243,21 +228,43 @@ class JMSConfigDialog:
                         self.jms_service.password = password
                         logger.info("Updated JMS service password")
                     
-                    logger.info("Testing JMS connection")
-                    connection_result = self.jms_service.test_connection()
-                    logger.info(f"Connection test result: {connection_result}")
-                    
-                    if connection_result or not REQUESTS_AVAILABLE:
-                        logger.info("Starting JMS polling")
-                        self.jms_service.start_polling()
-                        success = True
-                    else:
-                        success = False
-                except Exception as e:
-                    logger.error(f"Error enabling JMS integration: {str(e)}")
-                    messagebox.showerror("JMS Error", f"Error enabling JMS integration: {str(e)}")
+                    # Update the client if it exists
+                    if hasattr(self.jms_service, 'client') and self.jms_service.client:
+                        self.jms_service.client.base_url = url
+                        self.jms_service.client.auth_client.base_url = url
+                        if username and password:
+                            self.jms_service.client.auth_client.username = username
+                            self.jms_service.client.auth_client.password = password
+                        logger.info("Updated JMS client configuration")
+            except Exception as e:
+                logger.error(f"Failed to update JMS configuration: {str(e)}")
+                messagebox.showerror("JMS Error", f"Failed to update JMS configuration: {str(e)}")
+                self.jms_enabled.set(False)
+                self._update_status()
+                return
+            
+            # Test connection and enable
+            success = False
+            try:
+                # Add a small delay to ensure configuration is fully updated
+                import time
+                time.sleep(0.1)
+                
+                logger.info("Testing JMS connection")
+                connection_result = self.jms_service.test_connection()
+                logger.info(f"Connection test result: {connection_result}")
+                
+                if connection_result or not REQUESTS_AVAILABLE:
+                    logger.info("Starting JMS polling")
+                    self.jms_service.start_polling()
+                    success = True
+                else:
                     success = False
-                    
+            except Exception as e:
+                logger.error(f"Error enabling JMS integration: {str(e)}")
+                messagebox.showerror("JMS Error", f"Error enabling JMS integration: {str(e)}")
+                success = False
+            
             # If requests is not available but JMS modules are, enable anyway with mock functionality
             if not success and not REQUESTS_AVAILABLE:
                 logger.info("Using mock JMS functionality")
@@ -269,15 +276,11 @@ class JMSConfigDialog:
         else:
             # Disable JMS
             logger.info("Disabling JMS integration")
-            if hasattr(self.jms_service, 'disable_jms'):
-                self.jms_service.disable_jms()
-            else:
-                # Fallback for direct JMSService instance
-                try:
-                    self.jms_service.stop_polling()
-                except Exception as e:
-                    logger.error(f"Error disabling JMS integration: {str(e)}")
-                    messagebox.showerror("JMS Error", f"Error disabling JMS integration: {str(e)}")
+            try:
+                self.jms_service.stop_polling()
+            except Exception as e:
+                logger.error(f"Error disabling JMS integration: {str(e)}")
+                messagebox.showerror("JMS Error", f"Error disabling JMS integration: {str(e)}")
             
         # Update status
         self._update_status()

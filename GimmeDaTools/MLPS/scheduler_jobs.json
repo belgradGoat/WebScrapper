@@ -6,7 +6,11 @@
     "cycleTime": 100.0,
     "color": "#0ea5e9",
     "createdAt": 1751544675092,
-    "status": "active"
+    "status": "active",
+    "schedulerLocked": false,
+    "workpiecePriority": 50,
+    "priorityLevel": "normal",
+    "rushOrder": false
   },
   "job-9c7faebd-b959-4929-8b01-170673b527aa": {
     "id": "job-9c7faebd-b959-4929-8b01-170673b527aa",
@@ -15,7 +19,11 @@
     "cycleTime": 8.598977700478052,
     "color": "#3b82f6",
     "createdAt": 1751657298784,
-    "status": "active"
+    "status": "active",
+    "schedulerLocked": false,
+    "workpiecePriority": 50,
+    "priorityLevel": "normal",
+    "rushOrder": true
   },
   "job-902559ac-4df4-4931-890d-948296ba9290": {
     "id": "job-902559ac-4df4-4931-890d-948296ba9290",
@@ -24,16 +32,11 @@
     "cycleTime": 8.598977700478052,
     "color": "#06b6d4",
     "createdAt": 1751658170036,
-    "status": "locked"
-  },
-  "job-eb320813-caf9-4198-93c6-fa7c6f1635f2": {
-    "id": "job-eb320813-caf9-4198-93c6-fa7c6f1635f2",
-    "name": "SS_499091_Su1",
-    "totalParts": 1,
-    "cycleTime": 8.598977700478052,
-    "color": "#ec4899",
-    "createdAt": 1751658178254,
-    "status": "locked"
+    "status": "locked",
+    "schedulerLocked": false,
+    "workpiecePriority": 50,
+    "priorityLevel": "normal",
+    "rushOrder": false
   },
   "job-32f1fc84-5fbb-408b-9575-0d17c1935dee": {
     "id": "job-32f1fc84-5fbb-408b-9575-0d17c1935dee",
@@ -42,7 +45,11 @@
     "cycleTime": 403.29011588189826,
     "color": "#d946ef",
     "createdAt": 1751658338888,
-    "status": "locked"
+    "status": "locked",
+    "schedulerLocked": false,
+    "workpiecePriority": 50,
+    "priorityLevel": "normal",
+    "rushOrder": false
   },
   "job-e5f9de22-21a5-4603-bff0-dab6daf179e2": {
     "id": "job-e5f9de22-21a5-4603-bff0-dab6daf179e2",
@@ -51,7 +58,11 @@
     "cycleTime": 144.53186458608977,
     "color": "#a855f7",
     "createdAt": 1751660222968,
-    "status": "active"
+    "status": "active",
+    "schedulerLocked": false,
+    "workpiecePriority": 50,
+    "priorityLevel": "normal",
+    "rushOrder": false
   },
   "job-7dea51e2-8cc2-4155-bfda-f31e605e1549": {
     "id": "job-7dea51e2-8cc2-4155-bfda-f31e605e1549",
@@ -60,6 +71,88 @@
     "cycleTime": 144.53186458608977,
     "color": "#3b82f6",
     "createdAt": 1751660559213,
-    "status": "active"
+    "status": "active",
+    "schedulerLocked": false,
+    "workpiecePriority": 50,
+    "priorityLevel": "normal",
+    "rushOrder": false
+  },
+  "job-6e64cdae-e6a6-4685-afe8-dd3c1bc9e0e4": {
+    "id": "job-6e64cdae-e6a6-4685-afe8-dd3c1bc9e0e4",
+    "name": "SS_499091_Su1",
+    "totalParts": 1,
+    "cycleTime": 8.598977700478052,
+    "color": "#14b8a6",
+    "createdAt": 1751765360118,
+    "status": "active",
+    "schedulerLocked": false,
+    "workpiecePriority": 50,
+    "priorityLevel": "normal",
+    "rushOrder": false
+  },
+  "job-45d0c534-e2b8-4510-94ec-79e845056e1f": {
+    "id": "job-45d0c534-e2b8-4510-94ec-79e845056e1f",
+    "name": "SS_499091_Su2",
+    "totalParts": 6,
+    "cycleTime": 144.53186458608977,
+    "color": "#22c55e",
+    "createdAt": 1751905288372,
+    "status": "locked",
+    "schedulerLocked": false,
+    "workpiecePriority": 50,
+    "priorityLevel": "normal",
+    "rushOrder": false
+  },
+  "job-7233e894-929a-48ee-9fd8-8d318079c0bb": {
+    "id": "job-7233e894-929a-48ee-9fd8-8d318079c0bb",
+    "name": "SS_499091_Su2",
+    "totalParts": 6,
+    "cycleTime": 144.53186458608977,
+    "color": "#fbbf24",
+    "createdAt": 1751905305892,
+    "status": "active",
+    "schedulerLocked": false,
+    "workpiecePriority": 50,
+    "priorityLevel": "normal",
+    "rushOrder": false
+  },
+  "job-2cffb7aa-c80d-493d-9a43-fd8a63a7dbe0": {
+    "id": "job-2cffb7aa-c80d-493d-9a43-fd8a63a7dbe0",
+    "name": "SS_499091_Su1",
+    "totalParts": 5,
+    "cycleTime": 8.598977700478052,
+    "color": "#22c55e",
+    "createdAt": 1751928323551,
+    "status": "active",
+    "schedulerLocked": false,
+    "workpiecePriority": 50,
+    "priorityLevel": "normal",
+    "rushOrder": false
+  },
+  "job-a9079c0c-602f-4a7a-a6b4-f29b7b42dd4f": {
+    "id": "job-a9079c0c-602f-4a7a-a6b4-f29b7b42dd4f",
+    "name": "SS_500424_Su1",
+    "totalParts": 1,
+    "cycleTime": 9.181748342908927,
+    "color": "#a855f7",
+    "createdAt": 1752016611481,
+    "status": "locked",
+    "schedulerLocked": false,
+    "workpiecePriority": 50,
+    "priorityLevel": "normal",
+    "rushOrder": false
+  },
+  "job-0cde4049-268b-4057-9c25-82657611e981": {
+    "id": "job-0cde4049-268b-4057-9c25-82657611e981",
+    "name": "SS_500424_Su1",
+    "totalParts": 1,
+    "cycleTime": 9.181748342908927,
+    "color": "#a855f7",
+    "createdAt": 1752016651344,
+    "status": "locked",
+    "schedulerLocked": false,
+    "workpiecePriority": 50,
+    "priorityLevel": "normal",
+    "rushOrder": false
   }
 }

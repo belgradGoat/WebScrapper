@@ -160,7 +160,18 @@ class JMSAuthClient:
             username: Username for authentication (optional)
             password: Password for authentication (optional)
         """
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        logger.info(f"=== JMS AUTH CLIENT INITIALIZATION ===")
+        logger.info(f"JMSAuthClient instance ID: {id(self)}")
+        logger.info(f"Constructor parameter base_url: {base_url}")
+        logger.info(f"Constructor parameter client_id: {client_id}")
+        logger.info(f"Constructor parameter username: {username}")
+        
         self.base_url = base_url
+        logger.info(f"self.base_url set to: {self.base_url}")
+        
         self.client_id = client_id
         self.client_secret = client_secret
         self.username = username
@@ -171,6 +182,9 @@ class JMSAuthClient:
         print(f"JMS Auth Client initialized with URL: {base_url}")
         print(f"Using client_id: {client_id}")
         print(f"Username provided: {username is not None}")
+        
+        logger.info(f"=== JMS AUTH CLIENT INITIALIZATION COMPLETE ===")
+        logger.info(f"Final JMSAuthClient base_url: {self.base_url}")
         
     def get_auth_header(self) -> Dict[str, str]:
         """
@@ -190,8 +204,16 @@ class JMSAuthClient:
         Raises:
             Exception: If authentication fails
         """
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        logger.info(f"=== JMS AUTH TOKEN REFRESH ===")
+        logger.info(f"JMSAuthClient instance ID: {id(self)}")
+        logger.info(f"Current self.base_url: {self.base_url}")
+        
         if not REQUESTS_AVAILABLE:
             print("Using mock authentication since 'requests' module is not available")
+            logger.info("Using mock authentication since 'requests' module is not available")
             # Use a proper OAuth token structure
             mock_response = {
                 "access_token": "mock_token_12345",
@@ -206,6 +228,12 @@ class JMSAuthClient:
             
         auth_url = f"{self.base_url}/IAM/Authorization/token"
         
+        # Debug logging
+        logger.info(f"JMSAuthClient: Using base_url: {self.base_url}")
+        logger.info(f"JMSAuthClient: Constructed auth_url: {auth_url}")
+        print(f"DEBUG: Constructing auth URL with base_url: {self.base_url}")
+        print(f"DEBUG: Final auth_url: {auth_url}")
+        
         # Prepare payload based on authentication method
         if self.username and self.password:
             # Use password grant type if username/password provided
@@ -219,6 +247,7 @@ class JMSAuthClient:
                 "scope": "esbusci"
             }
             print(f"Using password grant type with username: {self.username}")
+            logger.info(f"Using password grant type with username: {self.username}")
         else:
             # Use client credentials grant type
             payload = {
@@ -229,6 +258,7 @@ class JMSAuthClient:
                 "scope": "esbusci"
             }
             print("Using client credentials grant type")
+            logger.info("Using client credentials grant type")
         
         try:
             # This block is now redundant since we handle mock authentication at the beginning of the method
