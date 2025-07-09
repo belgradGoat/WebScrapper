@@ -1,6 +1,35 @@
 {
-  "machine_bookings": [],
-  "next_id": 1,
-  "created_at": "2025-01-07T17:37:00Z",
-  "version": "1.0.0"
+  "booking-284edeeb-7459-4d1d-b478-1f72633cacdc": {
+    "id": "booking-284edeeb-7459-4d1d-b478-1f72633cacdc",
+    "machineId": "1",
+    "activityTypeId": "1",
+    "startTime": 1751713200000,
+    "duration": 240,
+    "description": "",
+    "blockingType": "complete",
+    "createdBy": "user",
+    "createdAt": 1751763475440
+  },
+  "booking-8315afe0-8610-4839-b88a-3b036042b99d": {
+    "id": "booking-8315afe0-8610-4839-b88a-3b036042b99d",
+    "machineId": "1",
+    "activityTypeId": "1",
+    "startTime": 1751886000000,
+    "duration": 240,
+    "description": "",
+    "blockingType": "complete",
+    "createdBy": "user",
+    "createdAt": 1751763491840
+  },
+  "booking-90b7a4c8-4d51-4fa4-834e-82c7fd43d363": {
+    "id": "booking-90b7a4c8-4d51-4fa4-834e-82c7fd43d363",
+    "machineId": "1",
+    "activityTypeId": "1",
+    "startTime": 1752058800000,
+    "duration": 240,
+    "description": "",
+    "blockingType": "complete",
+    "createdBy": "user",
+    "createdAt": 1751763564194
+  }
 }

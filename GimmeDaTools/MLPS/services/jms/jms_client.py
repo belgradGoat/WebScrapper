@@ -28,8 +28,22 @@ class JMSClient:
             username: Username for authentication (optional)
             password: Password for authentication (optional)
         """
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        logger.info(f"=== JMS CLIENT INITIALIZATION ===")
+        logger.info(f"JMSClient instance ID: {id(self)}")
+        logger.info(f"Constructor parameter base_url: {base_url}")
+        logger.info(f"Constructor parameter client_id: {client_id}")
+        logger.info(f"Constructor parameter username: {username}")
+        
         self.base_url = base_url
+        logger.info(f"self.base_url set to: {self.base_url}")
+        
+        logger.info(f"Creating JMSAuthClient with base_url: {base_url}")
         self.auth_client = JMSAuthClient(base_url, client_id, client_secret, username, password)
+        logger.info(f"JMSAuthClient created with ID: {id(self.auth_client)}")
+        logger.info(f"JMSAuthClient base_url: {self.auth_client.base_url}")
         
         # Initialize client instances
         self._cell = None
@@ -40,9 +54,15 @@ class JMSClient:
         # Print status
         if REQUESTS_AVAILABLE:
             print(f"JMSClient initialized with real HTTP client, base URL: {base_url}")
+            logger.info(f"JMSClient initialized with real HTTP client, base URL: {base_url}")
         else:
             print(f"JMSClient initialized with mock HTTP client, base URL: {base_url}")
-    
+            logger.info(f"JMSClient initialized with mock HTTP client, base URL: {base_url}")
+        
+        logger.info(f"=== JMS CLIENT INITIALIZATION COMPLETE ===")
+        logger.info(f"Final JMSClient base_url: {self.base_url}")
+        logger.info(f"Final JMSAuthClient base_url: {self.auth_client.base_url}")
+        
     @property
     def cell(self) -> JMSCellClient:
         """
