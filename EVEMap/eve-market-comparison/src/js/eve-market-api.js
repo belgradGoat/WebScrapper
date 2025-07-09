@@ -110,9 +110,14 @@ class EVEMarketAPI {
     this._fetchLocks.set(lockKey, true);
 
     try {
-        // Construct URL based on location type
+        
         let url;
         const headers = { ...this.headers };
+        let allOrders = [];
+        let page = 1;
+        let hasMorePages = true;
+        let errorLimit = 100; // Start with default error limit
+        let skipPages = new Set();
         
         switch(locationType) {
             case 'structure':
@@ -125,9 +130,22 @@ class EVEMarketAPI {
                 break;
 
             case 'station':
-                // For stations, we need the region ID
-                const regionId = Math.floor(locationId / 10000000) * 10000000;
+                // Fix region ID calculation for stations
+                // Example: Jita 4-4 (60003760) is in The Forge (10000002)
+                const stationToRegion = {
+                    '60003760': '10000002', // Jita 4-4 -> The Forge
+                    '60008494': '10000043', // Amarr VIII -> Domain
+                    '60011866': '10000032', // Dodixie IX -> Sinq Laison
+                    '60004588': '10000042', // Rens VI -> Metropolis
+                    '60005686': '10000030'  // Hek VIII -> Heimatar
+                };
+                
+                const regionId = stationToRegion[locationId];
+                if (!regionId) {
+                    throw new Error(`Unknown station ID: ${locationId}`);
+                }
                 url = `${this.esiUrl}/markets/${regionId}/orders/`;
+                console.log(`Using region ${regionId} for station ${locationId}`);
                 break;
 
             case 'region':
@@ -137,23 +155,54 @@ class EVEMarketAPI {
             default:
                 throw new Error(`Unsupported market location type: ${locationType}`);
         }
-
-        // Rest of existing getMarketOrders code...
-        let allOrders = [];
-        let page = 1;
-        let hasMorePages = true;
-        let consecutiveErrors = 0;
-        const maxConsecutiveErrors = 3;
         
         while (hasMorePages && page <= 300) {
             try {
-                const paginatedUrl = `${url}${url.includes('?') ? '&' : '?'}page=${page}`;
+                const paginatedUrl = `${url}?page=${page}`;
                 console.log(`Fetching page ${page} from ${paginatedUrl}`);
 
                 const response = await fetch(paginatedUrl, { headers });
-                // ... rest of the existing code ...
+                
+                if (!response.ok) {
+                    if (response.status === 420) {
+                        const resetTime = parseInt(response.headers.get('x-esi-error-limit-reset') || '60');
+                        console.log(`Rate limited, waiting ${resetTime}s...`);
+                        await new Promise(resolve => setTimeout(resolve, resetTime * 1000));
+                        continue;
+                    }
+                    if (response.status === 404 || response.status === 500) {
+                        console.log(`No more pages available (${response.status})`);
+                        hasMorePages = false;
+                        break;
+                    }
+                    throw new Error(`Failed to fetch market data: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                // Handle paginated response format
+                const orders = Array.isArray(data) ? data : data.orders || [];
+                
+                if (orders.length > 0) {
+                    await window.marketStorage.storePartialMarketData(locationId, orders, page);
+                    allOrders.push(...orders);
+                }
+
+                // Check if we should continue pagination
+                if (data.hasMore === false || orders.length === 0) {
+                    hasMorePages = false;
+                    break;
+                }
+
+                // Increment page only on successful request
+                page++;
+                
+                // Add delay between requests
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
             } catch (pageError) {
-                // ... existing error handling ...
+                console.error(`Error on page ${page}:`, pageError);
+                throw pageError;
             }
         }
 
@@ -162,8 +211,6 @@ class EVEMarketAPI {
     } catch (error) {
         console.error('Error in getMarketOrders:', error);
         throw error;
-    } finally {
-        this._fetchLocks.delete(lockKey);
     }
 }
 

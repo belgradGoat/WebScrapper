@@ -52,16 +52,24 @@
             <section id="marketComparison">
                 <h2>Compare Markets</h2>
                 <div class="input-group">
-                    <div class="market-input-wrapper">
-                        <input type="text" id="buyLocationInput" value="10000002" placeholder="Buy Location ID (e.g., Jita)">
-                        <span id="buyLocationTypeDisplay" class="market-type-display"></span>
-                    </div>
-                    <div class="market-input-wrapper">
-                        <input type="text" id="sellLocationInput" placeholder="Sell Location ID (e.g., Amarr)">
-                        <span id="sellLocationTypeDisplay" class="market-type-display"></span>
-                    </div>
-                    <button id="compareBtn">Compare</button>
-                </div>
+    <div class="market-input-wrapper">
+        <input type="text" id="buyLocationInput" value="10000002" placeholder="First Location ID">
+        <span id="buyLocationTypeDisplay" class="market-type-display"></span>
+        <select id="firstLocationOrderType">
+            <option value="sell">Sell Orders</option>
+            <option value="buy">Buy Orders</option>
+        </select>
+    </div>
+    <div class="market-input-wrapper">
+        <input type="text" id="sellLocationInput" placeholder="Second Location ID">
+        <span id="sellLocationTypeDisplay" class="market-type-display"></span>
+        <select id="secondLocationOrderType">
+            <option value="sell">Sell Orders</option>
+            <option value="buy">Buy Orders</option>
+        </select>
+    </div>
+    <button id="compareBtn">Compare</button>
+</div>
                 <!-- Filter panel will be inserted here by JavaScript -->
                 <div id="comparisonResults">
                     <!-- Comparison results will be displayed here -->

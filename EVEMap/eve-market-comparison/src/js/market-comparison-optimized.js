@@ -8,19 +8,45 @@ const marketFilters = {
     typeIds: [],
     minPrice: null,
     maxPrice: null,
-    minProfit: 100000, // Default 100k ISK minimum profit
-    minProfitPercent: 5, // Default 5% minimum profit percentage
+    minProfit: 100000,
+    minProfitPercent: 5,
     searchQuery: '',
     savedFilterName: '',
-    showMissingItems: true, // Default to showing items missing in sell location
-    excludedCategoryIds: [] // Categories to exclude from searches and downloads
+    showMissingItems: true,
+    excludedCategoryIds: [], // Initialize as empty array
+    firstLocationOrderType: 'sell',
+    secondLocationOrderType: 'sell'
 };
 
 // Helper function to initialize market filters
 function initializeMarketFilters() {
-    // Load excluded categories from storage
-    marketFilters.excludedCategoryIds = window.marketAPI.getExcludedCategories();
+    try {
+        // Check if marketAPI exists
+        if (!window.marketAPI) {
+            console.warn('marketAPI not available, using default filter values');
+            return;
+        }
+
+        // Load excluded categories if the method exists
+        if (typeof window.marketAPI.getExcludedCategories === 'function') {
+            marketFilters.excludedCategoryIds = window.marketAPI.getExcludedCategories() || [];
+        }
+
+        console.log('Market filters initialized:', marketFilters);
+    } catch (error) {
+        console.error('Error initializing market filters:', error);
+        marketFilters.excludedCategoryIds = []; // Fallback to empty array
+    }
 }
+
+// Export to window immediately
+window.marketFilters = marketFilters;
+window.initializeMarketFilters = initializeMarketFilters;
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    initializeMarketFilters();
+});
 
 // Function to set a filter value with proper persistence
 function setFilter(filterType, value) {
@@ -243,17 +269,26 @@ async function fetchMarketOrdersForTypes(locationId, typeIds) {
 async function processMarketOpportunities(buyLocationId, sellLocationId) {
     try {
         // Retrieve market data from IndexedDB storage
-        const buyOrders = await window.marketStorage.getMarketOrders(buyLocationId);
-        const sellOrders = await window.marketStorage.getMarketOrders(sellLocationId);
+        const firstLocationOrders = await window.marketStorage.getMarketOrders(buyLocationId);
+        const secondLocationOrders = await window.marketStorage.getMarketOrders(sellLocationId);
 
-        if (!buyOrders || !sellOrders) {
+        if (!firstLocationOrders || !secondLocationOrders) {
             throw new Error('Market data not found in storage');
         }
 
-        console.log(`Processing ${buyOrders.length} buy orders and ${sellOrders.length} sell orders`);
+        // Filter orders based on selected order types
+        const filteredFirstLocationOrders = firstLocationOrders.filter(order => 
+            marketFilters.firstLocationOrderType === 'buy' ? order.is_buy_order : !order.is_buy_order
+        );
+        
+        const filteredSecondLocationOrders = secondLocationOrders.filter(order => 
+            marketFilters.secondLocationOrderType === 'buy' ? order.is_buy_order : !order.is_buy_order
+        );
+
+        console.log(`Processing ${filteredFirstLocationOrders.length} first location orders and ${filteredSecondLocationOrders.length} second location orders`);
 
         // Calculate opportunities using the stored data
-        const opportunities = await calculateOpportunities(buyOrders, sellOrders);
+        const opportunities = await calculateOpportunities(filteredFirstLocationOrders, filteredSecondLocationOrders);
         
         // Apply category exclusion filter AFTER processing opportunities
         const filteredOpportunities = opportunities.filter(opp => {
@@ -599,6 +634,27 @@ function getMarketIdInfo(marketId) {
     return null;
 }
 
+// Function to recalculate market comparison without fetching new data
+async function recalculateMarketComparison(buyLocationId, sellLocationId) {
+    const resultsDiv = document.getElementById('comparisonResults');
+    try {
+        resultsDiv.innerHTML = '<div class="loading-status"><h3>Recalculating opportunities...</h3></div>';
+        
+        // Process opportunities using existing data in storage
+        const opportunities = await processMarketOpportunities(buyLocationId, sellLocationId);
+        
+        // Display results
+        displayOptimizedResults(opportunities, resultsDiv);
+    } catch (error) {
+        console.error('Error recalculating market comparison:', error);
+        resultsDiv.innerHTML = `
+            <div class="error">
+                <h3>Error Recalculating Results</h3>
+                <p>${error.message}</p>
+            </div>`;
+    }
+}
+
 // Export functions to global scope
 window.marketFilters = marketFilters;
 window.initializeMarketFilters = initializeMarketFilters;
@@ -606,3 +662,126 @@ window.setFilter = setFilter;
 window.compareMarkets = compareMarkets;
 window.compareCategoryMarkets = compareCategoryMarkets;
 window.getMarketIdInfo = getMarketIdInfo;
+window.recalculateMarketComparison = recalculateMarketComparison;
+
+// Inside processMarketComparison function, modify the comparison logic:
+async function processMarketComparison(buyLocationOrders, sellLocationOrders) {
+    try {
+        const buyLocationByType = groupOrdersByType(buyLocationOrders);
+        const sellLocationByType = groupOrdersByType(sellLocationOrders);
+
+        for (const typeId of batch) {
+            try {
+                const firstLocationData = buyLocationByType[typeId] || { buyOrders: [], sellOrders: [] };
+                const secondLocationData = sellLocationByType[typeId] || { buyOrders: [], sellOrders: [] };
+
+                // Get orders based on user selection
+                const firstLocationOrders = marketFilters.firstLocationOrderType === 'buy' 
+                    ? firstLocationData.buyOrders 
+                    : firstLocationData.sellOrders;
+                
+                const secondLocationOrders = marketFilters.secondLocationOrderType === 'buy' 
+                    ? secondLocationData.buyOrders 
+                    : secondLocationData.sellOrders;
+
+                // Filter and sort orders
+                const firstLocationFilteredOrders = firstLocationOrders
+                    .filter(order => order.price && !isNaN(order.price))
+                    .sort((a, b) => marketFilters.firstLocationOrderType === 'buy' 
+                        ? b.price - a.price  // Highest first for buy orders
+                        : a.price - b.price  // Lowest first for sell orders
+                    );
+
+                const secondLocationFilteredOrders = secondLocationOrders
+                    .filter(order => order.price && !isNaN(order.price))
+                    .sort((a, b) => marketFilters.secondLocationOrderType === 'buy' 
+                        ? b.price - a.price  // Highest first for buy orders
+                        : a.price - b.price  // Lowest first for sell orders
+                    );
+
+                if (!firstLocationFilteredOrders.length) continue;
+
+                const firstPrice = firstLocationFilteredOrders[0].price;
+
+                if (!secondLocationFilteredOrders.length) {
+                    if (marketFilters.showMissingItems) {
+                        opportunities.push({
+                            typeId,
+                            firstPrice,
+                            secondPrice: null,
+                            profit: null,
+                            profitPercent: null,
+                            firstVolume: firstLocationFilteredOrders.reduce((sum, order) => 
+                                sum + (order.volume_remain || 0), 0),
+                            secondVolume: 0,
+                            isMissingInSecondLocation: true,
+                            firstOrderType: marketFilters.firstLocationOrderType,
+                            secondOrderType: marketFilters.secondLocationOrderType
+                        });
+                    }
+                    continue;
+                }
+
+                const secondPrice = secondLocationFilteredOrders[0].price;
+                const profit = secondPrice - firstPrice;
+                const profitPercent = (profit / firstPrice) * 100;
+
+                if (profit > 0 && profit >= marketFilters.minProfit && 
+                    profitPercent >= marketFilters.minProfitPercent) {
+                    opportunities.push({
+                        typeId,
+                        firstPrice,
+                        secondPrice,
+                        profit,
+                        profitPercent,
+                        firstVolume: firstLocationFilteredOrders.reduce((sum, order) => 
+                            sum + (order.volume_remain || 0), 0),
+                        secondVolume: secondLocationFilteredOrders.reduce((sum, order) => 
+                            sum + (order.volume_remain || 0), 0),
+                        firstOrderType: marketFilters.firstLocationOrderType,
+                        secondOrderType: marketFilters.secondOrderOrderType
+                    });
+                }
+            } catch (itemError) {
+                console.error(`Error processing item ${typeId}:`, itemError);
+            }
+        }
+    } catch (error) {
+        console.error('Error in processMarketComparison:', error);
+        throw error;
+    }
+}
+
+// Add event listeners for the order type selectors
+document.addEventListener('DOMContentLoaded', () => {
+    const firstLocationOrderType = document.getElementById('firstLocationOrderType');
+    const secondLocationOrderType = document.getElementById('secondLocationOrderType');
+
+    firstLocationOrderType.addEventListener('change', (e) => {
+        console.log('First Location Order Type Changed:', e.target.value);
+        setFilter('firstLocationOrderType', e.target.value);
+        
+        // Get the market IDs
+        const buyLocationInput = document.getElementById('buyLocationInput');
+        const sellLocationInput = document.getElementById('sellLocationInput');
+        if (buyLocationInput && sellLocationInput && window.marketStorage) {
+            recalculateMarketComparison(buyLocationInput.value, sellLocationInput.value);
+        }
+    });
+
+    secondLocationOrderType.addEventListener('change', (e) => {
+        console.log('Second Location Order Type Changed:', e.target.value);
+        setFilter('secondLocationOrderType', e.target.value);
+        
+        // Get the market IDs
+        const buyLocationInput = document.getElementById('buyLocationInput');
+        const sellLocationInput = document.getElementById('sellLocationInput');
+        if (buyLocationInput && sellLocationInput && window.marketStorage) {
+            recalculateMarketComparison(buyLocationInput.value, sellLocationInput.value);
+        }
+    });
+
+    // Debug logging for initial state
+    console.log('Initial First Location Order Type:', firstLocationOrderType.value);
+    console.log('Initial Second Location Order Type:', secondLocationOrderType.value);
+});

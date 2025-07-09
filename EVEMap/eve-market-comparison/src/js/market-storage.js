@@ -85,34 +85,23 @@ class MarketDataStorage {
     const index = store.index('locationId');
     
     return new Promise((resolve, reject) => {
-        const request = index.getAll();
-        request.onsuccess = () => {
-            // Find all chunks for this location, including partial data
-            const allChunks = request.result.filter(chunk => {
-                const chunkLocationId = chunk.locationId.toString();
-                const searchLocationId = locationId.toString();
-                return chunkLocationId.includes(searchLocationId) || 
-                       chunkLocationId.includes('partial');
-            });
-            
-            // Sort chunks by index if they have one
-            allChunks.sort((a, b) => {
-                const indexA = a.chunkIndex || 0;
-                const indexB = b.chunkIndex || 0;
-                return indexA - indexB;
-            });
-            
-            // Combine all orders from all chunks
-            const allOrders = [];
-            allChunks.forEach(chunk => {
-                if (chunk.orders && Array.isArray(chunk.orders)) {
-                    allOrders.push(...chunk.orders);
+        const allOrders = [];
+        const request = index.openCursor(IDBKeyRange.only(locationId.toString()));
+        
+        request.onsuccess = (event) => {
+            const cursor = event.target.result;
+            if (cursor) {
+                // Combine orders from this chunk
+                if (cursor.value.orders && Array.isArray(cursor.value.orders)) {
+                    allOrders.push(...cursor.value.orders);
                 }
-            });
-            
-            console.log(`Retrieved ${allOrders.length} orders for location ${locationId}`);
-            resolve(allOrders);
+                cursor.continue();
+            } else {
+                console.log(`Retrieved ${allOrders.length} total orders for location ${locationId}`);
+                resolve(allOrders);
+            }
         };
+        
         request.onerror = () => reject(request.error);
     });
 }
@@ -120,23 +109,50 @@ class MarketDataStorage {
 async storePartialMarketData(locationId, orders, pageIndex) {
     if (!this.db) await this.initialize();
     
-    const transaction = this.db.transaction(['marketOrders'], 'readwrite');
-    const store = transaction.objectStore('marketOrders');
+    // Split large pages into smaller chunks
+    const maxChunkSize = 100; // Smaller chunks for better handling
+    const chunks = [];
     
-    const chunkData = {
-        id: `${this.sessionId}_${locationId}_${pageIndex}`,
-        sessionId: this.sessionId,
-        locationId: locationId,
-        pageIndex: pageIndex,
-        orders: orders,
-        timestamp: Date.now()
-    };
+    for (let i = 0; i < orders.length; i += maxChunkSize) {
+        chunks.push(orders.slice(i, i + maxChunkSize));
+    }
     
-    return new Promise((resolve, reject) => {
-        const request = store.put(chunkData);
-        request.onsuccess = () => resolve();
-        request.onerror = () => reject(request.error);
-    });
+    console.log(`Splitting page ${pageIndex} into ${chunks.length} chunks`);
+    
+    for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
+        const chunk = chunks[chunkIndex];
+        const subPageIndex = `${pageIndex}_${chunkIndex}`;
+        
+        const chunkData = {
+            id: `${this.sessionId}_${locationId}_${subPageIndex}`,
+            sessionId: this.sessionId,
+            locationId: locationId,
+            pageIndex: pageIndex,
+            subChunkIndex: chunkIndex,
+            orders: chunk,
+            timestamp: Date.now()
+        };
+        
+        try {
+            const transaction = this.db.transaction(['marketOrders'], 'readwrite');
+            const store = transaction.objectStore('marketOrders');
+            
+            await new Promise((resolve, reject) => {
+                const request = store.put(chunkData);
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
+            
+            // Add small delay between chunks to prevent overwhelming IndexedDB
+            await new Promise(resolve => setTimeout(resolve, 50));
+            
+        } catch (error) {
+            console.error(`Error storing chunk ${chunkIndex} of page ${pageIndex}:`, error);
+            throw error;
+        }
+    }
+    
+    console.log(`Successfully stored page ${pageIndex} in ${chunks.length} chunks`);
 }
 
     // Store item info with better memory management

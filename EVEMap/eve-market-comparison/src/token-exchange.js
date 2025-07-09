@@ -254,86 +254,76 @@ app.get('/api/markets/:regionId/orders', async (req, res) => {
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok' });
 });
-
-// Update structure endpoint with better error handling
+// Update structure endpoint with better error handling and logging
 app.get('/api/markets/structures/:structureId', async (req, res) => {
     try {
         const { structureId } = req.params;
         const page = parseInt(req.query.page) || 1;
         const authHeader = req.headers.authorization;
         
+        console.log(`Structure ${structureId} request - page ${page}`);
+        
         if (!authHeader) {
-            return res.status(401).json({ error: 'Authentication required' });
+            return res.status(401).json({ 
+                error: 'Authentication required',
+                details: 'No authorization header present'
+            });
         }
-
-        console.log(`Fetching structure ${structureId} page ${page}...`);
 
         const token = authHeader.replace('Bearer ', '');
         
-        // Validate V2 token
-        if (!token.startsWith('eyJ')) {
-            return res.status(401).json({
-                error: 'Invalid token format',
-                details: 'V2 JWT token required'
-            });
-        }
+        try {
+            const response = await fetch(
+                `https://esi.evetech.net/latest/markets/structures/${structureId}/?page=${page}`,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                        'User-Agent': 'EVE-Market-Comparison/2.0'
+                    }
+                }
+            );
 
-        const url = `https://esi.evetech.net/latest/markets/structures/${structureId}/`;
-        console.log(`Fetching structure page ${page}...`);
-        
-        const response = await fetch(`${url}?page=${page}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-                'User-Agent': 'EVE-Market-Comparison/2.0'
+            // Forward ESI headers
+            ['x-esi-error-limit-remain', 'x-esi-error-limit-reset'].forEach(header => {
+                if (response.headers.has(header)) {
+                    res.setHeader(header, response.headers.get(header));
+                }
+            });
+
+            if (!response.ok) {
+                if (response.status === 500) {
+                    console.log(`Server returned 500 on page ${page}, returning empty array`);
+                    return res.json([]);
+                }
+                throw new Error(`ESI returned status ${response.status}`);
             }
-        });
 
-        console.log(`Structure page ${page} response status:`, response.status);
-
-        // Handle specific error cases
-        if (response.status === 403) {
-            return res.status(403).json({
-                error: 'Access forbidden',
-                details: 'You do not have access to this structure'
+            const data = await response.json();
+            console.log(`Structure ${structureId} page ${page}: Got ${data.length} orders`);
+            
+            // Return the data along with pagination info
+            res.json({
+                orders: data,
+                hasMore: data.length === 1000, // ESI returns max 1000 orders per page
+                nextPage: data.length === 1000 ? page + 1 : null
             });
+
+        } catch (fetchError) {
+            throw fetchError;
         }
-
-        if (response.status === 404 && page > 1) {
-            // No more pages - return empty array
-            return res.json([]);
-        }
-
-        if (!response.ok) {
-            throw new Error(`ESI returned status ${response.status}`);
-        }
-
-        const data = await response.json();
-        
-        // Validate response data
-        if (!Array.isArray(data)) {
-            console.error('Invalid response data:', data);
-            throw new Error('Invalid response format from ESI');
-        }
-
-        // Log success
-        console.log(`Page ${page}: Received ${data.length} orders, ${data.filter(o => o && o.type_id).length} valid`);
-
-        // Add delay based on remaining error limit
-        const errorLimit = parseInt(response.headers.get('x-esi-error-limit-remain') || '100');
-        const waitTime = errorLimit < 50 ? 1000 : 500;
-        console.log(`Waiting ${waitTime}ms before next request (error limit: ${errorLimit}, reset: ${response.headers.get('x-esi-error-limit-reset')}s)`);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
-
-        res.json(data);
 
     } catch (error) {
-        console.error('Structure market error:', error);
+        console.error('Structure market error:', {
+            structureId: req.params.structureId,
+            page: req.query.page,
+            error: error.message,
+            stack: error.stack
+        });
+
         res.status(500).json({
             error: 'Structure market data retrieval failed',
-            details: error.message,
-            structureId: req.params.structureId,
-            page: req.query.page
+            details: error.message
         });
     }
 });
@@ -1171,6 +1161,44 @@ app.get('/api/universe/groups/:groupId', async (req, res) => {
         });
     }
 });
+
+// Update rate limit settings
+const rateLimit = {
+    requests: new Map(),
+    resetTime: 60000, // 1 minute
+    maxRequests: 150, // Increased from 100 to 150
+    errorLimit: 100,  // Track ESI error limit
+};
+
+function rateLimitMiddleware(req, res, next) {
+    const now = Date.now();
+    
+    // Clean up old entries
+    for (const [key, time] of rateLimit.requests) {
+        if (now - time > rateLimit.resetTime) {
+            rateLimit.requests.delete(key);
+        }
+    }
+    
+    const requestCount = Array.from(rateLimit.requests.values()).filter(time => 
+        now - time < rateLimit.resetTime
+    ).length;
+
+    // More lenient rate limiting
+    if (requestCount >= rateLimit.maxRequests) {
+        const oldestRequest = Math.min(...rateLimit.requests.values());
+        const resetIn = Math.ceil((rateLimit.resetTime - (now - oldestRequest)) / 1000);
+        return res.status(429).json({
+            error: 'Rate limit exceeded',
+            reset_in: resetIn,
+            current_requests: requestCount,
+            max_requests: rateLimit.maxRequests
+        });
+    }
+
+    rateLimit.requests.set(req.ip + '_' + now, now);
+    next();
+}
 
 app.listen(8085, () => {
     console.log('Server running on http://localhost:8085');
