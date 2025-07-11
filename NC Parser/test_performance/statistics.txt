@@ -1,0 +1,44 @@
+NC File Processing Statistics
+========================================
+
+File format: Heidenhain
+Total commands: 453861
+Movement commands: 453861
+Rapid moves (L_RAPID): 3538
+Linear moves (L_FEED): 450323
+Clockwise arcs (C_CW): 0
+Counter-clockwise arcs (C_CCW): 0
+General arcs (C): 0
+
+Tools found:
+  T7: Square End Mill, D9.53mm
+    Corner radius: 0.0mm
+    Material: AL, 3 flutes
+  T9: Square End Mill, D6.35mm
+    Corner radius: 0.0mm
+    Material: AL, 3 flutes
+  T13: Ball End Mill, D3.18mm
+    Corner radius: 0.0mm
+    Material: AL, 2 flutes
+  T471: Ball End Mill, D3.0mm
+    Corner radius: 0.0mm
+    Material: AL, 2 flutes
+  T2038: Ball End Mill, D1.0mm
+    Corner radius: 0.0mm
+    Material: AL, 2 flutes
+Bounding box:
+  X: -41.07 to 202.80 mm
+  Y: -280.45 to 74.10 mm
+  Z: 98.24 to 250.00 mm
+
+Dimensions:
+  X range: 243.87 mm
+  Y range: 354.55 mm
+  Z range: 151.76 mm
+
+Processing parameters:
+  Tool diameter: 6.00 mm
+  Path resolution: 1.00 mm
+  Generated path points: 2485546
+  Estimated machining time: 184.75 minutes
+  Open3D available: False
