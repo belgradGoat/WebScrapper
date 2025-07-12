@@ -198,7 +198,7 @@ class EVEMarketAPI {
                 page++;
                 
                 // Add delay between requests
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await new Promise(resolve => setTimeout(resolve, 500));
 
             } catch (pageError) {
                 console.error(`Error on page ${page}:`, pageError);

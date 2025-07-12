@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Machinist Runner</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #1a1a1a;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+        }
+        
+        #gameCanvas {
+            border: 2px solid #333;
+            background: #2a2a2a;
+            display: block;
+            margin: 0 auto;
+        }
+        
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        #workOrders {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            max-width: 200px;
+        }
+        
+        .station {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .work-order {
+            border: 1px solid #555;
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .work-order:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .work-order.selected {
+            border-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.2);
+        }
+        
+        .work-order.completed {
+            opacity: 0.5;
+            background: rgba(0, 255, 0, 0.2);
+        }
+        
+        .work-order.failed {
+            background: rgba(255, 0, 0, 0.2);
+        }
+        
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+            z-index: 1000;
+        }
+        
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    
+    <div id="ui">
+        <div>Level: <span id="level">1</span></div>
+        <div>PIPs: <span id="pips">0</span>/3</div>
+        <div>Time: <span id="timeLeft">60</span>s</div>
+        <div>Score: <span id="score">0</span></div>
+        <div>Inventory:</div>
+        <div id="inventory">
+            <div>Material: <span id="material">0</span></div>
+            <div>Programs: <span id="programs">0</span></div>
+            <div>Parts: <span id="parts">0</span></div>
+        </div>
+    </div>
+    
+    <div id="workOrders">
+        <h3>Work Orders</h3>
+        <div id="ordersList"></div>
+    </div>
+    
+    <div id="gameOver">
+        <h2>Game Over!</h2>
+        <p id="gameOverMessage"></p>
+        <button onclick="restartGame()">Play Again</button>
+    </div>
+
+    <script>
+        // Game state
+        let gameState = {
+            level: 1,
+            pips: 0,
+            score: 0,
+            timeLeft: 60,
+            material: 0,
+            programs: 0,
+            parts: 0,
+            currentOrder: null,
+            workOrders: [],
+            gameRunning: true,
+            gameStartTime: Date.now()
+        };
+
+        // Canvas setup
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Player object
+        const player = {
+            x: 400,
+            y: 300,
+            size: 20,
+            speed: 3,
+            color: '#4CAF50'
+        };
+
+        // Stations
+        const stations = [
+            { name: 'CAD', x: 100, y: 100, color: '#2196F3', action: 'cad' },
+            { name: 'Material', x: 700, y: 100, color: '#FF9800', action: 'material' },
+            { name: 'Machine', x: 100, y: 500, color: '#9C27B0', action: 'machine' },
+            { name: 'QC', x: 400, y: 500, color: '#F44336', action: 'qc' },
+            { name: 'Ship', x: 700, y: 500, color: '#4CAF50', action: 'ship' }
+        ];
+
+        // Enemies (managers and coworkers)
+        const enemies = [
+            { x: 200, y: 200, size: 15, speed: 1, color: '#FF5722', type: 'manager' },
+            { x: 600, y: 400, size: 15, speed: 0.8, color: '#795548', type: 'coworker' }
+        ];
+
+        // Input handling
+        const keys = {};
+        document.addEventListener('keydown', (e) => keys[e.key] = true);
+        document.addEventListener('keyup', (e) => keys[e.key] = false);
+
+        // Game mechanics
+        function generateWorkOrder() {
+            const difficulties = ['Easy', 'Medium', 'Hard'];
+            const difficulty = difficulties[Math.floor(Math.random() * difficulties.length)];
+            const timeMultiplier = gameState.level * 0.8;
+            
+            return {
+                id: Date.now() + Math.random(),
+                difficulty: difficulty,
+                timeLimit: Math.floor((60 - gameState.level * 5) * timeMultiplier),
+                materialNeeded: difficulty === 'Easy' ? 1 : difficulty === 'Medium' ? 2 : 3,
+                programNeeded: true,
+                machineTime: difficulty === 'Easy' ? 5 : difficulty === 'Medium' ? 8 : 12,
+                qcFailChance: difficulty === 'Easy' ? 0.1 : difficulty === 'Medium' ? 0.2 : 0.3,
+                points: difficulty === 'Easy' ? 100 : difficulty === 'Medium' ? 200 : 300,
+                status: 'pending', // pending, in_progress, completed, failed
+                steps: {
+                    cad: false,
+                    material: false,
+                    machined: false,
+                    qc: false,
+                    shipped: false
+                }
+            };
+        }
+
+        function selectWorkOrder(orderId) {
+            const order = gameState.workOrders.find(o => o.id === orderId);
+            if (order && order.status === 'pending') {
+                if (gameState.currentOrder) {
+                    gameState.currentOrder.status = 'pending';
+                }
+                gameState.currentOrder = order;
+                order.status = 'in_progress';
+                updateUI();
+            }
+        }
+
+        function updatePlayer() {
+            if (!gameState.gameRunning) return;
+
+            // Movement
+            if (keys['ArrowLeft'] || keys['a']) player.x -= player.speed;
+            if (keys['ArrowRight'] || keys['d']) player.x += player.speed;
+            if (keys['ArrowUp'] || keys['w']) player.y -= player.speed;
+            if (keys['ArrowDown'] || keys['s']) player.y += player.speed;
+
+            // Boundary checking
+            player.x = Math.max(player.size, Math.min(canvas.width - player.size, player.x));
+            player.y = Math.max(player.size, Math.min(canvas.height - player.size, player.y));
+
+            // Check station interactions
+            stations.forEach(station => {
+                const distance = Math.sqrt(
+                    Math.pow(player.x - station.x, 2) + 
+                    Math.pow(player.y - station.y, 2)
+                );
+                
+                if (distance < 40) {
+                    handleStationInteraction(station);
+                }
+            });
+
+            // Check enemy collisions
+            enemies.forEach(enemy => {
+                const distance = Math.sqrt(
+                    Math.pow(player.x - enemy.x, 2) + 
+                    Math.pow(player.y - enemy.y, 2)
+                );
+                
+                if (distance < player.size + enemy.size) {
+                    // Slow down player for 2 seconds
+                    player.speed = Math.max(0.5, player.speed * 0.5);
+                    setTimeout(() => {
+                        player.speed = 3;
+                    }, 2000);
+                }
+            });
+        }
+
+        function handleStationInteraction(station) {
+            if (!gameState.currentOrder) return;
+
+            const order = gameState.currentOrder;
+            
+            switch (station.action) {
+                case 'cad':
+                    if (!order.steps.cad) {
+                        order.steps.cad = true;
+                        gameState.programs++;
+                        showMessage('CAD program created!');
+                    }
+                    break;
+                    
+                case 'material':
+                    if (gameState.material < order.materialNeeded) {
+                        gameState.material++;
+                        showMessage('Material collected!');
+                    }
+                    break;
+                    
+                case 'machine':
+                    if (order.steps.cad && gameState.material >= order.materialNeeded && !order.steps.machined) {
+                        order.steps.machined = true;
+                        gameState.material -= order.materialNeeded;
+                        gameState.parts++;
+                        showMessage('Part machined!');
+                    }
+                    break;
+                    
+                case 'qc':
+                    if (order.steps.machined && !order.steps.qc) {
+                        if (Math.random() > order.qcFailChance) {
+                            order.steps.qc = true;
+                            showMessage('QC passed!');
+                        } else {
+                            // Failed QC - need to remake
+                            order.steps.machined = false;
+                            gameState.parts--;
+                            showMessage('QC failed! Remake required.');
+                        }
+                    }
+                    break;
+                    
+                case 'ship':
+                    if (order.steps.qc && !order.steps.shipped) {
+                        order.steps.shipped = true;
+                        order.status = 'completed';
+                        gameState.score += order.points;
+                        gameState.parts--;
+                        showMessage('Order shipped!');
+                        
+                        // Check for level up
+                        if (gameState.workOrders.filter(o => o.status === 'completed').length >= gameState.level * 2) {
+                            levelUp();
+                        }
+                    }
+                    break;
+            }
+        }
+
+        function updateEnemies() {
+            enemies.forEach(enemy => {
+                // Simple AI - move towards player
+                const dx = player.x - enemy.x;
+                const dy = player.y - enemy.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance > 0) {
+                    enemy.x += (dx / distance) * enemy.speed;
+                    enemy.y += (dy / distance) * enemy.speed;
+                }
+            });
+        }
+
+        function updateTimer() {
+            if (!gameState.gameRunning) return;
+            
+            gameState.timeLeft--;
+            
+            if (gameState.timeLeft <= 0) {
+                // Time's up - check for incomplete orders
+                const incompleteOrders = gameState.workOrders.filter(o => o.status === 'in_progress');
+                if (incompleteOrders.length > 0) {
+                    gameState.pips++;
+                    showMessage('Deadline missed! PIP assigned.');
+                    
+                    if (gameState.pips >= 3) {
+                        gameOver('Too many PIPs! You\'ve been terminated.');
+                        return;
+                    }
+                }
+                
+                // Reset timer and generate new orders
+                gameState.timeLeft = Math.max(30, 60 - gameState.level * 3);
+                generateNewOrders();
+            }
+        }
+
+        function generateNewOrders() {
+            // Generate 2-4 new work orders
+            const numOrders = Math.floor(Math.random() * 3) + 2;
+            for (let i = 0; i < numOrders; i++) {
+                gameState.workOrders.push(generateWorkOrder());
+            }
+            updateUI();
+        }
+
+        function levelUp() {
+            gameState.level++;
+            gameState.timeLeft = Math.max(30, 60 - gameState.level * 3);
+            showMessage(`Level ${gameState.level}! Difficulty increased.`);
+            
+            // Add more enemies
+            if (gameState.level % 2 === 0) {
+                enemies.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: 15,
+                    speed: 0.5 + Math.random() * 1.5,
+                    color: Math.random() > 0.5 ? '#FF5722' : '#795548',
+                    type: Math.random() > 0.5 ? 'manager' : 'coworker'
+                });
+            }
+        }
+
+        function gameOver(message) {
+            gameState.gameRunning = false;
+            document.getElementById('gameOverMessage').textContent = message;
+            document.getElementById('gameOver').style.display = 'block';
+        }
+
+        function restartGame() {
+            // Reset game state
+            gameState = {
+                level: 1,
+                pips: 0,
+                score: 0,
+                timeLeft: 60,
+                material: 0,
+                programs: 0,
+                parts: 0,
+                currentOrder: null,
+                workOrders: [],
+                gameRunning: true,
+                gameStartTime: Date.now()
+            };
+            
+            // Reset player
+            player.x = 400;
+            player.y = 300;
+            player.speed = 3;
+            
+            // Reset enemies
+            enemies.length = 2;
+            enemies[0] = { x: 200, y: 200, size: 15, speed: 1, color: '#FF5722', type: 'manager' };
+            enemies[1] = { x: 600, y: 400, size: 15, speed: 0.8, color: '#795548', type: 'coworker' };
+            
+            document.getElementById('gameOver').style.display = 'none';
+            generateNewOrders();
+            updateUI();
+        }
+
+        function showMessage(text) {
+            // Simple message display - you can enhance this
+            console.log(text);
+        }
+
+        function updateUI() {
+            document.getElementById('level').textContent = gameState.level;
+            document.getElementById('pips').textContent = gameState.pips;
+            document.getElementById('timeLeft').textContent = gameState.timeLeft;
+            document.getElementById('score').textContent = gameState.score;
+            document.getElementById('material').textContent = gameState.material;
+            document.getElementById('programs').textContent = gameState.programs;
+            document.getElementById('parts').textContent = gameState.parts;
+            
+            // Update work orders display
+            const ordersList = document.getElementById('ordersList');
+            ordersList.innerHTML = '';
+            
+            gameState.workOrders.forEach(order => {
+                const div = document.createElement('div');
+                div.className = `work-order ${order.status}`;
+                if (order === gameState.currentOrder) div.classList.add('selected');
+                
+                div.innerHTML = `
+                    <div><strong>${order.difficulty}</strong></div>
+                    <div>Points: ${order.points}</div>
+                    <div>Material: ${order.materialNeeded}</div>
+                    <div>Status: ${order.status}</div>
+                `;
+                
+                div.onclick = () => selectWorkOrder(order.id);
+                ordersList.appendChild(div);
+            });
+        }
+
+        function render() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw stations
+            stations.forEach(station => {
+                ctx.fillStyle = station.color;
+                ctx.fillRect(station.x - 30, station.y - 30, 60, 60);
+                ctx.fillStyle = '#000';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(station.name, station.x, station.y);
+            });
+            
+            // Draw player
+            ctx.fillStyle = player.color;
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw enemies
+            enemies.forEach(enemy => {
+                ctx.fillStyle = enemy.color;
+                ctx.beginPath();
+                ctx.arc(enemy.x, enemy.y, enemy.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            
+            // Draw paths/connections between stations
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            // You can add path drawing logic here
+            ctx.stroke();
+        }
+
+        function gameLoop() {
+            if (gameState.gameRunning) {
+                updatePlayer();
+                updateEnemies();
+                render();
+                updateUI();
+            }
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Initialize game
+        generateNewOrders();
+        updateUI();
+        
+        // Timer
+        setInterval(updateTimer, 1000);
+        
+        // Start game loop
+        gameLoop();
+    </script>
+</body>
+</html>
