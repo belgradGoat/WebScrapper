@@ -334,3 +334,167 @@ class Visualizer:
             print(f"Plot exported to {filename}")
         else:
             print("No active plot to export")
+    
+    def plot_final_part(self, final_part_points: List[np.ndarray], 
+                       workpiece_bounds: Optional[Tuple] = None,
+                       title: str = "Final Machined Part") -> None:
+        """
+        Plot the final part after material removal with better visualization.
+        
+        Args:
+            final_part_points: Points representing the remaining material
+            workpiece_bounds: Original workpiece boundaries
+            title: Plot title
+        """
+        if not final_part_points:
+            print("No final part points to visualize")
+            return
+        
+        points_array = np.array(final_part_points)
+        
+        if self.backend == 'plotly':
+            self._plot_final_part_plotly(points_array, workpiece_bounds, title)
+        else:
+            self._plot_final_part_matplotlib(points_array, workpiece_bounds, title)
+    
+    def _plot_final_part_plotly(self, points_array: np.ndarray, 
+                               workpiece_bounds: Optional[Tuple], 
+                               title: str) -> None:
+        """Plot final part using Plotly with enhanced visualization."""
+        try:
+            # Create a more sophisticated visualization
+            fig = go.Figure()
+            
+            # Add remaining material points
+            fig.add_trace(go.Scatter3d(
+                x=points_array[:, 0],
+                y=points_array[:, 1], 
+                z=points_array[:, 2],
+                mode='markers',
+                marker=dict(
+                    size=3,
+                    color=points_array[:, 2],  # Color by Z height
+                    colorscale='Viridis',
+                    colorbar=dict(title="Height (mm)"),
+                    opacity=0.8
+                ),
+                name='Remaining Material',
+                hovertemplate='X: %{x:.2f}mm<br>Y: %{y:.2f}mm<br>Z: %{z:.2f}mm<extra></extra>'
+            ))
+            
+            # Add workpiece outline if available
+            if workpiece_bounds:
+                x_bounds, y_bounds, z_bounds = workpiece_bounds
+                
+                # Create wireframe box for original workpiece
+                box_x = [x_bounds[0], x_bounds[1], x_bounds[1], x_bounds[0], x_bounds[0],
+                        x_bounds[0], x_bounds[1], x_bounds[1], x_bounds[0], x_bounds[0],
+                        x_bounds[1], x_bounds[1], x_bounds[0], x_bounds[0], x_bounds[1], x_bounds[1]]
+                box_y = [y_bounds[0], y_bounds[0], y_bounds[1], y_bounds[1], y_bounds[0],
+                        y_bounds[0], y_bounds[0], y_bounds[1], y_bounds[1], y_bounds[0],
+                        y_bounds[0], y_bounds[1], y_bounds[1], y_bounds[0], y_bounds[0], y_bounds[1]]
+                box_z = [z_bounds[0], z_bounds[0], z_bounds[0], z_bounds[0], z_bounds[0],
+                        z_bounds[1], z_bounds[1], z_bounds[1], z_bounds[1], z_bounds[1],
+                        z_bounds[0], z_bounds[0], z_bounds[1], z_bounds[1], z_bounds[0], z_bounds[1]]
+                
+                fig.add_trace(go.Scatter3d(
+                    x=box_x, y=box_y, z=box_z,
+                    mode='lines',
+                    line=dict(color='red', width=2),
+                    name='Original Workpiece',
+                    showlegend=True
+                ))
+            
+            # Calculate part statistics
+            if len(points_array) > 0:
+                part_volume = len(points_array) * 2.0**3  # Approximate volume (2mm³ per point)
+                x_range = points_array[:, 0].max() - points_array[:, 0].min()
+                y_range = points_array[:, 1].max() - points_array[:, 1].min()
+                z_range = points_array[:, 2].max() - points_array[:, 2].min()
+                
+                title += f"<br><sub>Dimensions: {x_range:.1f}×{y_range:.1f}×{z_range:.1f}mm, Est. Volume: {part_volume:.0f}mm³</sub>"
+            
+            fig.update_layout(
+                title=dict(
+                    text=title,
+                    x=0.5,
+                    font=dict(size=16)
+                ),
+                scene=dict(
+                    xaxis_title='X (mm)',
+                    yaxis_title='Y (mm)', 
+                    zaxis_title='Z (mm)',
+                    aspectmode='data',
+                    camera=dict(
+                        eye=dict(x=1.5, y=1.5, z=1.5)
+                    )
+                ),
+                showlegend=True,
+                width=1000,
+                height=700
+            )
+            
+            fig.show()
+            
+        except Exception as e:
+            print(f"Error creating Plotly final part visualization: {e}")
+            self._plot_final_part_matplotlib(points_array, workpiece_bounds, title)
+    
+    def _plot_final_part_matplotlib(self, points_array: np.ndarray, 
+                                   workpiece_bounds: Optional[Tuple], 
+                                   title: str) -> None:
+        """Plot final part using Matplotlib."""
+        try:
+            fig = plt.figure(figsize=(12, 8))
+            ax = fig.add_subplot(111, projection='3d')
+            
+            # Plot remaining material with color by height
+            scatter = ax.scatter(
+                points_array[:, 0], points_array[:, 1], points_array[:, 2],
+                c=points_array[:, 2], cmap='viridis', 
+                alpha=0.7, s=20
+            )
+            
+            # Add colorbar
+            cbar = plt.colorbar(scatter, ax=ax, shrink=0.8)
+            cbar.set_label('Height (mm)')
+            
+            # Add workpiece outline
+            if workpiece_bounds:
+                x_bounds, y_bounds, z_bounds = workpiece_bounds
+                
+                # Draw workpiece box edges
+                edges = [
+                    # Bottom face
+                    [[x_bounds[0], x_bounds[1]], [y_bounds[0], y_bounds[0]], [z_bounds[0], z_bounds[0]]],
+                    [[x_bounds[1], x_bounds[1]], [y_bounds[0], y_bounds[1]], [z_bounds[0], z_bounds[0]]],
+                    [[x_bounds[1], x_bounds[0]], [y_bounds[1], y_bounds[1]], [z_bounds[0], z_bounds[0]]],
+                    [[x_bounds[0], x_bounds[0]], [y_bounds[1], y_bounds[0]], [z_bounds[0], z_bounds[0]]],
+                    # Top face
+                    [[x_bounds[0], x_bounds[1]], [y_bounds[0], y_bounds[0]], [z_bounds[1], z_bounds[1]]],
+                    [[x_bounds[1], x_bounds[1]], [y_bounds[0], y_bounds[1]], [z_bounds[1], z_bounds[1]]],
+                    [[x_bounds[1], x_bounds[0]], [y_bounds[1], y_bounds[1]], [z_bounds[1], z_bounds[1]]],
+                    [[x_bounds[0], x_bounds[0]], [y_bounds[1], y_bounds[0]], [z_bounds[1], z_bounds[1]]],
+                    # Vertical edges
+                    [[x_bounds[0], x_bounds[0]], [y_bounds[0], y_bounds[0]], [z_bounds[0], z_bounds[1]]],
+                    [[x_bounds[1], x_bounds[1]], [y_bounds[0], y_bounds[0]], [z_bounds[0], z_bounds[1]]],
+                    [[x_bounds[1], x_bounds[1]], [y_bounds[1], y_bounds[1]], [z_bounds[0], z_bounds[1]]],
+                    [[x_bounds[0], x_bounds[0]], [y_bounds[1], y_bounds[1]], [z_bounds[0], z_bounds[1]]],
+                ]
+                
+                for edge in edges:
+                    ax.plot3D(edge[0], edge[1], edge[2], 'r-', alpha=0.3, linewidth=1)
+            
+            ax.set_xlabel('X (mm)')
+            ax.set_ylabel('Y (mm)')
+            ax.set_zlabel('Z (mm)')
+            ax.set_title(title)
+            
+            # Set equal aspect ratio
+            ax.set_box_aspect([1,1,1])
+            
+            plt.tight_layout()
+            plt.show()
+            
+        except Exception as e:
+            print(f"Error creating Matplotlib final part visualization: {e}")

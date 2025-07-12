@@ -56,6 +56,7 @@ class NCParser:
     def process_nc_file(self, file_path: str, 
                        tool_diameter: float = 6.0,
                        resolution: float = 0.1,
+                       workpiece_resolution: float = 1.5,
                        visualization_backend: str = 'auto') -> dict:
         """
         Process NC file and generate visualizations.
@@ -116,7 +117,9 @@ class NCParser:
             )
             
             # Create workpiece points
-            workpiece_points = self.point_cloud_generator.create_workpiece_points(workpiece_bounds)
+            workpiece_points = self.point_cloud_generator.create_workpiece_points(
+                workpiece_bounds, resolution=workpiece_resolution
+            )
             
             # Simulate material removal (simplified without Open3D)
             final_part_points = self.point_cloud_generator.simulate_removal_simple(
@@ -152,7 +155,7 @@ class NCParser:
             print(f"Error processing NC file: {e}")
             raise
     
-    def visualize_results(self, results: dict, show_analysis: bool = True) -> None:
+    def visualize_results(self, results: dict, show_analysis: bool = True, show_part_only: bool = False) -> None:
         """
         Create visualizations from processing results.
         
@@ -163,27 +166,31 @@ class NCParser:
         try:
             print("Displaying visualizations...")
             
-            # Tool path visualization
-            self.visualizer.plot_tool_path(
-                results['tool_path_points'], 
-                title="NC File Tool Path"
-            )
+            # Show final machined part (most important visualization)
+            if results['final_part_points']:
+                print("Creating final machined part visualization...")
+                workpiece_bounds = (
+                    (results['statistics']['bounding_box']['x'][0] - results['tool_diameter'], 
+                     results['statistics']['bounding_box']['x'][1] + results['tool_diameter']),
+                    (results['statistics']['bounding_box']['y'][0] - results['tool_diameter'], 
+                     results['statistics']['bounding_box']['y'][1] + results['tool_diameter']),
+                    (results['statistics']['bounding_box']['z'][0] - results['tool_diameter'], 
+                     results['statistics']['bounding_box']['z'][1] + results['tool_diameter'])
+                )
+                
+                self.visualizer.plot_final_part(
+                    results['final_part_points'], 
+                    workpiece_bounds=workpiece_bounds,
+                    title="Final Machined Part - What Remains After CNC Program"
+                )
             
-            # Point cloud visualizations (without Open3D dependency)
-            if results['tool_path_points']:
+            # Tool path visualization (secondary) - skip if show_part_only is True
+            if not show_part_only and results['tool_path_points']:
                 print("Creating tool path visualization...")
                 self.visualizer.plot_tool_path(
                     results['tool_path_points'], 
-                    title="Tool Path Points"
+                    title="CNC Tool Path"
                 )
-                
-                if results['final_part_points']:
-                    print("Creating final part visualization...")
-                    # Use tool path visualization for final part points as well
-                    self.visualizer.plot_tool_path(
-                        results['final_part_points'], 
-                        title="Final Part Points"
-                    )
             
             # G-code analysis (if plotly is available)
             if show_analysis and hasattr(self.visualizer, 'plot_gcode_analysis'):
@@ -363,6 +370,10 @@ def main():
                        help="Number of threads to use (0=auto detect, default: 0)")
     parser.add_argument("--fast", action='store_true',
                        help="Fast mode: lower resolution and fewer points for large files")
+    parser.add_argument("--show-part-only", action='store_true',
+                       help="Show only the final machined part (skip tool path visualization)")
+    parser.add_argument("--workpiece-resolution", type=float, default=1.5,
+                       help="Workpiece point resolution in mm for part visualization (default: 1.5)")
     
     args = parser.parse_args()
     
@@ -398,12 +409,13 @@ def main():
             args.file,
             tool_diameter=args.tool_diameter,
             resolution=args.resolution,
+            workpiece_resolution=args.workpiece_resolution,
             visualization_backend=args.backend
         )
         
         # Show visualizations
         if not args.no_viz:
-            app.visualize_results(results)
+            app.visualize_results(results, show_part_only=args.show_part_only)
         
         # Export results if requested
         if args.export:
