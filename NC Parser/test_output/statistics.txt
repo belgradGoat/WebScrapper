@@ -1,0 +1,26 @@
+NC File Processing Statistics
+========================================
+
+Total commands: 20
+Movement commands: 14
+Rapid moves (G00): 3
+Linear moves (G01): 10
+Clockwise arcs (G02): 1
+Counter-clockwise arcs (G03): 0
+
+Bounding box:
+  X: 0.00 to 20.00 mm
+  Y: 0.00 to 10.00 mm
+  Z: -2.00 to 5.00 mm
+
+Dimensions:
+  X range: 20.00 mm
+  Y range: 10.00 mm
+  Z range: 7.00 mm
+
+Processing parameters:
+  Tool diameter: 6.00 mm
+  Path resolution: 0.10 mm
+  Generated path points: 1346
+  Estimated machining time: 0.54 minutes
+  Open3D available: False
