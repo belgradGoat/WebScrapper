@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Machinist Runner</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    
+    <div id="ui">
+        <div>Level: <span id="level">1</span></div>
+        <div>PIPs: <span id="pips">0</span>/3</div>
+        <div>Time: <span id="timeLeft">60</span>s</div>
+        <div>Score: <span id="score">0</span></div>
+        <div>Inventory:</div>
+        <div id="inventory">
+            <div>Material: <span id="material">0</span></div>
+            <div>Programs: <span id="programs">0</span></div>
+            <div>Parts: <span id="parts">0</span></div>
+        </div>
+        <div id="currentMessage" class="message"></div>
+        <button id="soundToggle" onclick="toggleSound()" style="margin-top: 10px; padding: 5px 10px; font-size: 10px;">🔊 Sound</button>
+    </div>
+    
+    <div id="workOrders">
+        <h3>Work Orders</h3>
+        <div id="ordersList"></div>
+    </div>
+    
+    <div id="gameOver">
+        <h2>Game Over!</h2>
+        <p id="gameOverMessage"></p>
+        <button onclick="restartGame()">Play Again</button>
+    </div>
+
+    <div class="control-hint">
+        Use WASD or Arrow Keys to move • SPACE to interact with stations • Click work orders to select
+    </div>
+
+    <script src="js/sound.js"></script>
+    <script src="js/particles.js"></script>
+    <script src="js/achievements.js"></script>
+    <script src="js/touchControls.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/gameState.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/enemies.js"></script>
+    <script src="js/stations.js"></script>
+    <script src="js/workOrders.js"></script>
+    <script src="js/game.js"></script>
+    <script src="test-game.js"></script>
+</body>
+</html>

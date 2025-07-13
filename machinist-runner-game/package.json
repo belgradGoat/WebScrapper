@@ -1,0 +1,33 @@
+{
+  "name": "machinist-runner-game",
+  "version": "1.0.0",
+  "description": "A Pac-Man inspired game where players act as machinists navigating a labyrinth, completing work orders, and avoiding coworkers and managers.",
+  "main": "src/js/game.js",
+  "scripts": {
+    "start": "concurrently \"node server.js\" \"live-server src --port=8080\"",
+    "server": "node server.js",
+    "frontend": "live-server src",
+    "test": "jest"
+  },
+  "keywords": [
+    "game",
+    "javascript",
+    "html5",
+    "pacman",
+    "machinist"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "jest": "^27.0.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.28.0",
+    "@babel/preset-env": "^7.28.0",
+    "babel-jest": "^30.0.4",
+    "concurrently": "^9.2.0",
+    "live-server": "^1.2.1"
+  }
+}
