@@ -2,12 +2,89 @@
 
 // Initialize UI components when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize market filters (loads excluded categories)
+    // Wait for all required functions to be available before initializing UI
+    waitForDependencies().then(() => {
+        initializeUI();
+    });
+});
+
+// Function to wait for all required dependencies
+async function waitForDependencies() {
+    let attempts = 0;
+    const maxAttempts = 200; // Wait up to 20 seconds
+    
+    while (attempts < maxAttempts) {
+        // Check if all required dependencies are available
+        const hasMarketFilters = !!window.marketFilters;
+        const hasSetFilter = typeof window.setFilter === 'function';
+        const hasCompareMarkets = typeof window.compareMarkets === 'function';
+        const hasInitializeMarketFilters = typeof window.initializeMarketFilters === 'function';
+        const hasCompareCategoryMarkets = typeof window.compareCategoryMarkets === 'function';
+        
+        if (hasMarketFilters && hasSetFilter && hasCompareMarkets && hasInitializeMarketFilters && hasCompareCategoryMarkets) {
+            console.log('✅ All dependencies available for market-ui.js initialization');
+            // Initialize market filters if not already done
+            if (window.initializeMarketFilters && typeof window.marketFilters === 'object') {
+                window.initializeMarketFilters();
+            }
+            return true;
+        }
+        
+        if (attempts % 10 === 0) { // Log every second
+            console.log(`⏳ market-ui.js waiting for dependencies (attempt ${attempts + 1}/${maxAttempts}):`, {
+                marketFilters: hasMarketFilters,
+                setFilter: hasSetFilter,
+                compareMarkets: hasCompareMarkets,
+                initializeMarketFilters: hasInitializeMarketFilters,
+                compareCategoryMarkets: hasCompareCategoryMarkets
+            });
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+    }
+    
+    console.error('❌ Timeout waiting for dependencies in market-ui.js');
+    return false;
+}
+
+function initializeUI() {
+    console.log('🎨 Initializing UI components...');
+    
+    // Check if marketFilters is available
+    if (!window.marketFilters) {
+        console.warn('⚠️ window.marketFilters not available during UI initialization');
+        // Create a minimal marketFilters object to prevent errors
+        window.marketFilters = {
+            groupIds: [],
+            excludedGroupIds: [],
+            typeIds: [],
+            minPrice: null,
+            maxPrice: null,
+            minProfit: 100000,
+            minProfitPercent: 5,
+            searchQuery: '',
+            savedFilterName: '',
+            showMissingItems: true,
+            firstLocationOrderType: 'sell',
+            secondLocationOrderType: 'sell'
+        };
+    }
+    
+    // Initialize market filters if the function exists
     if (window.initializeMarketFilters) {
         window.initializeMarketFilters();
     }
     
-    initializeFilterUI();
+    // Only initialize the old filter UI if we're in compatibility mode
+    // For group-based filtering, the group-filter-ui.js will handle the UI
+    if (!document.getElementById('filterPanel')) {
+        console.log('🎨 Creating traditional filter UI...');
+        initializeFilterUI();
+    } else {
+        console.log('🎨 Group filter UI already present, skipping traditional UI');
+    }
+    
     initializeResultsUI();
     initializeLocationDropdowns();
     
@@ -16,7 +93,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (token) {
         updateUIForLoggedInUser();
     }
-});
+    
+    console.log('✅ UI initialization complete');
+}
 
 // Create and initialize the filter UI
 function initializeFilterUI() {
@@ -184,10 +263,26 @@ function setupFilterEventListeners() {
             const categoryId = categorySelect.value;
             if (categoryId) {
                 await loadGroups(categoryId);
+                
+                // Wait for dependencies if not available
+                if (!window.setFilter || !window.marketFilters) {
+                    console.log('⏳ Category handler waiting for dependencies...');
+                    await waitForDependencies();
+                }
+                
+                // Safely set the category filter
                 if (window.setFilter) {
+                    console.log(`🎯 Setting categoryId filter: ${categoryId}`);
                     window.setFilter('categoryId', categoryId);
-                } else {
+                } else if (window.marketFilters) {
+                    // Ensure categoryId property exists
+                    if (!window.marketFilters.hasOwnProperty('categoryId')) {
+                        window.marketFilters.categoryId = null;
+                    }
+                    console.log(`🎯 Setting categoryId in marketFilters: ${categoryId}`);
                     window.marketFilters.categoryId = categoryId;
+                } else {
+                    console.error('❌ Cannot set categoryId - marketFilters and setFilter still not available after waiting');
                 }
                 
                 // Enable group select and category buttons
@@ -199,10 +294,17 @@ function setupFilterEventListeners() {
                 if (fullCategoryBtn) fullCategoryBtn.disabled = false;
                 if (downloadCategoryBtn) downloadCategoryBtn.disabled = false;
 
+                // Recalculate results if data exists
+                const buyLocationInput = document.getElementById('buyLocationInput');
+                const sellLocationInput = document.getElementById('sellLocationInput');
+                if (buyLocationInput && sellLocationInput && buyLocationInput.value && sellLocationInput.value && window.recalculateMarketComparison) {
+                    window.recalculateMarketComparison(buyLocationInput.value, sellLocationInput.value);
+                }
+
             } else {
                 if (window.setFilter) {
                     window.setFilter('categoryId', null);
-                } else {
+                } else if (window.marketFilters) {
                     window.marketFilters.categoryId = null;
                 }
                 
@@ -217,6 +319,13 @@ function setupFilterEventListeners() {
                 }
                 if (fullCategoryBtn) fullCategoryBtn.disabled = true;
                 if (downloadCategoryBtn) downloadCategoryBtn.disabled = true;
+
+                // Recalculate results if data exists (show all categories)
+                const buyLocationInput = document.getElementById('buyLocationInput');
+                const sellLocationInput = document.getElementById('sellLocationInput');
+                if (buyLocationInput && sellLocationInput && buyLocationInput.value && sellLocationInput.value && window.recalculateMarketComparison) {
+                    window.recalculateMarketComparison(buyLocationInput.value, sellLocationInput.value);
+                }
             }
         });
     }
@@ -231,22 +340,41 @@ function setupFilterEventListeners() {
             } else {
                 window.marketFilters.groupId = groupId ? groupId : null;
             }
+            
+            // Recalculate results if data exists
+            const buyLocationInput = document.getElementById('buyLocationInput');
+            const sellLocationInput = document.getElementById('sellLocationInput');
+            if (buyLocationInput && sellLocationInput && buyLocationInput.value && sellLocationInput.value && window.recalculateMarketComparison) {
+                window.recalculateMarketComparison(buyLocationInput.value, sellLocationInput.value);
+            }
         });
     }
     
     const fullCategoryBtn = document.getElementById('fullCategoryBtn');
     if (fullCategoryBtn) {
-        fullCategoryBtn.addEventListener('click', () => {
-    const categoryId = document.getElementById('categorySelect').value;
-    const buyLocationId = document.getElementById('buyLocationInput').value;
-    const sellLocationId = document.getElementById('sellLocationInput').value;
-    
-    if (categoryId && buyLocationId && sellLocationId) {
-        window.compareCategoryMarkets(buyLocationId, sellLocationId, categoryId);
-    } else {
-        alert('Please select a category and enter both market locations');
-    }
-});
+        fullCategoryBtn.addEventListener('click', async () => {
+            const categoryId = document.getElementById('categorySelect').value;
+            const buyLocationId = document.getElementById('buyLocationInput').value;
+            const sellLocationId = document.getElementById('sellLocationInput').value;
+            
+            if (categoryId && buyLocationId && sellLocationId) {
+                // Wait for dependencies if not available
+                if (!window.compareCategoryMarkets) {
+                    console.log('⏳ Full category handler waiting for dependencies...');
+                    await waitForDependencies();
+                }
+                
+                if (window.compareCategoryMarkets) {
+                    console.log(`🚀 Starting full category comparison for category ${categoryId}`);
+                    window.compareCategoryMarkets(buyLocationId, sellLocationId, categoryId);
+                } else {
+                    console.error('❌ compareCategoryMarkets still not available after waiting');
+                    alert('Error: Category comparison function is not available. Please refresh the page.');
+                }
+            } else {
+                alert('Please select a category and enter both market locations');
+            }
+        });
     }
 
     const downloadCategoryBtn = document.getElementById('downloadCategoryBtn');
@@ -619,7 +747,10 @@ async function loadCategories(excludeSelect) {
         }
         
         // Update the excluded categories UI to reflect current state
-        updateExcludedCategoriesUI();
+        // Only if we're using the old category system
+        if (window.marketFilters && window.marketFilters.hasOwnProperty('excludedCategoryIds')) {
+            updateExcludedCategoriesUI();
+        }
         
     } catch (error) {
         console.error('Failed to load categories:', error);
@@ -1099,6 +1230,13 @@ function addExcludedCategory(categoryId, categoryName) {
     
     // Update UI
     updateExcludedCategoriesUI();
+    
+    // Recalculate results if data exists
+    const buyLocationInput = document.getElementById('buyLocationInput');
+    const sellLocationInput = document.getElementById('sellLocationInput');
+    if (buyLocationInput && sellLocationInput && buyLocationInput.value && sellLocationInput.value && window.recalculateMarketComparison) {
+        window.recalculateMarketComparison(buyLocationInput.value, sellLocationInput.value);
+    }
 }
 
 // Remove a category from the excluded list
@@ -1117,12 +1255,32 @@ function removeExcludedCategory(categoryId) {
     
     // Refresh the exclude category select to show the newly available category
     loadCategories();
+    
+    // Recalculate results if data exists
+    const buyLocationInput = document.getElementById('buyLocationInput');
+    const sellLocationInput = document.getElementById('sellLocationInput');
+    if (buyLocationInput && sellLocationInput && buyLocationInput.value && sellLocationInput.value && window.recalculateMarketComparison) {
+        window.recalculateMarketComparison(buyLocationInput.value, sellLocationInput.value);
+    }
 }
 
 // Update the excluded categories UI display
 function updateExcludedCategoriesUI() {
     const container = document.getElementById('excludedCategoriesList');
     if (!container) return;
+    
+    // Check if we're using the new group-based system
+    if (!window.marketFilters || !window.marketFilters.hasOwnProperty('excludedCategoryIds')) {
+        // New group-based system - show a message about the new filtering
+        container.innerHTML = `
+            <p class="info-text">
+                🎯 <strong>New Group-Based Filtering Active!</strong><br>
+                Category-based filtering has been replaced with more granular group-based filtering. 
+                Use the Group Filters section above for better control.
+            </p>
+        `;
+        return;
+    }
     
     const excludedCategories = window.marketFilters.excludedCategoryIds;
     
@@ -1185,3 +1343,9 @@ function updateExcludedCategoriesUI() {
 }
 
 // Function to handle loading categories for different select elements
+
+// Export functions to global scope for testing and external access
+window.addExcludedCategory = addExcludedCategory;
+window.removeExcludedCategory = removeExcludedCategory;
+window.updateExcludedCategoriesUI = updateExcludedCategoriesUI;
+window.loadCategories = loadCategories;

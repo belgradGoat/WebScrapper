@@ -7,6 +7,9 @@ The EVE Market Comparison Tool is designed to help users compare market data fro
 - Compare market prices between two different structures.
 - Access private market data through EVE Online's SSO authentication.
 - User-friendly interface for easy navigation and data visualization.
+- **Excluded Categories**: Filter out unwanted item categories from results.
+- **Memory Optimized**: Uses IndexedDB storage to handle large datasets efficiently.
+- **Advanced Filtering**: Price, profit, category, and item-specific filters.
 
 ## Project Structure
 ```

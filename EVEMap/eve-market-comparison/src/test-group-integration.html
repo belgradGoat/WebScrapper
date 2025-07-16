@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Group Filter Integration Test</title>
+    <link rel="stylesheet" href="css/market-comparison.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .test-section {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .console-output {
+            background: #1e1e1e;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            padding: 15px;
+            border-radius: 5px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+        
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        .test-button:hover {
+            background: #0056b3;
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Group Filter Integration Test</h1>
+    <p>This page tests the new group-based filtering system integration.</p>
+    
+    <!-- Test Results -->
+    <div id="testResults" class="test-section">
+        <h2>Test Results</h2>
+        <div id="statusDisplay" class="status">Initializing tests...</div>
+        <div id="consoleOutput" class="console-output">
+            <div>Console output will appear here...</div>
+        </div>
+    </div>
+    
+    <!-- Group Filter UI Test Area -->
+    <div class="test-section">
+        <h2>Group Filter UI Test</h2>
+        <p>The group filter UI should appear below:</p>
+        <div id="marketComparison">
+            <div id="filterContainer">
+                <!-- Group filter UI will be inserted here -->
+            </div>
+            <div id="comparisonResults">
+                <p>Mock comparison results area</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Manual Test Controls -->
+    <div class="test-section">
+        <h2>Manual Test Controls</h2>
+        <button class="test-button" onclick="testGroupAPI()">Test Group API</button>
+        <button class="test-button" onclick="testFilterUI()">Test Filter UI</button>
+        <button class="test-button" onclick="testPresets()">Test Presets</button>
+        <button class="test-button" onclick="testFiltering()">Test Filtering Logic</button>
+        <button class="test-button" onclick="clearConsole()">Clear Console</button>
+    </div>
+    
+    <!-- Load required scripts -->
+    <script src="js/market-storage.js"></script>
+    <script src="js/eve-market-api.js"></script>
+    <script src="js/market-comparison-optimized.js"></script>
+    <script src="js/group-filter-ui.js"></script>
+    
+    <script>
+        // Console output redirection
+        const originalConsoleLog = console.log;
+        const originalConsoleError = console.error;
+        const originalConsoleWarn = console.warn;
+        
+        function addToConsole(message, type = 'log') {
+            const output = document.getElementById('consoleOutput');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#ff4444' : type === 'warn' ? '#ffaa00' : '#00ff00';
+            
+            const line = document.createElement('div');
+            line.style.color = color;
+            line.innerHTML = `[${timestamp}] ${message}`;
+            output.appendChild(line);
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        console.log = function(message) {
+            originalConsoleLog.apply(console, arguments);
+            addToConsole(Array.from(arguments).join(' '), 'log');
+        };
+        
+        console.error = function(message) {
+            originalConsoleError.apply(console, arguments);
+            addToConsole(Array.from(arguments).join(' '), 'error');
+        };
+        
+        console.warn = function(message) {
+            originalConsoleWarn.apply(console, arguments);
+            addToConsole(Array.from(arguments).join(' '), 'warn');
+        };
+        
+        function clearConsole() {
+            document.getElementById('consoleOutput').innerHTML = '<div>Console cleared...</div>';
+        }
+        
+        // Test functions
+        function testGroupAPI() {
+            console.log('🧪 Testing Group API...');
+            
+            if (!window.marketAPI || typeof window.marketAPI.getGroupInfo !== 'function') {
+                console.error('❌ Group API not available');
+                return;
+            }
+            
+            // Test with known group ID (Frigates)
+            window.marketAPI.getGroupInfo(25).then(groupInfo => {
+                console.log('✅ Group API test successful:', groupInfo?.name || 'Unknown');
+            }).catch(error => {
+                console.error('❌ Group API test failed:', error.message);
+            });
+        }
+        
+        function testFilterUI() {
+            console.log('🧪 Testing Filter UI...');
+            
+            const filterPanel = document.getElementById('filterPanel');
+            if (filterPanel) {
+                console.log('✅ Filter panel found');
+                console.log('   Include input:', !!document.getElementById('includeGroups'));
+                console.log('   Exclude input:', !!document.getElementById('excludeGroups'));
+                console.log('   Preset buttons:', document.querySelectorAll('.preset-btn').length);
+            } else {
+                console.error('❌ Filter panel not found');
+            }
+        }
+        
+        function testPresets() {
+            console.log('🧪 Testing Presets...');
+            
+            if (typeof window.setPreset === 'function') {
+                console.log('✅ Testing Frigate preset...');
+                window.setPreset('frigates');
+                
+                setTimeout(() => {
+                    const includeInput = document.getElementById('includeGroups');
+                    if (includeInput && includeInput.value === '25') {
+                        console.log('✅ Frigate preset working correctly');
+                    } else {
+                        console.error('❌ Frigate preset failed');
+                    }
+                }, 100);
+            } else {
+                console.error('❌ setPreset function not available');
+            }
+        }
+        
+        function testFiltering() {
+            console.log('🧪 Testing Filtering Logic...');
+            
+            if (!window.filterOpportunities) {
+                console.error('❌ filterOpportunities function not available');
+                return;
+            }
+            
+            // Create test data with known group IDs
+            const testData = [
+                {
+                    typeId: 1001,
+                    itemName: "Test Frigate",
+                    groupId: 25, // Frigates
+                    buyPrice: 100,
+                    sellPrice: 150,
+                    profit: 50,
+                    profitPercent: 50
+                },
+                {
+                    typeId: 1002,
+                    itemName: "Test Cruiser",
+                    groupId: 26, // Cruisers
+                    buyPrice: 200,
+                    sellPrice: 250,
+                    profit: 50,
+                    profitPercent: 25
+                },
+                {
+                    typeId: 1003,
+                    itemName: "Test Module",
+                    groupId: 60, // Modules
+                    buyPrice: 300,
+                    sellPrice: 350,
+                    profit: 50,
+                    profitPercent: 16.7
+                }
+            ];
+            
+            console.log('📊 Test data:', testData.map(t => `${t.itemName} (group: ${t.groupId})`));
+            
+            // Test 1: No filters
+            window.marketFilters.groupIds = [];
+            window.marketFilters.excludedGroupIds = [];
+            const noFilter = window.filterOpportunities(testData);
+            console.log('   No filters - count:', noFilter.length, '(should be 3)');
+            
+            // Test 2: Include only frigates
+            window.marketFilters.groupIds = [25];
+            window.marketFilters.excludedGroupIds = [];
+            const frigatesOnly = window.filterOpportunities(testData);
+            console.log('   Frigates only - count:', frigatesOnly.length, '(should be 1)');
+            console.log('   Items:', frigatesOnly.map(t => t.itemName));
+            
+            // Test 3: Exclude modules
+            window.marketFilters.groupIds = [];
+            window.marketFilters.excludedGroupIds = [60];
+            const noModules = window.filterOpportunities(testData);
+            console.log('   Exclude modules - count:', noModules.length, '(should be 2)');
+            console.log('   Items:', noModules.map(t => t.itemName));
+            
+            if (frigatesOnly.length === 1 && noModules.length === 2) {
+                console.log('✅ Group filtering working correctly!');
+            } else {
+                console.error('❌ Group filtering not working as expected');
+            }
+        }
+        
+        // Initialize when DOM loads
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 Group Filter Integration Test Started');
+            
+            // Update status
+            const status = document.getElementById('statusDisplay');
+            status.textContent = 'Running integration tests...';
+            status.className = 'status';
+            
+            setTimeout(() => {
+                console.log('🔧 Checking system components...');
+                
+                const checks = {
+                    marketAPI: !!window.marketAPI,
+                    marketFilters: !!window.marketFilters,
+                    createGroupFilterUI: typeof window.createGroupFilterUI === 'function',
+                    setFilter: typeof window.setFilter === 'function',
+                    filterOpportunities: typeof window.filterOpportunities === 'function'
+                };
+                
+                console.log('System checks:', checks);
+                
+                const allGood = Object.values(checks).every(v => v);
+                
+                if (allGood) {
+                    console.log('✅ All system components available');
+                    
+                    // Try to create the filter UI
+                    if (window.createGroupFilterUI) {
+                        const success = window.createGroupFilterUI();
+                        if (success) {
+                            console.log('✅ Group filter UI created successfully');
+                            status.textContent = 'All tests passed! Group filtering system is ready.';
+                            status.className = 'status success';
+                        } else {
+                            console.error('❌ Failed to create group filter UI');
+                            status.textContent = 'Error: Failed to create group filter UI';
+                            status.className = 'status error';
+                        }
+                    }
+                } else {
+                    console.error('❌ Some system components missing:', 
+                        Object.entries(checks).filter(([k,v]) => !v).map(([k,v]) => k));
+                    status.textContent = 'Error: Missing system components';
+                    status.className = 'status error';
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

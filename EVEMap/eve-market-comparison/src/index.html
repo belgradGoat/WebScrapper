@@ -10,37 +10,177 @@
     console.log('Index.html loaded at:', new Date().toLocaleTimeString());
     
     window.onerror = function(message, source, lineno, colno, error) {
+        // Filter out browser extension errors that we can't control
+        if (message && (
+            message.includes('Extension context invalidated') ||
+            message.includes('message channel') ||
+            message.includes('MessageChannel') ||
+            message.includes('chrome-extension://') ||
+            message.includes('moz-extension://') ||
+            source && (source.includes('chrome-extension://') || source.includes('moz-extension://'))
+        )) {
+            console.log('Ignoring browser extension error:', message);
+            return true; // Suppress these errors
+        }
+        
         console.error('Global error caught:', message, 'at', source, ':', lineno, ':', colno);
         console.error('Error object:', error);
         
-        // Create an error display on the page
-        const errorDiv = document.createElement('div');
-        errorDiv.style.position = 'fixed';
-        errorDiv.style.top = '10px';
-        errorDiv.style.right = '10px';
-        errorDiv.style.background = '#f8d7da';
-        errorDiv.style.color = '#721c24';
-        errorDiv.style.padding = '10px';
-        errorDiv.style.borderRadius = '5px';
-        errorDiv.style.zIndex = '9999';
-        errorDiv.style.maxWidth = '80%';
-        errorDiv.style.boxShadow = '0 0 10px rgba(0,0,0,0.2)';
-        errorDiv.innerHTML = `<strong>Error:</strong> ${message}<br>at ${source}:${lineno}:${colno}`;
-        document.body.appendChild(errorDiv);
-        
-        // Remove after 10 seconds
-        setTimeout(() => errorDiv.remove(), 10000);
+        // Only show error display for application errors, not extension errors
+        if (!message.includes('script error') && source !== '') {
+            const errorDiv = document.createElement('div');
+            errorDiv.style.position = 'fixed';
+            errorDiv.style.top = '10px';
+            errorDiv.style.right = '10px';
+            errorDiv.style.background = '#f8d7da';
+            errorDiv.style.color = '#721c24';
+            errorDiv.style.padding = '10px';
+            errorDiv.style.borderRadius = '5px';
+            errorDiv.style.zIndex = '9999';
+            errorDiv.style.maxWidth = '80%';
+            errorDiv.style.boxShadow = '0 0 10px rgba(0,0,0,0.2)';
+            errorDiv.innerHTML = `<strong>Error:</strong> ${message}<br>at ${source}:${lineno}:${colno}`;
+            document.body.appendChild(errorDiv);
+            
+            // Remove after 10 seconds
+            setTimeout(() => errorDiv.remove(), 10000);
+        }
         
         return true; // Prevent default error handling
     };
     </script>
     
     <!-- Load scripts in correct order with defer to ensure they execute after HTML is parsed -->
-    <script src="js/market-storage.js" defer></script>
-    <script src="js/eve-market-api.js" defer></script>
+    <script>
+        // Global flag to track script loading
+        window.scriptsLoaded = {
+            marketStorage: false,
+            marketAPI: false,
+            marketComparison: false,
+            marketUI: false
+        };
+        
+        // Function to check if all critical scripts are loaded
+        window.checkAllScriptsLoaded = function() {
+            return typeof window.compareMarkets === 'function' && 
+                   typeof window.setFilter === 'function' && 
+                   !!window.marketFilters;
+        };
+    </script>
+    <script src="js/market-storage.js" defer onload="window.scriptsLoaded.marketStorage = true; console.log('✅ market-storage.js loaded');"></script>
+    <script src="js/eve-market-api.js" defer onload="window.scriptsLoaded.marketAPI = true; console.log('✅ eve-market-api.js loaded');"></script>
     <script src="js/eve-auth.js" defer></script>
-    <script src="js/market-comparison-optimized.js" defer></script>
-    <script src="js/market-ui.js" defer></script>
+    <script src="js/market-comparison-optimized.js" defer onload="window.scriptsLoaded.marketComparison = true; console.log('✅ market-comparison-optimized.js loaded');"></script>
+    <script src="js/group-filter-ui.js" defer></script>
+    <script src="js/market-ui.js" defer onload="window.scriptsLoaded.marketUI = true; console.log('✅ market-ui.js loaded');"></script>
+    <script src="comprehensive-group-test.js" defer></script>
+    <script src="debug-category-filtering.js" defer></script>
+    <script src="test-debug-fixes.js" defer></script>
+    
+    <!-- Initialize Group-based Filtering System -->
+    <script>
+        // Initialize the new group-based filtering system
+        setTimeout(() => {
+            console.log('🚀 INITIALIZING Group-based Filter System');
+            console.log('==========================================');
+
+            // Check system availability
+            console.log('✅ System Check:');
+            console.log('   window.marketAPI:', !!window.marketAPI);
+            console.log('   window.marketFilters:', !!window.marketFilters);
+            console.log('   window.createGroupFilterUI:', typeof window.createGroupFilterUI);
+            
+            if (!window.marketAPI) {
+                console.error('❌ CRITICAL: window.marketAPI not available');
+                return;
+            }
+            
+            if (!window.marketFilters) {
+                console.error('❌ CRITICAL: window.marketFilters not available');
+                return;
+            }
+
+            // Clean up old category-based localStorage entries
+            console.log('🧹 Cleaning up old category-based filter data...');
+            try {
+                localStorage.removeItem('excludedCategories');
+                localStorage.removeItem('excludedCategoryIds');
+                console.log('   ✅ Old category data cleaned up');
+            } catch (error) {
+                console.log('   ⚠️ Could not clean up old data:', error.message);
+            }
+
+            // Initialize the new group filter UI
+            if (typeof window.createGroupFilterUI === 'function') {
+                console.log('🎨 Creating group filter UI...');
+                try {
+                    // Find the insertion point (before comparison results)
+                    const insertionPoint = document.getElementById('comparisonResults');
+                    if (insertionPoint) {
+                        window.createGroupFilterUI();
+                        console.log('   ✅ Group filter UI created successfully');
+                        
+                        // Initialize group filters from storage
+                        const savedGroupFilters = window.marketAPI.getExcludedGroups();
+                        if (savedGroupFilters && savedGroupFilters.length > 0) {
+                            console.log('   📁 Loaded saved group filters:', savedGroupFilters);
+                            window.marketFilters.excludedGroupIds = savedGroupFilters;
+                        }
+                        
+                        console.log('   🎯 Current filter state:', {
+                            groupIds: window.marketFilters.groupIds || [],
+                            excludedGroupIds: window.marketFilters.excludedGroupIds || []
+                        });
+                    } else {
+                        console.error('   ❌ Could not find insertion point for filter UI');
+                    }
+                } catch (error) {
+                    console.error('   ❌ Error creating group filter UI:', error);
+                }
+            } else {
+                console.error('❌ createGroupFilterUI function not available');
+            }
+
+            // Test group API functionality
+            console.log('🧪 Testing Group API functionality...');
+            if (window.marketAPI.getGroupInfo) {
+                // Test with a known group ID (Frigates)
+                window.marketAPI.getGroupInfo(25).then(groupInfo => {
+                    console.log('   ✅ Group API test successful:', groupInfo?.name || 'Unknown');
+                }).catch(error => {
+                    console.log('   ⚠️ Group API test failed:', error.message);
+                });
+            }
+
+            // Final setup status
+            setTimeout(() => {
+                const setupStatus = {
+                    apiAvailable: !!window.marketAPI,
+                    filtersAvailable: !!window.marketFilters,
+                    groupUIAvailable: typeof window.createGroupFilterUI === 'function',
+                    groupAPIAvailable: typeof window.marketAPI.getGroupInfo === 'function',
+                    filterPanelPresent: !!document.getElementById('filterPanel')
+                };
+                
+                console.log('📊 SETUP STATUS REPORT:');
+                Object.entries(setupStatus).forEach(([key, value]) => {
+                    console.log(`   ${key}: ${value ? '✅' : '❌'}`);
+                });
+                
+                const allGood = Object.values(setupStatus).every(v => v);
+                console.log(`\n🎯 System Status: ${allGood ? '✅ GROUP FILTERING READY' : '❌ SETUP ISSUES DETECTED'}`);
+                
+                if (allGood) {
+                    console.log('\n🚀 Group-based filtering is ready! Features:');
+                    console.log('   • Include/exclude specific market groups by ID');
+                    console.log('   • Quick presets for common ship types');
+                    console.log('   • More granular control than category filtering');
+                    console.log('   • Test with market comparison to see filtering in action');
+                }
+            }, 1500);
+            
+        }, 3000); // Wait 3 seconds for everything to load
+    </script>
 </head>
 <body>
     <div class="app-container">
@@ -86,41 +226,190 @@
         </footer>
     </div>
     <script>
-        // Initialize the application
-        document.addEventListener('DOMContentLoaded', () => {
+        // Initialize the application with better function loading detection
+        let initializationComplete = false;
+        
+        // Function to wait for all required functions to be available
+        async function waitForFunctions() {
+            const requiredFunctions = [
+                'compareMarkets',
+                'setFilter', 
+                'marketFilters',
+                'marketAPI',
+                'marketStorage'
+            ];
+            
+            console.log('🔄 Waiting for required functions to load...');
+            let allLoaded = false;
+            let attempts = 0;
+            const maxAttempts = 300; // Wait up to 30 seconds
+            
+            while (!allLoaded && attempts < maxAttempts) {
+                // Check using the global helper function
+                allLoaded = window.checkAllScriptsLoaded && window.checkAllScriptsLoaded();
+                
+                // Also check individual functions as backup
+                if (!allLoaded) {
+                    allLoaded = requiredFunctions.every(funcName => {
+                        if (funcName === 'marketFilters' || funcName === 'marketAPI' || funcName === 'marketStorage') {
+                            return !!window[funcName];
+                        }
+                        return typeof window[funcName] === 'function';
+                    });
+                }
+                
+                if (!allLoaded) {
+                    // Log status every 2 seconds instead of every attempt
+                    if (attempts % 20 === 0) {
+                        console.log(`⏳ Still waiting (${attempts/10}s) for:`, 
+                            requiredFunctions.filter(funcName => {
+                                if (funcName === 'marketFilters' || funcName === 'marketAPI' || funcName === 'marketStorage') {
+                                    return !window[funcName];
+                                }
+                                return typeof window[funcName] !== 'function';
+                            })
+                        );
+                    }
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    attempts++;
+                }
+            }
+            
+            if (allLoaded) {
+                console.log('✅ All required functions loaded after', attempts * 100, 'ms');
+            } else {
+                console.error('❌ Timeout waiting for functions after', attempts * 100, 'ms');
+            }
+            
+            return allLoaded;
+        }
+        
+        document.addEventListener('DOMContentLoaded', async () => {
             console.log('DOM content loaded');
             
-            // Debug check for required functions
-            setTimeout(() => {
-                console.log('Checking for required functions...');
-                console.log('window.compareMarkets exists:', typeof window.compareMarkets === 'function');
-                console.log('window.marketAPI exists:', !!window.marketAPI);
-                console.log('window.marketStorage exists:', !!window.marketStorage);
+            const allLoaded = await waitForFunctions();
+            
+            if (allLoaded) {
+                console.log('✅ All required functions loaded successfully');
+                initializationComplete = true;
+            } else {
+                console.error('❌ Some required functions failed to load:', 
+                    ['compareMarkets', 'setFilter', 'marketFilters', 'marketAPI', 'marketStorage'].filter(funcName => {
+                        if (funcName === 'marketFilters' || funcName === 'marketAPI' || funcName === 'marketStorage') {
+                            return !window[funcName];
+                        }
+                        return typeof window[funcName] !== 'function';
+                    })
+                );
+            }
+            
+            // Initialize group filter UI when DOM is ready - only if all functions loaded
+            if (allLoaded && typeof window.createGroupFilterUI === 'function') {
+                console.log('🎨 Initializing group filter UI from DOMContentLoaded...');
                 
-                // Create status display
-                const statusDiv = document.createElement('div');
-                statusDiv.style.position = 'fixed';
-                statusDiv.style.bottom = '10px';
-                statusDiv.style.left = '10px';
-                statusDiv.style.background = '#d4edda';
-                statusDiv.style.color = '#155724';
-                statusDiv.style.padding = '10px';
-                statusDiv.style.borderRadius = '5px';
-                statusDiv.style.zIndex = '9999';
-                statusDiv.innerHTML = `
-                    <strong>Debug Info:</strong><br>
-                    compareMarkets: ${typeof window.compareMarkets === 'function' ? 'Available ✓' : 'Missing ✗'}<br>
-                    marketAPI: ${!!window.marketAPI ? 'Available ✓' : 'Missing ✗'}<br>
-                    marketStorage: ${!!window.marketStorage ? 'Available ✓' : 'Missing ✗'}<br>
-                `;
-                document.body.appendChild(statusDiv);
-            }, 1000);
+                // Find insertion point and create UI
+                const comparisonSection = document.getElementById('marketComparison');
+                const resultsDiv = document.getElementById('comparisonResults');
+                
+                if (comparisonSection && resultsDiv) {
+                    // Create the filter UI and insert it before results
+                    const filterContainer = document.createElement('div');
+                    filterContainer.id = 'filterContainer';
+                    
+                    // Insert before results
+                    comparisonSection.insertBefore(filterContainer, resultsDiv);
+                    
+                    // Create the group filter UI
+                    const success = window.createGroupFilterUI();
+                    if (success) {
+                        console.log('✅ Group filter UI initialized successfully');
+                    } else {
+                        console.error('❌ Failed to create group filter UI');
+                    }
+                }
+            } else if (!allLoaded) {
+                console.warn('⚠️ Skipping group filter UI initialization - required functions not loaded');
+            } else {
+                console.warn('⚠️ createGroupFilterUI function not available');
+            }
+            
+            // Debug check for required functions
+            console.log('Checking for required functions...');
+            console.log('window.compareMarkets exists:', typeof window.compareMarkets === 'function');
+            console.log('window.marketAPI exists:', !!window.marketAPI);
+            console.log('window.marketStorage exists:', !!window.marketStorage);
+            console.log('window.createGroupFilterUI exists:', typeof window.createGroupFilterUI === 'function');
+            console.log('window.marketFilters exists:', !!window.marketFilters);
+            console.log('window.setFilter exists:', typeof window.setFilter === 'function');
+            
+            // Create status display
+            const statusDiv = document.createElement('div');
+            statusDiv.style.position = 'fixed';
+            statusDiv.style.bottom = '10px';
+            statusDiv.style.left = '10px';
+            statusDiv.style.background = allLoaded ? '#d4edda' : '#f8d7da';
+            statusDiv.style.color = allLoaded ? '#155724' : '#721c24';
+            statusDiv.style.padding = '10px';
+            statusDiv.style.borderRadius = '5px';
+            statusDiv.style.zIndex = '9999';
+            statusDiv.innerHTML = `
+                <strong>Debug Info:</strong><br>
+                compareMarkets: ${typeof window.compareMarkets === 'function' ? 'Available ✓' : 'Missing ✗'}<br>
+                setFilter: ${typeof window.setFilter === 'function' ? 'Available ✓' : 'Missing ✗'}<br>
+                marketAPI: ${!!window.marketAPI ? 'Available ✓' : 'Missing ✗'}<br>
+                marketStorage: ${!!window.marketStorage ? 'Available ✓' : 'Missing ✗'}<br>
+                groupFilterUI: ${typeof window.createGroupFilterUI === 'function' ? 'Available ✓' : 'Missing ✗'}<br>
+                marketFilters: ${!!window.marketFilters ? 'Available ✓' : 'Missing ✗'}<br>
+                Status: ${allLoaded ? 'Ready ✓' : 'Loading... ⏳'}
+            `;
+            document.body.appendChild(statusDiv);
+            
+            // Update compare button to show ready status
+            const compareBtnElement = document.getElementById('compareBtn');
+            if (compareBtnElement && allLoaded) {
+                compareBtnElement.style.background = '#28a745';
+                compareBtnElement.style.color = 'white';
+                compareBtnElement.title = 'All systems ready';
+            } else if (compareBtnElement) {
+                compareBtnElement.style.background = '#ffc107';
+                compareBtnElement.style.color = '#000';
+                compareBtnElement.title = 'Waiting for scripts to load...';
+                
+                // Update button when ready
+                const checkReady = setInterval(() => {
+                    if (initializationComplete) {
+                        compareBtnElement.style.background = '#28a745';
+                        compareBtnElement.style.color = 'white';
+                        compareBtnElement.title = 'All systems ready';
+                        clearInterval(checkReady);
+                    }
+                }, 500);
+            }
             
             // Add event listeners for the compare button with enhanced error handling
             const compareBtn = document.getElementById('compareBtn');
             if (compareBtn) {
-                compareBtn.addEventListener('click', () => {
+                compareBtn.addEventListener('click', async () => {
                     console.log('Compare button clicked');
+                    
+                    // Check if initialization is complete
+                    if (!initializationComplete) {
+                        console.log('Initialization not complete, waiting for functions...');
+                        compareBtn.disabled = true;
+                        compareBtn.textContent = 'Loading...';
+                        
+                        const functionsLoaded = await waitForFunctions();
+                        if (functionsLoaded) {
+                            initializationComplete = true;
+                            compareBtn.disabled = false;
+                            compareBtn.textContent = 'Compare';
+                        } else {
+                            compareBtn.disabled = false;
+                            compareBtn.textContent = 'Compare';
+                            alert('Error: Required functions are not available. Please refresh the page.');
+                            return;
+                        }
+                    }
                     
                     // Fetch input values
                     const buyLocationInput = document.getElementById('buyLocationInput');
@@ -141,10 +430,10 @@
                         return;
                     }
                     
-                    // Check if the compare markets function is available
+                    // Final check that compareMarkets is available
                     if (typeof window.compareMarkets !== 'function') {
-                        console.error('compareMarkets function is not available!');
-                        alert('Error: Market comparison function is not available. Please check the console for errors and refresh the page.');
+                        console.error('compareMarkets function is not available after initialization!');
+                        alert('Error: Market comparison function is not available. Please refresh the page and try again.');
                         return;
                     }
                     
@@ -154,7 +443,7 @@
                     
                     try {
                         console.log('Calling compareMarkets with:', buyLocationId, sellLocationId);
-                        window.compareMarkets(buyLocationId, sellLocationId);
+                        await window.compareMarkets(buyLocationId, sellLocationId);
                     } catch (error) {
                         console.error('Error calling compareMarkets:', error);
                         alert('Error comparing markets: ' + error.message);

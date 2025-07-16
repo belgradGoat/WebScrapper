@@ -119,6 +119,11 @@ class EVEMarketAPI {
         let errorLimit = 100; // Start with default error limit
         let skipPages = new Set();
         
+        // Safety limits to prevent infinite loops
+        const MAX_PAGES = 2000; // Increased from 300 to handle large markets
+        const MAX_CONSECUTIVE_EMPTY_PAGES = 5; // Stop if we get multiple empty pages
+        let consecutiveEmptyPages = 0;
+        
         switch(locationType) {
             case 'structure':
                 const token = localStorage.getItem('eveAccessToken');
@@ -156,7 +161,7 @@ class EVEMarketAPI {
                 throw new Error(`Unsupported market location type: ${locationType}`);
         }
         
-        while (hasMorePages && page <= 300) {
+        while (hasMorePages && page <= MAX_PAGES) {
             try {
                 const paginatedUrl = `${url}?page=${page}`;
                 console.log(`Fetching page ${page} from ${paginatedUrl}`);
@@ -186,6 +191,10 @@ class EVEMarketAPI {
                 if (orders.length > 0) {
                     await window.marketStorage.storePartialMarketData(locationId, orders, page);
                     allOrders.push(...orders);
+                    consecutiveEmptyPages = 0; // Reset counter on successful data
+                } else {
+                    consecutiveEmptyPages++;
+                    console.log(`Empty page ${page}, consecutive empty pages: ${consecutiveEmptyPages}`);
                 }
 
                 // Check if we should continue pagination
@@ -193,18 +202,31 @@ class EVEMarketAPI {
                     hasMorePages = false;
                     break;
                 }
+                
+                // Stop if we've hit too many consecutive empty pages
+                if (consecutiveEmptyPages >= MAX_CONSECUTIVE_EMPTY_PAGES) {
+                    console.log(`Stopping pagination after ${consecutiveEmptyPages} consecutive empty pages`);
+                    hasMorePages = false;
+                    break;
+                }
 
                 // Increment page only on successful request
                 page++;
                 
-                // Add delay between requests
-                await new Promise(resolve => setTimeout(resolve, 500));
+                // Add delay between requests, this is main throttle point
+                await new Promise(resolve => setTimeout(resolve, 200));
 
             } catch (pageError) {
                 console.error(`Error on page ${page}:`, pageError);
                 throw pageError;
             }
         }
+        
+        // Log completion statistics
+        if (page > MAX_PAGES) {
+            console.warn(`Market data fetch stopped at maximum page limit (${MAX_PAGES}). There may be more data available.`);
+        }
+        console.log(`Market data fetch completed. Total pages: ${page - 1}, Total orders: ${allOrders.length}`);
 
         return allOrders;
 
@@ -618,6 +640,41 @@ class EVEMarketAPI {
         }
     }
 
+    // Clear all excluded categories data (utility for debugging/fixing issues)
+    clearExcludedCategories() {
+        try {
+            localStorage.removeItem('eveMarketExcludedCategories');
+            console.log('✅ Cleared all excluded categories data from localStorage');
+            return true;
+        } catch (error) {
+            console.error('Failed to clear excluded categories:', error);
+            return false;
+        }
+    }
+
+    // Reset excluded categories to empty state and update filters
+    resetExcludedCategories() {
+        try {
+            this.clearExcludedCategories();
+            
+            // Reset in-memory filters if available
+            if (window.marketFilters) {
+                window.marketFilters.excludedCategoryIds = [];
+            }
+            
+            // Update UI if available
+            if (window.updateExcludedCategoriesUI) {
+                window.updateExcludedCategoriesUI();
+            }
+            
+            console.log('✅ Reset excluded categories to empty state');
+            return true;
+        } catch (error) {
+            console.error('Failed to reset excluded categories:', error);
+            return false;
+        }
+    }
+
     // New method to get market ID info
     getMarketIdInfo(marketId) {
         const id = marketId.toString();
@@ -767,6 +824,112 @@ class EVEMarketAPI {
         } catch (error) {
             console.error(`Error fetching category types for ${categoryId}:`, error);
             throw error;
+        }
+    }
+
+    // Group-based filtering methods
+    async getGroupInfo(groupId) {
+        const cacheKey = `group_info_${groupId}`;
+        const cachedData = this.getCache(cacheKey);
+        if (cachedData) return cachedData;
+
+        try {
+            const response = await fetch(`${this.esiUrl}/universe/groups/${groupId}/`, {
+                headers: this.headers
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const groupInfo = await response.json();
+            this.setCache(cacheKey, groupInfo, 24 * 60 * 60 * 1000); // Cache for 24 hours
+            return groupInfo;
+        } catch (error) {
+            console.error(`Error fetching group info for ${groupId}:`, error);
+            throw error;
+        }
+    }
+
+    async getGroupInfoBatch(groupIds) {
+        const results = {};
+        const batchSize = 10;
+        
+        for (let i = 0; i < groupIds.length; i += batchSize) {
+            const batch = groupIds.slice(i, i + batchSize);
+            const promises = batch.map(async groupId => {
+                try {
+                    const groupInfo = await this.getGroupInfo(groupId);
+                    results[groupId] = groupInfo;
+                } catch (error) {
+                    console.warn(`Failed to get info for group ${groupId}:`, error);
+                    results[groupId] = { name: `Group ${groupId}`, error: true };
+                }
+            });
+            
+            await Promise.all(promises);
+            
+            // Small delay between batches
+            if (i + batchSize < groupIds.length) {
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
+        }
+        
+        return results;
+    }
+
+    async getAllGroups() {
+        const cacheKey = 'all_groups';
+        const cachedData = this.getCache(cacheKey);
+        if (cachedData) return cachedData;
+
+        try {
+            const response = await fetch(`${this.esiUrl}/universe/groups/`, {
+                headers: this.headers
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const groupIds = await response.json();
+            this.setCache(cacheKey, groupIds, 24 * 60 * 60 * 1000); // Cache for 24 hours
+            return groupIds;
+        } catch (error) {
+            console.error('Error fetching all groups:', error);
+            throw error;
+        }
+    }
+
+    // Group filter persistence methods
+    saveExcludedGroups(groupIds) {
+        try {
+            const validGroups = Array.isArray(groupIds) ? groupIds.filter(id => !isNaN(parseInt(id))) : [];
+            localStorage.setItem('eveMarketExcludedGroups', JSON.stringify(validGroups));
+            return true;
+        } catch (error) {
+            console.error('Failed to save excluded groups:', error);
+            return false;
+        }
+    }
+
+    getExcludedGroups() {
+        try {
+            const stored = localStorage.getItem('eveMarketExcludedGroups');
+            return stored ? JSON.parse(stored) : [];
+        } catch (error) {
+            console.error('Failed to load excluded groups:', error);
+            return [];
+        }
+    }
+
+    clearExcludedGroups() {
+        try {
+            localStorage.removeItem('eveMarketExcludedGroups');
+            return true;
+        } catch (error) {
+            console.error('Failed to clear excluded groups:', error);
+            return false;
         }
     }
 

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Function Test</title>
+</head>
+<body>
+    <h1>Quick Function Test</h1>
+    <p>Check browser console for output</p>
+    <button id="testBtn">Test compareMarkets Function</button>
+    <div id="result"></div>
+    
+    <!-- Load scripts in same order as main app -->
+    <script src="js/market-storage.js" defer></script>
+    <script src="js/eve-market-api.js" defer></script>
+    <script src="js/eve-auth.js" defer></script>
+    <script src="js/market-comparison-optimized.js" defer></script>
+    <script src="js/group-filter-ui.js" defer></script>
+    <script src="js/market-ui.js" defer></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const testBtn = document.getElementById('testBtn');
+            const result = document.getElementById('result');
+            
+            testBtn.addEventListener('click', () => {
+                console.log('Testing compareMarkets function...');
+                console.log('Type of window.compareMarkets:', typeof window.compareMarkets);
+                console.log('Type of window.setFilter:', typeof window.setFilter);
+                
+                if (typeof window.compareMarkets === 'function') {
+                    result.innerHTML = '<p style="color: green;">✅ compareMarkets function is available!</p>';
+                    console.log('✅ SUCCESS: compareMarkets function is available');
+                } else {
+                    result.innerHTML = '<p style="color: red;">❌ compareMarkets function is NOT available</p>';
+                    console.error('❌ ERROR: compareMarkets function is NOT available');
+                }
+                
+                if (typeof window.setFilter === 'function') {
+                    result.innerHTML += '<p style="color: green;">✅ setFilter function is available!</p>';
+                    console.log('✅ SUCCESS: setFilter function is available');
+                } else {
+                    result.innerHTML += '<p style="color: red;">❌ setFilter function is NOT available</p>';
+                    console.error('❌ ERROR: setFilter function is NOT available');
+                }
+            });
+            
+            // Auto-test after 2 seconds
+            setTimeout(() => {
+                testBtn.click();
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

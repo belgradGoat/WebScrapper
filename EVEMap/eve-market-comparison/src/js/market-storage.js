@@ -264,7 +264,7 @@ async storePartialMarketData(locationId, orders, pageIndex) {
         
         for (const storeName of stores) {
             const transaction = this.db.transaction([storeName], 'readwrite');
-            const store = transaction.objectStore('storeName');
+            const store = transaction.objectStore(storeName);
             const index = store.index('sessionId');
             
             const request = index.openCursor(this.sessionId);

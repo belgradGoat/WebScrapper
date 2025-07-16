@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Final Validation - Debug Fixes</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+        }
+        .header {
+            color: #4EC9B0;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+        .console {
+            background: #000;
+            color: #00ff00;
+            padding: 15px;
+            border: 1px solid #333;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">🔧 Final Validation - Debug Error Fixes</div>
+    <div>This page tests the exact error scenarios that were reported.</div>
+    <div>Check the console output below and browser dev console for detailed results.</div>
+    <br>
+    <div class="console" id="console-output">Loading test...</div>
+
+    <!-- Load all scripts in exact same order as main app -->
+    <script src="js/market-storage.js" defer></script>
+    <script src="js/eve-market-api.js" defer></script>
+    <script src="js/eve-auth.js" defer></script>
+    <script src="js/market-comparison-optimized.js" defer></script>
+    <script src="js/group-filter-ui.js" defer></script>
+    <script src="js/market-ui.js" defer></script>
+    <script src="final-validation-test.js" defer></script>
+
+    <script>
+        // Capture console output
+        const output = document.getElementById('console-output');
+        const originalLog = console.log;
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            output.textContent += message + '\n';
+        };
+        
+        // Initial message
+        output.textContent = 'Initializing validation test...\n';
+    </script>
+</body>
+</html>

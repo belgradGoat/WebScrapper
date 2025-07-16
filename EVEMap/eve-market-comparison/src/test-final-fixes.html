@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Final Fixes Verification Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 3px;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .test-controls {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+        #testResults {
+            min-height: 200px;
+        }
+        .progress {
+            width: 100%;
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: #28a745;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .function-status {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .function-item {
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .available {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .missing {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Final Fixes Verification Test</h1>
+    <p>This test verifies that all JavaScript loading errors have been resolved.</p>
+
+    <div class="test-controls">
+        <h3>Test Controls</h3>
+        <button onclick="runAllTests()">🧪 Run All Tests</button>
+        <button onclick="testScriptLoading()">📋 Test Script Loading</button>
+        <button onclick="testCategorySelection()">🎯 Test Category Selection</button>
+        <button onclick="testCompareButton()">🔍 Test Compare Button</button>
+        <button onclick="testFilterFunctions()">⚙️ Test Filter Functions</button>
+        <button onclick="clearResults()">🗑️ Clear Results</button>
+    </div>
+
+    <div class="progress">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>📊 Function Availability Status</h3>
+        <div class="function-status" id="functionStatus">
+            <!-- Function status will be populated here -->
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>🧪 Test Results</h3>
+        <div id="testResults">
+            <div class="info">Click "Run All Tests" to begin verification...</div>
+        </div>
+    </div>
+
+    <!-- Include the same scripts as main page -->
+    <script src="js/market-storage.js" defer></script>
+    <script src="js/eve-market-api.js" defer></script>
+    <script src="js/eve-auth.js" defer></script>
+    <script src="js/market-comparison-optimized.js" defer></script>
+    <script src="js/group-filter-ui.js" defer></script>
+    <script src="js/market-ui.js" defer></script>
+
+    <script>
+        let testResults = [];
+        let totalTests = 0;
+        let completedTests = 0;
+
+        // Function to wait for all scripts to load
+        async function waitForScripts() {
+            const requiredFunctions = [
+                'compareMarkets',
+                'setFilter', 
+                'marketFilters',
+                'marketAPI',
+                'marketStorage'
+            ];
+            
+            let attempts = 0;
+            const maxAttempts = 100;
+            
+            while (attempts < maxAttempts) {
+                const allAvailable = requiredFunctions.every(funcName => {
+                    if (funcName === 'marketFilters' || funcName === 'marketAPI' || funcName === 'marketStorage') {
+                        return !!window[funcName];
+                    }
+                    return typeof window[funcName] === 'function';
+                });
+                
+                if (allAvailable) {
+                    return true;
+                }
+                
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            
+            return false;
+        }
+
+        // Update function status display
+        function updateFunctionStatus() {
+            const functions = [
+                { name: 'compareMarkets', type: 'function' },
+                { name: 'setFilter', type: 'function' },
+                { name: 'marketFilters', type: 'object' },
+                { name: 'marketAPI', type: 'object' },
+                { name: 'marketStorage', type: 'object' },
+                { name: 'compareCategoryMarkets', type: 'function' },
+                { name: 'initializeMarketFilters', type: 'function' },
+                { name: 'recalculateMarketComparison', type: 'function' }
+            ];
+
+            const statusContainer = document.getElementById('functionStatus');
+            statusContainer.innerHTML = '';
+
+            functions.forEach(func => {
+                const div = document.createElement('div');
+                div.className = 'function-item';
+                
+                let isAvailable = false;
+                if (func.type === 'function') {
+                    isAvailable = typeof window[func.name] === 'function';
+                } else {
+                    isAvailable = !!window[func.name];
+                }
+                
+                div.classList.add(isAvailable ? 'available' : 'missing');
+                div.innerHTML = `
+                    <strong>${func.name}</strong><br>
+                    ${isAvailable ? '✅ Available' : '❌ Missing'}
+                `;
+                
+                statusContainer.appendChild(div);
+            });
+        }
+
+        // Add test result
+        function addTestResult(testName, success, message, details = '') {
+            testResults.push({ testName, success, message, details });
+            
+            const resultsDiv = document.getElementById('testResults');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${success ? 'success' : 'error'}`;
+            resultDiv.innerHTML = `
+                <strong>${success ? '✅' : '❌'} ${testName}</strong><br>
+                ${message}
+                ${details ? `<br><small>${details}</small>` : ''}
+            `;
+            resultsDiv.appendChild(resultDiv);
+            
+            completedTests++;
+            updateProgress();
+        }
+
+        // Update progress bar
+        function updateProgress() {
+            const progress = totalTests > 0 ? (completedTests / totalTests) * 100 : 0;
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+
+        // Clear results
+        function clearResults() {
+            document.getElementById('testResults').innerHTML = '<div class="info">Results cleared. Ready for new tests...</div>';
+            testResults = [];
+            completedTests = 0;
+            totalTests = 0;
+            updateProgress();
+        }
+
+        // Test script loading
+        async function testScriptLoading() {
+            addTestResult('Script Loading', false, 'Testing...', 'Waiting for all scripts to load...');
+            
+            const scriptsLoaded = await waitForScripts();
+            
+            if (scriptsLoaded) {
+                addTestResult('Script Loading', true, 'All required scripts loaded successfully', 'compareMarkets, setFilter, marketFilters, marketAPI, marketStorage');
+            } else {
+                addTestResult('Script Loading', false, 'Some scripts failed to load within timeout', 'Check console for details');
+            }
+            
+            updateFunctionStatus();
+        }
+
+        // Test category selection functionality
+        async function testCategorySelection() {
+            if (!window.setFilter) {
+                addTestResult('Category Selection', false, 'setFilter function not available', 'Scripts may not be loaded yet');
+                return;
+            }
+
+            try {
+                // Test setting a category filter
+                window.setFilter('categoryId', '123');
+                
+                if (window.marketFilters && window.marketFilters.categoryId === '123') {
+                    addTestResult('Category Selection', true, 'Category filter can be set without errors', 'categoryId set to 123');
+                } else {
+                    addTestResult('Category Selection', false, 'Category filter not properly stored', 'marketFilters may not be initialized');
+                }
+            } catch (error) {
+                addTestResult('Category Selection', false, 'Error setting category filter', error.message);
+            }
+        }
+
+        // Test compare button functionality
+        async function testCompareButton() {
+            if (!window.compareMarkets) {
+                addTestResult('Compare Button', false, 'compareMarkets function not available', 'Scripts may not be loaded yet');
+                return;
+            }
+
+            try {
+                // Test that compareMarkets function exists and is callable
+                if (typeof window.compareMarkets === 'function') {
+                    addTestResult('Compare Button', true, 'compareMarkets function is available and callable', 'Function type: ' + typeof window.compareMarkets);
+                } else {
+                    addTestResult('Compare Button', false, 'compareMarkets is not a function', 'Type: ' + typeof window.compareMarkets);
+                }
+            } catch (error) {
+                addTestResult('Compare Button', false, 'Error testing compareMarkets function', error.message);
+            }
+        }
+
+        // Test filter functions
+        async function testFilterFunctions() {
+            const filterTests = [
+                { name: 'setFilter', test: () => typeof window.setFilter === 'function' },
+                { name: 'marketFilters object', test: () => !!window.marketFilters },
+                { name: 'marketFilters.categoryId', test: () => window.marketFilters && window.marketFilters.hasOwnProperty('categoryId') },
+                { name: 'marketFilters.groupIds', test: () => window.marketFilters && Array.isArray(window.marketFilters.groupIds) },
+                { name: 'initializeMarketFilters', test: () => typeof window.initializeMarketFilters === 'function' }
+            ];
+
+            for (const filterTest of filterTests) {
+                try {
+                    const result = filterTest.test();
+                    addTestResult(`Filter: ${filterTest.name}`, result, result ? 'Available and correct type' : 'Missing or incorrect type');
+                } catch (error) {
+                    addTestResult(`Filter: ${filterTest.name}`, false, 'Error during test', error.message);
+                }
+            }
+        }
+
+        // Run all tests
+        async function runAllTests() {
+            clearResults();
+            totalTests = 12; // Approximate number of tests
+            completedTests = 0;
+            
+            addTestResult('Test Suite', false, 'Starting comprehensive test suite...', 'Running all verification tests');
+            
+            // Wait for scripts first
+            await testScriptLoading();
+            
+            // Run individual tests
+            await testCategorySelection();
+            await testCompareButton();
+            await testFilterFunctions();
+            
+            // Final summary
+            const successfulTests = testResults.filter(r => r.success).length;
+            const totalRunTests = testResults.length;
+            
+            const summaryDiv = document.createElement('div');
+            summaryDiv.className = `test-result ${successfulTests === totalRunTests ? 'success' : 'warning'}`;
+            summaryDiv.innerHTML = `
+                <strong>📊 Test Summary</strong><br>
+                ${successfulTests}/${totalRunTests} tests passed<br>
+                <small>Status: ${successfulTests === totalRunTests ? 'All issues resolved!' : 'Some issues remain'}</small>
+            `;
+            document.getElementById('testResults').appendChild(summaryDiv);
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Final fixes verification test page loaded');
+            updateFunctionStatus();
+            
+            // Auto-update function status every 2 seconds
+            setInterval(updateFunctionStatus, 2000);
+        });
+    </script>
+</body>
+</html>

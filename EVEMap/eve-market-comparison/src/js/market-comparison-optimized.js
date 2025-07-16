@@ -1,10 +1,12 @@
 // Market comparison logic - enhanced version with filtering and memory optimization
 // Uses global marketFilters object and IndexedDB storage
 
+console.log('🚀 LOADING: market-comparison-optimized.js started loading...');
+
 // Global state for current filter settings and market data
 const marketFilters = {
-    categoryId: null,
-    groupId: null,
+    groupIds: [],               // Array of group IDs to include (if empty, include all)
+    excludedGroupIds: [],       // Array of group IDs to exclude
     typeIds: [],
     minPrice: null,
     maxPrice: null,
@@ -13,50 +15,72 @@ const marketFilters = {
     searchQuery: '',
     savedFilterName: '',
     showMissingItems: true,
-    excludedCategoryIds: [], // Initialize as empty array
     firstLocationOrderType: 'sell',
     secondLocationOrderType: 'sell'
 };
 
 // Helper function to initialize market filters
 function initializeMarketFilters() {
+    console.log('🔧 INIT: Initializing market filters for group-based filtering');
+    
     try {
-        // Check if marketAPI exists
-        if (!window.marketAPI) {
-            console.warn('marketAPI not available, using default filter values');
-            return;
+        // Load any saved group filters from localStorage
+        if (window.marketAPI && typeof window.marketAPI.getExcludedGroups === 'function') {
+            const savedGroups = window.marketAPI.getExcludedGroups() || [];
+            if (Array.isArray(savedGroups) && savedGroups.length > 0) {
+                marketFilters.excludedGroupIds = savedGroups.map(id => parseInt(id));
+                console.log('✅ Loaded excluded groups from storage:', marketFilters.excludedGroupIds);
+            }
         }
-
-        // Load excluded categories if the method exists
-        if (typeof window.marketAPI.getExcludedCategories === 'function') {
-            marketFilters.excludedCategoryIds = window.marketAPI.getExcludedCategories() || [];
-        }
-
-        console.log('Market filters initialized:', marketFilters);
+        
+        console.log('✅ Market filters initialized for group-based filtering:', marketFilters);
     } catch (error) {
         console.error('Error initializing market filters:', error);
-        marketFilters.excludedCategoryIds = []; // Fallback to empty array
+        marketFilters.excludedGroupIds = [];
     }
 }
 
-// Export to window immediately
-window.marketFilters = marketFilters;
-window.initializeMarketFilters = initializeMarketFilters;
+// Initialize immediately when this script loads (not waiting for DOM)
+console.log('🔧 Market filters object created and will be exported at end of file');
+initializeMarketFilters();
 
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    initializeMarketFilters();
-});
+// Function to validate group IDs
+function validateGroupIds(groups) {
+    if (!Array.isArray(groups)) {
+        console.warn('Invalid group list format - expected array');
+        return [];
+    }
+    
+    return groups
+        .filter(id => id !== null && id !== undefined)
+        .map(id => parseInt(id))
+        .filter(id => !isNaN(id) && id > 0);
+}
 
 // Function to set a filter value with proper persistence
 function setFilter(filterType, value) {
-    marketFilters[filterType] = value;
+    console.log(`🔧 Setting filter ${filterType} to:`, value);
     
-    // Handle special case for excluded categories
-    if (filterType === 'excludedCategoryIds') {
-        // Save to persistent storage
-        window.marketAPI.saveExcludedCategories(value);
+    // Handle group-based filters
+    if (filterType === 'excludedGroupIds' || filterType === 'groupIds') {
+        const validatedGroups = validateGroupIds(value);
+        
+        if (validatedGroups.length !== value.length) {
+            console.warn(`⚠️ Some group IDs were invalid and filtered out. Original:`, value, 
+                        `Valid:`, validatedGroups);
+        }
+        
+        // Save to localStorage if it's excluded groups
+        if (filterType === 'excludedGroupIds' && window.marketAPI && typeof window.marketAPI.saveExcludedGroups === 'function') {
+            window.marketAPI.saveExcludedGroups(validatedGroups);
+            console.log(`💾 Saved excluded groups to localStorage:`, validatedGroups);
+        }
+        
+        value = validatedGroups;
     }
+    
+    marketFilters[filterType] = value;
+    console.log(`✅ Filter ${filterType} set to:`, marketFilters[filterType]);
     
     // Update UI
     if (window.updateFilterUI) {
@@ -70,10 +94,6 @@ async function compareMarkets(buyLocationId, sellLocationId, forceRefetch = fals
     try {
         if (!buyLocationId || !sellLocationId) {
             throw new Error('Please enter both market IDs');
-        }
-
-        if (marketFilters.categoryId) {
-            return compareCategoryMarkets(buyLocationId, sellLocationId, marketFilters.categoryId);
         }
 
         console.log('Starting market comparison:', { buyLocationId, sellLocationId });
@@ -120,7 +140,7 @@ async function compareMarkets(buyLocationId, sellLocationId, forceRefetch = fals
     }
 }
 
-// Category-specific market comparison with early filtering
+// Category-specific market comparison
 async function compareCategoryMarkets(buyLocationId, sellLocationId, categoryId) {
     const resultsDiv = document.getElementById('comparisonResults');
     
@@ -135,16 +155,6 @@ async function compareCategoryMarkets(buyLocationId, sellLocationId, categoryId)
                 <button id="cancel-operation-btn" class="cancel-btn">Cancel Operation</button>
             </div>
         `;
-
-        // Early category exclusion check
-        if (marketFilters.excludedCategoryIds.includes(parseInt(categoryId))) {
-            resultsDiv.innerHTML = `
-                <div class="error">
-                    <h3>Category Excluded</h3>
-                    <p>This category (${categoryId}) is in your excluded categories list and will not be processed.</p>
-                </div>`;
-            return [];
-        }
 
         // Get item types for this category from API
         const categoryTypes = await window.marketAPI.getCategoryTypes(categoryId);
@@ -162,12 +172,12 @@ async function compareCategoryMarkets(buyLocationId, sellLocationId, categoryId)
             fetchMarketOrdersForTypes(sellLocationId, categoryTypes.map(t => t.id))
         ]);
 
-        // Process opportunities
+        // Process opportunities (category filtering happens inside processMarketOpportunities)
         const opportunities = await calculateOpportunities(buyOrders, sellOrders, categoryTypes);
         
         // Filter based on current filter settings
         const filteredOpportunities = filterOpportunities(opportunities);
-        
+
         // Display results
         displayOptimizedResults(filteredOpportunities, resultsDiv);
 
@@ -268,7 +278,7 @@ async function fetchMarketOrdersForTypes(locationId, typeIds) {
 // Process market opportunities using IndexedDB storage
 async function processMarketOpportunities(buyLocationId, sellLocationId) {
     try {
-        // Retrieve market data from IndexedDB storage
+        // 1. Get all market orders without filtering
         const firstLocationOrders = await window.marketStorage.getMarketOrders(buyLocationId);
         const secondLocationOrders = await window.marketStorage.getMarketOrders(sellLocationId);
 
@@ -276,27 +286,67 @@ async function processMarketOpportunities(buyLocationId, sellLocationId) {
             throw new Error('Market data not found in storage');
         }
 
-        // Filter orders based on selected order types
-        const filteredFirstLocationOrders = firstLocationOrders.filter(order => 
+        // 2. Filter orders based on order type (buy/sell) first
+        let filteredFirstLocationOrders = firstLocationOrders.filter(order => 
             marketFilters.firstLocationOrderType === 'buy' ? order.is_buy_order : !order.is_buy_order
         );
         
-        const filteredSecondLocationOrders = secondLocationOrders.filter(order => 
+        let filteredSecondLocationOrders = secondLocationOrders.filter(order => 
             marketFilters.secondLocationOrderType === 'buy' ? order.is_buy_order : !order.is_buy_order
         );
 
-        console.log(`Processing ${filteredFirstLocationOrders.length} first location orders and ${filteredSecondLocationOrders.length} second location orders`);
+        // 3. Get unique type IDs from all orders
+        const allTypeIds = new Set([
+            ...filteredFirstLocationOrders.map(order => order.type_id),
+            ...filteredSecondLocationOrders.map(order => order.type_id)
+        ]);
 
-        // Calculate opportunities using the stored data
-        const opportunities = await calculateOpportunities(filteredFirstLocationOrders, filteredSecondLocationOrders);
+        // 4. Get item info including groups for all types
+        console.log('🔍 Getting item info for group filtering...');
+        const typeInfoMap = new Map();
+        const batchSize = 100;
+        const typeIdArray = Array.from(allTypeIds);
         
-        // Apply category exclusion filter AFTER processing opportunities
-        const filteredOpportunities = opportunities.filter(opp => {
-            return !marketFilters.excludedCategoryIds.includes(opp.categoryId);
-        });
+        for (let i = 0; i < typeIdArray.length; i += batchSize) {
+            const batch = typeIdArray.slice(i, i + batchSize);
+            const itemInfos = await Promise.all(
+                batch.map(typeId => window.marketAPI.getItemInfo(typeId))
+            );
+            itemInfos.forEach((info, index) => {
+                if (info) typeInfoMap.set(batch[index], info);
+            });
+            
+            // Add small delay to prevent overwhelming API
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
 
-        console.log(`Found ${opportunities.length} total opportunities, ${filteredOpportunities.length} after category filtering`);
+        // 5. Calculate opportunities with group info
+        console.log('🔍 Calculating market opportunities...');
+        const opportunities = await calculateOpportunities(
+            filteredFirstLocationOrders,
+            filteredSecondLocationOrders
+        );
+
+        // Add group info to opportunities
+        console.log('🔍 Adding group information to opportunities...');
+        for (const opp of opportunities) {
+            const itemInfo = typeInfoMap.get(opp.typeId);
+            if (itemInfo) {
+                opp.itemName = itemInfo.name;
+                opp.groupId = itemInfo.group_id;
+                // Keep categoryId for display purposes but don't use for filtering
+                opp.categoryId = itemInfo.category_id;
+            }
+        }
+        console.log('✅ Group information added');
+
+        // 6. Apply all filters after all data is loaded and processed
+        // NOTE: Group-based filtering happens HERE (post-processing approach)
+        // All market data has been downloaded, all opportunities calculated, all item info fetched
+        console.log('🔍 Applying group-based filters...');
+        const filteredOpportunities = filterOpportunities(opportunities);
         
+        console.log(`✅ Group filtering complete: ${opportunities.length} → ${filteredOpportunities.length} opportunities`);
         return filteredOpportunities;
 
     } catch (error) {
@@ -426,16 +476,34 @@ async function addItemInfoToOpportunities(opportunities) {
 }
 
 // Filter opportunities based on current filter settings
+// NOTE: This is POST-PROCESSING filtering - all market data has been downloaded and processed
+// The group-based filtering is applied here after opportunities are calculated
 function filterOpportunities(opportunities) {
+    console.log(`🔍 GROUP FILTERING: Starting with ${opportunities.length} opportunities`);
+    
+    // Get group-based filters
+    const includedGroups = marketFilters.groupIds || [];
+    const excludedGroups = marketFilters.excludedGroupIds || [];
+    
+    console.log(`🔍 GROUP FILTERING: Included groups: ${includedGroups.length > 0 ? includedGroups.join(', ') : 'all'}`);
+    console.log(`🔍 GROUP FILTERING: Excluded groups: ${excludedGroups.length > 0 ? excludedGroups.join(', ') : 'none'}`);
+    
     return opportunities.filter(opp => {
-        // Category filter
-        if (marketFilters.categoryId && opp.categoryId !== marketFilters.categoryId) {
-            return false;
-        }
-        
-        // Group filter
-        if (marketFilters.groupId && opp.groupId !== marketFilters.groupId) {
-            return false;
+        // Group filtering - check if item has group information
+        if (opp.groupId !== null && opp.groupId !== undefined) {
+            const groupId = parseInt(opp.groupId);
+            
+            // First check excluded groups
+            if (excludedGroups.length > 0 && excludedGroups.includes(groupId)) {
+                console.log(`🚫 GROUP FILTER: Excluding item ${opp.itemName || opp.typeId} from group ${groupId}`);
+                return false;
+            }
+            
+            // Then check included groups (if specified, only allow these)
+            if (includedGroups.length > 0 && !includedGroups.includes(groupId)) {
+                console.log(`📋 GROUP FILTER: Item ${opp.itemName || opp.typeId} not in included groups (group ${groupId})`);
+                return false;
+            }
         }
         
         // Type IDs filter
@@ -471,11 +539,6 @@ function filterOpportunities(opportunities) {
         
         // Missing items filter
         if (!marketFilters.showMissingItems && opp.status === 'missing_in_sell_location') {
-            return false;
-        }
-        
-        // Excluded categories filter
-        if (marketFilters.excludedCategoryIds.includes(opp.categoryId)) {
             return false;
         }
         
@@ -655,15 +718,6 @@ async function recalculateMarketComparison(buyLocationId, sellLocationId) {
     }
 }
 
-// Export functions to global scope
-window.marketFilters = marketFilters;
-window.initializeMarketFilters = initializeMarketFilters;
-window.setFilter = setFilter;
-window.compareMarkets = compareMarkets;
-window.compareCategoryMarkets = compareCategoryMarkets;
-window.getMarketIdInfo = getMarketIdInfo;
-window.recalculateMarketComparison = recalculateMarketComparison;
-
 // Inside processMarketComparison function, modify the comparison logic:
 async function processMarketComparison(buyLocationOrders, sellLocationOrders) {
     try {
@@ -784,4 +838,24 @@ document.addEventListener('DOMContentLoaded', () => {
     // Debug logging for initial state
     console.log('Initial First Location Order Type:', firstLocationOrderType.value);
     console.log('Initial Second Location Order Type:', secondLocationOrderType.value);
+});
+
+// Export functions to global scope - MOVED TO END TO ENSURE ALL FUNCTIONS ARE DEFINED
+console.log('📤 EXPORT: Exporting functions to global scope...');
+window.marketFilters = marketFilters;
+window.initializeMarketFilters = initializeMarketFilters;
+window.setFilter = setFilter;
+window.compareMarkets = compareMarkets;
+window.compareCategoryMarkets = compareCategoryMarkets;
+window.getMarketIdInfo = getMarketIdInfo;
+window.recalculateMarketComparison = recalculateMarketComparison;
+
+console.log('✅ EXPORT: Functions exported:', {
+    marketFilters: !!window.marketFilters,
+    initializeMarketFilters: typeof window.initializeMarketFilters === 'function',
+    setFilter: typeof window.setFilter === 'function',
+    compareMarkets: typeof window.compareMarkets === 'function',
+    compareCategoryMarkets: typeof window.compareCategoryMarkets === 'function',
+    getMarketIdInfo: typeof window.getMarketIdInfo === 'function',
+    recalculateMarketComparison: typeof window.recalculateMarketComparison === 'function'
 });

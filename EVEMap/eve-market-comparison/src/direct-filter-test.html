@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direct Category Filter Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { background: #f0f0f0; padding: 10px; margin: 10px 0; border-left: 4px solid #007bff; }
+        .success { border-left-color: #28a745; background: #d4edda; }
+        .error { border-left-color: #dc3545; background: #f8d7da; }
+        button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Direct Category Filter Test</h1>
+    <p>This test bypasses all complex initialization and tests the filtering logic directly.</p>
+    
+    <button onclick="runDirectTest()">Run Direct Test</button>
+    <button onclick="testWithRealFunction()">Test with Real Function</button>
+    <button onclick="runConsoleTest()">Run Console Test</button>
+    
+    <div id="results"></div>
+
+    <!-- Load only the main filtering script -->
+    <script src="js/market-comparison-optimized.js"></script>
+    <script src="../comprehensive-category-test.js"></script>
+
+    <script>
+        function runDirectTest() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<h2>Direct Test Results</h2>';
+            
+            // Create test data
+            const testOpportunities = [
+                { typeId: 1001, itemName: "Ship Alpha", categoryId: 6, buyPrice: 1000, profit: 500, profitPercent: 50 },
+                { typeId: 1002, itemName: "Module Beta", categoryId: 7, buyPrice: 100, profit: 50, profitPercent: 50 },
+                { typeId: 1003, itemName: "Ship Gamma", categoryId: 6, buyPrice: 2000, profit: 500, profitPercent: 25 }
+            ];
+            
+            // Simulate the filtering logic directly
+            function directFilter(opportunities, excludedCategories) {
+                const excludedCats = (excludedCategories || []).map(id => id.toString());
+                return opportunities.filter(opp => {
+                    if (opp.categoryId) {
+                        const categoryId = opp.categoryId.toString();
+                        if (excludedCats.length > 0 && excludedCats.includes(categoryId)) {
+                            console.log(`Direct test: Excluding ${opp.itemName} from category ${categoryId}`);
+                            return false;
+                        }
+                    }
+                    return true;
+                });
+            }
+            
+            // Test 1: No exclusions
+            const result1 = directFilter(testOpportunities, []);
+            const test1Pass = result1.length === 3;
+            resultsDiv.innerHTML += `
+                <div class="test-result ${test1Pass ? 'success' : 'error'}">
+                    <strong>Test 1 - No Exclusions:</strong> ${result1.length}/3 items ${test1Pass ? '✅' : '❌'}
+                </div>
+            `;
+            
+            // Test 2: Exclude Ships (category 6)
+            const result2 = directFilter(testOpportunities, ['6']);
+            const test2Pass = result2.length === 1;
+            resultsDiv.innerHTML += `
+                <div class="test-result ${test2Pass ? 'success' : 'error'}">
+                    <strong>Test 2 - Exclude Ships:</strong> ${result2.length}/3 items (expected: 1) ${test2Pass ? '✅' : '❌'}
+                    <br>Remaining: ${result2.map(r => r.itemName).join(', ')}
+                </div>
+            `;
+            
+            // Test 3: Exclude All
+            const result3 = directFilter(testOpportunities, ['6', '7']);
+            const test3Pass = result3.length === 0;
+            resultsDiv.innerHTML += `
+                <div class="test-result ${test3Pass ? 'success' : 'error'}">
+                    <strong>Test 3 - Exclude All:</strong> ${result3.length}/3 items (expected: 0) ${test3Pass ? '✅' : '❌'}
+                </div>
+            `;
+            
+            const allPass = test1Pass && test2Pass && test3Pass;
+            resultsDiv.innerHTML += `
+                <div class="test-result ${allPass ? 'success' : 'error'}">
+                    <strong>Overall Direct Test:</strong> ${allPass ? '✅ PASSED - Basic filtering logic works' : '❌ FAILED - Issue with filtering logic'}
+                </div>
+            `;
+        }
+        
+        function testWithRealFunction() {
+            const resultsDiv = document.getElementById('results');
+            
+            if (!window.filterOpportunities) {
+                resultsDiv.innerHTML += `
+                    <div class="test-result error">
+                        <strong>Real Function Test:</strong> ❌ filterOpportunities function not available
+                    </div>
+                `;
+                return;
+            }
+            
+            // Ensure marketFilters exists
+            if (!window.marketFilters) {
+                window.marketFilters = { excludedCategoryIds: [] };
+            }
+            
+            const testOpportunities = [
+                { typeId: 1001, itemName: "Ship Alpha", categoryId: 6, buyPrice: 1000, profit: 500, profitPercent: 50 },
+                { typeId: 1002, itemName: "Module Beta", categoryId: 7, buyPrice: 100, profit: 50, profitPercent: 50 },
+                { typeId: 1003, itemName: "Ship Gamma", categoryId: 6, buyPrice: 2000, profit: 500, profitPercent: 25 }
+            ];
+            
+            // Test with real function
+            window.marketFilters.excludedCategoryIds = [];
+            const realResult1 = window.filterOpportunities(testOpportunities);
+            const realTest1Pass = realResult1.length === 3;
+            
+            window.marketFilters.excludedCategoryIds = ['6'];
+            const realResult2 = window.filterOpportunities(testOpportunities);
+            const realTest2Pass = realResult2.length === 1;
+            
+            resultsDiv.innerHTML += `
+                <div class="test-result ${realTest1Pass ? 'success' : 'error'}">
+                    <strong>Real Function Test 1:</strong> ${realResult1.length}/3 items ${realTest1Pass ? '✅' : '❌'}
+                </div>
+                <div class="test-result ${realTest2Pass ? 'success' : 'error'}">
+                    <strong>Real Function Test 2:</strong> ${realResult2.length}/3 items (expected: 1) ${realTest2Pass ? '✅' : '❌'}
+                    <br>Remaining: ${realResult2.map(r => r.itemName).join(', ')}
+                </div>
+            `;
+            
+            const realAllPass = realTest1Pass && realTest2Pass;
+            resultsDiv.innerHTML += `
+                <div class="test-result ${realAllPass ? 'success' : 'error'}">
+                    <strong>Overall Real Function Test:</strong> ${realAllPass ? '✅ PASSED - Real function works' : '❌ FAILED - Issue with real function'}
+                </div>
+            `;
+        }
+        
+        function runConsoleTest() {
+            if (window.runComprehensiveCategoryTest) {
+                window.runComprehensiveCategoryTest();
+                document.getElementById('results').innerHTML += `
+                    <div class="test-result success">
+                        <strong>Console Test:</strong> ✅ Check browser console for detailed test results
+                    </div>
+                `;
+            } else {
+                document.getElementById('results').innerHTML += `
+                    <div class="test-result error">
+                        <strong>Console Test:</strong> ❌ Comprehensive test function not available
+                    </div>
+                `;
+            }
+        }
+        
+        // Auto-run when page loads
+        setTimeout(() => {
+            console.log('Auto-running direct category filter test...');
+            runDirectTest();
+            setTimeout(() => {
+                testWithRealFunction();
+            }, 500);
+        }, 1000);
+    </script>
+</body>
+</html>

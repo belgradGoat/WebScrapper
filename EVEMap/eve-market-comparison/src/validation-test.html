@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Function Loading Validation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { padding: 10px; margin: 5px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .loading { background: #e2e3e5; color: #383d41; }
+        button { padding: 10px 20px; margin: 10px 5px; border: none; border-radius: 5px; cursor: pointer; }
+        .test-btn { background: #007bff; color: white; }
+        .compare-btn { background: #28a745; color: white; }
+        .compare-btn:disabled { background: #6c757d; }
+    </style>
+</head>
+<body>
+    <h1>Complete Function Loading Validation</h1>
+    <p>This test validates that the JavaScript loading issue has been resolved.</p>
+    
+    <div id="loading-status" class="test-result loading">
+        🔄 Loading JavaScript files...
+    </div>
+    
+    <div id="test-results"></div>
+    
+    <div style="margin-top: 20px;">
+        <button id="manualTestBtn" class="test-btn">Run Manual Test</button>
+        <button id="simulateCompareBtn" class="compare-btn" disabled>Simulate Compare Markets</button>
+    </div>
+    
+    <div id="simulation-results"></div>
+    
+    <!-- Load scripts in same order as main app -->
+    <script src="js/market-storage.js" defer></script>
+    <script src="js/eve-market-api.js" defer></script>
+    <script src="js/eve-auth.js" defer></script>
+    <script src="js/market-comparison-optimized.js" defer></script>
+    <script src="js/group-filter-ui.js" defer></script>
+    <script src="js/market-ui.js" defer></script>
+
+    <script>
+        const loadingStatus = document.getElementById('loading-status');
+        const testResults = document.getElementById('test-results');
+        const manualTestBtn = document.getElementById('manualTestBtn');
+        const simulateCompareBtn = document.getElementById('simulateCompareBtn');
+        const simulationResults = document.getElementById('simulation-results');
+        
+        let testsPassed = 0;
+        let totalTests = 0;
+        
+        function addResult(message, type = 'info') {
+            totalTests++;
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = message;
+            testResults.appendChild(div);
+            
+            if (type === 'success') testsPassed++;
+            
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+        
+        function updateLoadingStatus(message, type = 'loading') {
+            loadingStatus.textContent = message;
+            loadingStatus.className = `test-result ${type}`;
+        }
+        
+        // Test all required functions
+        function runComprehensiveTest() {
+            testResults.innerHTML = '';
+            testsPassed = 0;
+            totalTests = 0;
+            
+            addResult('🧪 Starting comprehensive function loading test...', 'info');
+            
+            // Test 1: Check if compareMarkets exists and is a function
+            if (typeof window.compareMarkets === 'function') {
+                addResult('✅ compareMarkets function is available', 'success');
+            } else {
+                addResult(`❌ compareMarkets is ${typeof window.compareMarkets}, expected function`, 'error');
+            }
+            
+            // Test 2: Check if setFilter exists and is a function
+            if (typeof window.setFilter === 'function') {
+                addResult('✅ setFilter function is available', 'success');
+            } else {
+                addResult(`❌ setFilter is ${typeof window.setFilter}, expected function`, 'error');
+            }
+            
+            // Test 3: Check if marketFilters exists and is an object
+            if (window.marketFilters && typeof window.marketFilters === 'object') {
+                addResult('✅ marketFilters object is available', 'success');
+            } else {
+                addResult(`❌ marketFilters is ${typeof window.marketFilters}, expected object`, 'error');
+            }
+            
+            // Test 4: Check if marketAPI exists
+            if (window.marketAPI) {
+                addResult('✅ marketAPI is available', 'success');
+            } else {
+                addResult('⚠️ marketAPI is not available (expected for this test)', 'warning');
+            }
+            
+            // Test 5: Check if marketStorage exists
+            if (window.marketStorage) {
+                addResult('✅ marketStorage is available', 'success');
+            } else {
+                addResult('⚠️ marketStorage is not available (expected for this test)', 'warning');
+            }
+            
+            // Test 6: Try calling setFilter with test parameters
+            try {
+                if (typeof window.setFilter === 'function') {
+                    window.setFilter('minProfit', 1000);
+                    addResult('✅ setFilter function call successful', 'success');
+                } else {
+                    addResult('❌ Cannot test setFilter - function not available', 'error');
+                }
+            } catch (error) {
+                addResult(`❌ setFilter function call failed: ${error.message}`, 'error');
+            }
+            
+            // Test 7: Try calling compareMarkets with invalid parameters (should catch error gracefully)
+            try {
+                if (typeof window.compareMarkets === 'function') {
+                    // Call with empty parameters - should throw error but prove function exists
+                    window.compareMarkets('', '').catch(error => {
+                        addResult('✅ compareMarkets function is callable (caught expected error)', 'success');
+                    });
+                } else {
+                    addResult('❌ Cannot test compareMarkets - function not available', 'error');
+                }
+            } catch (error) {
+                addResult(`✅ compareMarkets threw sync error as expected: ${error.message}`, 'success');
+            }
+            
+            // Summary
+            setTimeout(() => {
+                const passRate = ((testsPassed / totalTests) * 100).toFixed(1);
+                if (testsPassed === totalTests) {
+                    addResult(`🎉 ALL TESTS PASSED! (${testsPassed}/${totalTests} - ${passRate}%)`, 'success');
+                    simulateCompareBtn.disabled = false;
+                    updateLoadingStatus('✅ All functions loaded successfully!', 'success');
+                } else {
+                    addResult(`⚠️ Some tests failed (${testsPassed}/${totalTests} passed - ${passRate}%)`, 'warning');
+                    updateLoadingStatus('❌ Some functions failed to load', 'error');
+                }
+            }, 100);
+        }
+        
+        // Simulate the original error scenario
+        function simulateCompareButtonClick() {
+            simulationResults.innerHTML = '';
+            
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'test-result info';
+            resultDiv.innerHTML = '🎭 Simulating compare button click from main application...';
+            simulationResults.appendChild(resultDiv);
+            
+            // This simulates the exact code that was failing before
+            setTimeout(() => {
+                if (typeof window.compareMarkets !== 'function') {
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'test-result error';
+                    errorDiv.innerHTML = '❌ REPRODUCTION: compareMarkets function is not available! (This was the original error)';
+                    simulationResults.appendChild(errorDiv);
+                } else {
+                    const successDiv = document.createElement('div');
+                    successDiv.className = 'test-result success';
+                    successDiv.innerHTML = '✅ FIXED: compareMarkets function is now available! The original error has been resolved.';
+                    simulationResults.appendChild(successDiv);
+                    
+                    // Test actual function call
+                    try {
+                        window.compareMarkets('test1', 'test2').catch(error => {
+                            const callDiv = document.createElement('div');
+                            callDiv.className = 'test-result success';
+                            callDiv.innerHTML = `✅ Function call test successful (expected error: ${error.message})`;
+                            simulationResults.appendChild(callDiv);
+                        });
+                    } catch (error) {
+                        const callDiv = document.createElement('div');
+                        callDiv.className = 'test-result success';
+                        callDiv.innerHTML = `✅ Function exists and threw expected error: ${error.message}`;
+                        simulationResults.appendChild(callDiv);
+                    }
+                }
+            }, 500);
+        }
+        
+        // Wait for all scripts to load, then run auto-test
+        let autoTestRan = false;
+        
+        function checkAndRunAutoTest() {
+            if (autoTestRan) return;
+            
+            // Check if we have at least the main functions
+            if (typeof window.compareMarkets === 'function' && typeof window.setFilter === 'function') {
+                autoTestRan = true;
+                updateLoadingStatus('🎯 JavaScript files loaded, running automatic test...', 'info');
+                setTimeout(runComprehensiveTest, 500);
+            }
+        }
+        
+        // Check every 500ms for up to 10 seconds
+        const loadCheckInterval = setInterval(() => {
+            checkAndRunAutoTest();
+            if (autoTestRan) {
+                clearInterval(loadCheckInterval);
+            }
+        }, 500);
+        
+        // Fallback timeout
+        setTimeout(() => {
+            if (!autoTestRan) {
+                updateLoadingStatus('⚠️ Timeout waiting for functions to load', 'warning');
+                runComprehensiveTest(); // Run test anyway to show what's missing
+                clearInterval(loadCheckInterval);
+            }
+        }, 10000);
+        
+        // Event listeners
+        manualTestBtn.addEventListener('click', runComprehensiveTest);
+        simulateCompareBtn.addEventListener('click', simulateCompareButtonClick);
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 Validation test page loaded');
+        });
+    </script>
+</body>
+</html>

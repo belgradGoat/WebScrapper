@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Group-Based Filtering Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { background: #f0f0f0; padding: 10px; margin: 10px 0; border-left: 4px solid #007bff; }
+        .success { border-left-color: #28a745; background: #d4edda; }
+        .error { border-left-color: #dc3545; background: #f8d7da; }
+        .info { border-left-color: #17a2b8; background: #d1ecf1; }
+        button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .group-info { background: #f8f9fa; padding: 10px; margin: 5px 0; border-radius: 4px; }
+        input[type="text"] { padding: 8px; margin: 5px; border: 1px solid #ccc; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>Group-Based Filtering Test</h1>
+    <p>Testing the new group-based filtering system that replaces category filtering.</p>
+    
+    <div class="test-result info">
+        <strong>New Filtering System:</strong><br>
+        • Uses EVE market groups (more granular than categories)<br>
+        • Supports both included and excluded groups<br>
+        • Raw group selection (no pre-defined categories)<br>
+        • Inclusive filtering approach
+    </div>
+    
+    <div class="group-info">
+        <h3>Test Groups:</h3>
+        <button onclick="testFrigateGroup()">Test Frigate Group (25)</button>
+        <button onclick="testModuleGroups()">Test Module Groups</button>
+        <button onclick="testMineralGroup()">Test Mineral Group (18)</button>
+        <button onclick="showGroupInfo()">Show Sample Group Info</button>
+    </div>
+    
+    <div class="group-info">
+        <h3>Manual Testing:</h3>
+        <input type="text" id="groupIdInput" placeholder="Enter group ID (e.g., 25)" />
+        <button onclick="testCustomGroup()">Test Custom Group</button>
+        <br>
+        <input type="text" id="excludeGroupInput" placeholder="Enter group IDs to exclude (comma-separated)" />
+        <button onclick="setExcludedGroups()">Set Excluded Groups</button>
+    </div>
+    
+    <div id="results"></div>
+
+    <!-- Load the updated scripts -->
+    <script src="js/market-storage.js"></script>
+    <script src="js/eve-market-api.js"></script>
+    <script src="js/market-comparison-optimized.js"></script>
+
+    <script>
+        // Sample test data with different groups
+        const testOpportunities = [
+            { typeId: 587, itemName: "Rifter", groupId: 25, buyPrice: 1200000, profit: 400000, profitPercent: 33 },
+            { typeId: 589, itemName: "Slasher", groupId: 25, buyPrice: 800000, profit: 200000, profitPercent: 25 },
+            { typeId: 2048, itemName: "Damage Control II", groupId: 60, buyPrice: 8500000, profit: 1200000, profitPercent: 14 },
+            { typeId: 1405, itemName: "Small Shield Extender II", groupId: 40, buyPrice: 45000, profit: 15000, profitPercent: 33 },
+            { typeId: 34, itemName: "Tritanium", groupId: 18, buyPrice: 5, profit: 1, profitPercent: 20 },
+            { typeId: 35, itemName: "Pyerite", groupId: 18, buyPrice: 8, profit: 2, profitPercent: 25 }
+        ];
+
+        function showResults(title, result, expectedCount = null) {
+            const resultsDiv = document.getElementById('results');
+            const isSuccess = expectedCount ? result.length === expectedCount : true;
+            
+            resultsDiv.innerHTML += `
+                <div class="test-result ${isSuccess ? 'success' : 'error'}">
+                    <strong>${title}:</strong> ${result.length} items ${expectedCount ? `(expected: ${expectedCount})` : ''} ${isSuccess ? '✅' : '❌'}
+                    <br>Items: ${result.map(r => `${r.itemName} (group ${r.groupId})`).join(', ')}
+                </div>
+            `;
+        }
+
+        async function testFrigateGroup() {
+            console.log('🧪 Testing Frigate Group filtering...');
+            
+            // Test including only frigates (group 25)
+            if (window.marketFilters) {
+                window.marketFilters.groupIds = [25];
+                window.marketFilters.excludedGroupIds = [];
+                
+                const result = window.filterOpportunities(testOpportunities);
+                showResults("Include Only Frigates (Group 25)", result, 2);
+                
+                // Reset filters
+                window.marketFilters.groupIds = [];
+            } else {
+                document.getElementById('results').innerHTML += `
+                    <div class="test-result error">
+                        <strong>Error:</strong> marketFilters not available
+                    </div>
+                `;
+            }
+        }
+
+        async function testModuleGroups() {
+            console.log('🧪 Testing Module Groups filtering...');
+            
+            if (window.marketFilters) {
+                // Exclude module groups (60 and 40)
+                window.marketFilters.groupIds = [];
+                window.marketFilters.excludedGroupIds = [60, 40];
+                
+                const result = window.filterOpportunities(testOpportunities);
+                showResults("Exclude Module Groups (60, 40)", result, 4);
+                
+                // Reset filters
+                window.marketFilters.excludedGroupIds = [];
+            } else {
+                document.getElementById('results').innerHTML += `
+                    <div class="test-result error">
+                        <strong>Error:</strong> marketFilters not available
+                    </div>
+                `;
+            }
+        }
+
+        async function testMineralGroup() {
+            console.log('🧪 Testing Mineral Group filtering...');
+            
+            if (window.marketFilters) {
+                // Include only minerals (group 18)
+                window.marketFilters.groupIds = [18];
+                window.marketFilters.excludedGroupIds = [];
+                
+                const result = window.filterOpportunities(testOpportunities);
+                showResults("Include Only Minerals (Group 18)", result, 2);
+                
+                // Reset filters
+                window.marketFilters.groupIds = [];
+            } else {
+                document.getElementById('results').innerHTML += `
+                    <div class="test-result error">
+                        <strong>Error:</strong> marketFilters not available
+                    </div>
+                `;
+            }
+        }
+
+        async function showGroupInfo() {
+            console.log('📡 Fetching group information...');
+            
+            if (window.marketAPI) {
+                try {
+                    const groupInfo25 = await window.marketAPI.getGroupInfo(25);
+                    const groupInfo18 = await window.marketAPI.getGroupInfo(18);
+                    
+                    document.getElementById('results').innerHTML += `
+                        <div class="test-result info">
+                            <strong>Group Information:</strong><br>
+                            Group 25: ${groupInfo25.name} (${groupInfo25.types?.length || 0} types)<br>
+                            Group 18: ${groupInfo18.name} (${groupInfo18.types?.length || 0} types)
+                        </div>
+                    `;
+                } catch (error) {
+                    document.getElementById('results').innerHTML += `
+                        <div class="test-result error">
+                            <strong>Error fetching group info:</strong> ${error.message}
+                        </div>
+                    `;
+                }
+            } else {
+                document.getElementById('results').innerHTML += `
+                    <div class="test-result error">
+                        <strong>Error:</strong> marketAPI not available
+                    </div>
+                `;
+            }
+        }
+
+        function testCustomGroup() {
+            const groupId = parseInt(document.getElementById('groupIdInput').value);
+            if (isNaN(groupId)) {
+                alert('Please enter a valid group ID');
+                return;
+            }
+
+            console.log(`🧪 Testing custom group ${groupId}...`);
+            
+            if (window.marketFilters) {
+                window.marketFilters.groupIds = [groupId];
+                window.marketFilters.excludedGroupIds = [];
+                
+                const result = window.filterOpportunities(testOpportunities);
+                showResults(`Include Only Group ${groupId}`, result);
+                
+                // Reset filters
+                window.marketFilters.groupIds = [];
+            }
+        }
+
+        function setExcludedGroups() {
+            const input = document.getElementById('excludeGroupInput').value;
+            const groupIds = input.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+            
+            if (groupIds.length === 0) {
+                alert('Please enter valid group IDs separated by commas');
+                return;
+            }
+
+            console.log(`🧪 Setting excluded groups: ${groupIds.join(', ')}...`);
+            
+            if (window.setFilter) {
+                window.setFilter('excludedGroupIds', groupIds);
+                
+                const result = window.filterOpportunities(testOpportunities);
+                showResults(`Exclude Groups [${groupIds.join(', ')}]`, result);
+            } else {
+                document.getElementById('results').innerHTML += `
+                    <div class="test-result error">
+                        <strong>Error:</strong> setFilter function not available
+                    </div>
+                `;
+            }
+        }
+
+        // Auto-run basic tests when page loads
+        setTimeout(() => {
+            console.log('🧪 Auto-running group-based filtering tests...');
+            document.getElementById('results').innerHTML = '<h2>Test Results</h2>';
+            
+            // Test basic functionality
+            if (window.marketFilters && window.filterOpportunities) {
+                // Test 1: No filters (should return all)
+                window.marketFilters.groupIds = [];
+                window.marketFilters.excludedGroupIds = [];
+                const noFilterResult = window.filterOpportunities(testOpportunities);
+                showResults("No Filters (All Items)", noFilterResult, 6);
+                
+                // Run other tests
+                setTimeout(() => testFrigateGroup(), 500);
+                setTimeout(() => testModuleGroups(), 1000);
+                setTimeout(() => testMineralGroup(), 1500);
+            } else {
+                document.getElementById('results').innerHTML += `
+                    <div class="test-result error">
+                        <strong>Error:</strong> Required functions not available. Check console for errors.
+                    </div>
+                `;
+            }
+        }, 2000);
+    </script>
+</body>
+</html>

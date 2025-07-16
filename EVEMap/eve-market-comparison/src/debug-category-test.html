@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Category Filtering Debug Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { border: 1px solid #ccc; padding: 15px; margin: 10px 0; }
+        .result { background: #f0f0f0; padding: 10px; margin: 10px 0; }
+        .success { background: #d4edda; }
+        .error { background: #f8d7da; }
+        button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Category Filtering Debug Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Setup</h2>
+        <button onclick="runCategoryFilterTest()">Run Category Filter Test</button>
+        <button onclick="testRealComparison()">Test with Real Market Data</button>
+        <div id="setupResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Market Filters State</h2>
+        <button onclick="showFilterState()">Show Current Filter State</button>
+        <button onclick="manuallySetExclusions()">Manually Set Exclusions</button>
+        <button onclick="clearExclusions()">Clear All Exclusions</button>
+        <div id="filterState" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="testResults" class="result"></div>
+    </div>
+
+    <!-- Load the main scripts -->
+    <script src="js/market-storage.js"></script>
+    <script src="js/eve-market-api.js"></script>
+    <script src="js/market-comparison-optimized.js"></script>
+    <script src="js/market-ui.js"></script>
+
+    <script>
+        let testOpportunities = [
+            {
+                typeId: 1001,
+                itemName: "Test Ship Alpha",
+                categoryId: 6, // Ships
+                buyPrice: 1000000,
+                sellPrice: 1500000,
+                profit: 500000,
+                profitPercent: 50
+            },
+            {
+                typeId: 1002,
+                itemName: "Test Module Beta",
+                categoryId: 7, // Modules
+                buyPrice: 100000,
+                sellPrice: 150000,
+                profit: 50000,
+                profitPercent: 50
+            },
+            {
+                typeId: 1003,
+                itemName: "Test Ship Gamma",
+                categoryId: 6, // Ships (should be excluded)
+                buyPrice: 2000000,
+                sellPrice: 2500000,
+                profit: 500000,
+                profitPercent: 25
+            },
+            {
+                typeId: 1004,
+                itemName: "Test Commodity Delta",
+                categoryId: 43, // Commodities
+                buyPrice: 500000,
+                sellPrice: 600000,
+                profit: 100000,
+                profitPercent: 20
+            }
+        ];
+
+        function showFilterState() {
+            const resultDiv = document.getElementById('filterState');
+            const state = {
+                marketFiltersExists: !!window.marketFilters,
+                excludedCategoryIds: window.marketFilters?.excludedCategoryIds || 'not available',
+                filterOpportunitiesExists: !!window.filterOpportunities,
+                setFilterExists: !!window.setFilter
+            };
+            
+            resultDiv.innerHTML = `
+                <h3>Current State:</h3>
+                <pre>${JSON.stringify(state, null, 2)}</pre>
+            `;
+        }
+
+        function manuallySetExclusions() {
+            if (window.setFilter) {
+                window.setFilter('excludedCategoryIds', ['6', '43']); // Exclude Ships and Commodities
+                showFilterState();
+                document.getElementById('filterState').innerHTML += '<p>✅ Set exclusions for categories 6 (Ships) and 43 (Commodities)</p>';
+            } else {
+                document.getElementById('filterState').innerHTML = '<p>❌ setFilter function not available</p>';
+            }
+        }
+
+        function clearExclusions() {
+            if (window.setFilter) {
+                window.setFilter('excludedCategoryIds', []);
+                showFilterState();
+                document.getElementById('filterState').innerHTML += '<p>✅ Cleared all exclusions</p>';
+            } else {
+                document.getElementById('filterState').innerHTML = '<p>❌ setFilter function not available</p>';
+            }
+        }
+
+        function runCategoryFilterTest() {
+            const resultDiv = document.getElementById('testResults');
+            
+            if (!window.filterOpportunities) {
+                resultDiv.innerHTML = '<p class="error">❌ filterOpportunities function not available</p>';
+                return;
+            }
+
+            let testResults = '<h3>Category Filter Test Results:</h3>';
+
+            // Test 1: No exclusions (should return all 4 items)
+            window.marketFilters = window.marketFilters || {};
+            window.marketFilters.excludedCategoryIds = [];
+            
+            const noFilterResult = window.filterOpportunities(testOpportunities);
+            testResults += `<p><strong>Test 1 - No Exclusions:</strong> ${noFilterResult.length}/4 items (Expected: 4)</p>`;
+            testResults += `<p>Items: ${noFilterResult.map(o => `${o.itemName} (cat:${o.categoryId})`).join(', ')}</p>`;
+
+            // Test 2: Exclude Ships (category 6) - should return 2 items
+            window.marketFilters.excludedCategoryIds = ['6'];
+            
+            const excludeShipsResult = window.filterOpportunities(testOpportunities);
+            testResults += `<p><strong>Test 2 - Exclude Ships (6):</strong> ${excludeShipsResult.length}/4 items (Expected: 2)</p>`;
+            testResults += `<p>Items: ${excludeShipsResult.map(o => `${o.itemName} (cat:${o.categoryId})`).join(', ')}</p>`;
+
+            // Test 3: Exclude Ships and Commodities - should return 1 item
+            window.marketFilters.excludedCategoryIds = ['6', '43'];
+            
+            const excludeMultipleResult = window.filterOpportunities(testOpportunities);
+            testResults += `<p><strong>Test 3 - Exclude Ships & Commodities:</strong> ${excludeMultipleResult.length}/4 items (Expected: 1)</p>`;
+            testResults += `<p>Items: ${excludeMultipleResult.map(o => `${o.itemName} (cat:${o.categoryId})`).join(', ')}</p>`;
+
+            // Validation
+            const test1Pass = noFilterResult.length === 4;
+            const test2Pass = excludeShipsResult.length === 2;
+            const test3Pass = excludeMultipleResult.length === 1;
+            
+            if (test1Pass && test2Pass && test3Pass) {
+                testResults += '<p class="success">✅ ALL TESTS PASSED - Category filtering is working correctly!</p>';
+            } else {
+                testResults += `<p class="error">❌ TESTS FAILED - Test1: ${test1Pass}, Test2: ${test2Pass}, Test3: ${test3Pass}</p>`;
+            }
+
+            resultDiv.innerHTML = testResults;
+        }
+
+        function testRealComparison() {
+            const resultDiv = document.getElementById('testResults');
+            
+            // Set up some exclusions
+            if (window.setFilter) {
+                window.setFilter('excludedCategoryIds', ['6']); // Exclude Ships
+                resultDiv.innerHTML = `
+                    <h3>Real Market Comparison Test:</h3>
+                    <p>✅ Set exclusions for Ships (category 6)</p>
+                    <p>📋 Now run a market comparison manually and check if Ships are excluded from results</p>
+                    <p>🔍 Look for console messages like "🚫 Excluding item ... from category 6"</p>
+                    <p>📊 Current excluded categories: ${JSON.stringify(window.marketFilters.excludedCategoryIds)}</p>
+                `;
+            } else {
+                resultDiv.innerHTML = '<p class="error">❌ setFilter function not available for real test</p>';
+            }
+        }
+
+        // Auto-run basic tests when page loads
+        setTimeout(() => {
+            console.log('🧪 Auto-running category filter debug tests...');
+            showFilterState();
+            
+            setTimeout(() => {
+                runCategoryFilterTest();
+            }, 1000);
+        }, 2000);
+    </script>
+</body>
+</html>

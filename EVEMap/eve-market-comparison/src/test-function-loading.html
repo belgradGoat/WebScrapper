@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Function Loading Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>Function Loading Test</h1>
+    <div id="results"></div>
+    
+    <!-- Load scripts in same order as main app -->
+    <script src="js/market-storage.js" defer></script>
+    <script src="js/eve-market-api.js" defer></script>
+    <script src="js/eve-auth.js" defer></script>
+    <script src="js/market-comparison-optimized.js" defer></script>
+    <script src="js/group-filter-ui.js" defer></script>
+    <script src="js/market-ui.js" defer></script>
+
+    <script>
+        const results = document.getElementById('results');
+        
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.textContent = message;
+            results.appendChild(div);
+            console.log(message);
+        }
+
+        // Test function availability every 500ms for 10 seconds
+        let testCount = 0;
+        const maxTests = 20;
+        
+        function testFunctions() {
+            testCount++;
+            
+            const functions = [
+                { name: 'compareMarkets', check: () => typeof window.compareMarkets === 'function' },
+                { name: 'setFilter', check: () => typeof window.setFilter === 'function' },
+                { name: 'marketFilters', check: () => !!window.marketFilters },
+                { name: 'marketAPI', check: () => !!window.marketAPI },
+                { name: 'marketStorage', check: () => !!window.marketStorage },
+                { name: 'createGroupFilterUI', check: () => typeof window.createGroupFilterUI === 'function' }
+            ];
+            
+            const available = functions.filter(f => f.check());
+            const missing = functions.filter(f => !f.check());
+            
+            addResult(`Test ${testCount}: ${available.length}/${functions.length} functions available`);
+            
+            if (available.length > 0) {
+                addResult(`Available: ${available.map(f => f.name).join(', ')}`, 'success');
+            }
+            
+            if (missing.length > 0) {
+                addResult(`Missing: ${missing.map(f => f.name).join(', ')}`, 'warning');
+            }
+            
+            if (available.length === functions.length) {
+                addResult('✅ All functions loaded successfully!', 'success');
+                
+                // Test calling compareMarkets
+                if (typeof window.compareMarkets === 'function') {
+                    addResult('Testing compareMarkets function call...', 'info');
+                    try {
+                        // Call with invalid parameters to test if function exists
+                        window.compareMarkets('', '').catch(error => {
+                            addResult(`compareMarkets function is callable (expected error: ${error.message})`, 'success');
+                        });
+                    } catch (error) {
+                        addResult(`compareMarkets function exists but threw sync error: ${error.message}`, 'warning');
+                    }
+                }
+                
+                return; // Stop testing
+            }
+            
+            if (testCount < maxTests) {
+                setTimeout(testFunctions, 500);
+            } else {
+                addResult('❌ Timeout: Not all functions loaded within 10 seconds', 'error');
+            }
+        }
+        
+        // Start testing when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            addResult('Starting function loading test...', 'info');
+            setTimeout(testFunctions, 100); // Small delay to allow scripts to start loading
+        });
+        
+        // Also listen for script load events
+        window.addEventListener('load', () => {
+            addResult('Window load event fired', 'info');
+        });
+    </script>
+</body>
+</html>

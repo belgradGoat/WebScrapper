@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robust Category Filter Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { background: #f0f0f0; padding: 10px; margin: 10px 0; border-left: 4px solid #007bff; }
+        .success { border-left-color: #28a745; background: #d4edda; }
+        .error { border-left-color: #dc3545; background: #f8d7da; }
+        .warning { border-left-color: #ffc107; background: #fff3cd; }
+        button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .code { background: #f8f9fa; padding: 10px; border-radius: 4px; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h1>Robust Category Filter Solution</h1>
+    <p>This page tests the robust category filtering solution that should resolve the filtering issues.</p>
+    
+    <div class="test-result warning">
+        <strong>Status:</strong> Testing improved category filtering implementation
+    </div>
+    
+    <button onclick="testRobustSolution()">Test Robust Solution</button>
+    <button onclick="compareWithOriginal()">Compare with Original</button>
+    <button onclick="testPersistence()">Test Persistence</button>
+    <button onclick="simulateRealScenario()">Simulate Real Market Scenario</button>
+    
+    <div id="results"></div>
+
+    <!-- Load scripts -->
+    <script src="js/market-comparison-optimized.js"></script>
+    <script src="robust-category-filter.js"></script>
+
+    <script>
+        function testRobustSolution() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<h2>Robust Solution Test Results</h2>';
+            
+            const success = window.testRobustCategoryFiltering();
+            
+            resultsDiv.innerHTML += `
+                <div class="test-result ${success ? 'success' : 'error'}">
+                    <strong>Robust Solution Test:</strong> ${success ? '✅ ALL TESTS PASSED' : '❌ TESTS FAILED'}
+                    <br>Check console for detailed results.
+                </div>
+            `;
+        }
+        
+        function compareWithOriginal() {
+            const resultsDiv = document.getElementById('results');
+            
+            if (!window.filterOpportunities) {
+                resultsDiv.innerHTML += `
+                    <div class="test-result error">
+                        <strong>Comparison Test:</strong> ❌ Original filterOpportunities not available
+                    </div>
+                `;
+                return;
+            }
+            
+            const testData = [
+                { typeId: 1001, itemName: "Test Ship", categoryId: 6, profit: 100, profitPercent: 10 },
+                { typeId: 1002, itemName: "Test Module", categoryId: 7, profit: 50, profitPercent: 5 }
+            ];
+            
+            // Test with original function
+            if (!window.marketFilters) window.marketFilters = {};
+            window.marketFilters.excludedCategoryIds = ['6'];
+            
+            const originalResult = window.filterOpportunities(testData);
+            const robustResult = window.robustFilterOpportunities(testData);
+            
+            const match = originalResult.length === robustResult.length;
+            
+            resultsDiv.innerHTML += `
+                <div class="test-result ${match ? 'success' : 'warning'}">
+                    <strong>Original vs Robust Comparison:</strong>
+                    <br>Original function: ${originalResult.length} items
+                    <br>Robust function: ${robustResult.length} items
+                    <br>Results match: ${match ? '✅' : '⚠️ Different results'}
+                </div>
+            `;
+        }
+        
+        function testPersistence() {
+            const resultsDiv = document.getElementById('results');
+            
+            // Test setting and getting excluded categories
+            const testCategories = ['6', '7', '43'];
+            window.setExcludedCategories(testCategories);
+            
+            const retrieved = window.getExcludedCategories();
+            const match = JSON.stringify(testCategories) === JSON.stringify(retrieved);
+            
+            // Test localStorage persistence
+            const fromStorage = JSON.parse(localStorage.getItem('eveMarketExcludedCategories') || '[]');
+            const storageMatch = JSON.stringify(testCategories) === JSON.stringify(fromStorage);
+            
+            resultsDiv.innerHTML += `
+                <div class="test-result ${match && storageMatch ? 'success' : 'error'}">
+                    <strong>Persistence Test:</strong>
+                    <br>Set: [${testCategories.join(', ')}]
+                    <br>Retrieved: [${retrieved.join(', ')}]
+                    <br>From localStorage: [${fromStorage.join(', ')}]
+                    <br>Memory persistence: ${match ? '✅' : '❌'}
+                    <br>Storage persistence: ${storageMatch ? '✅' : '❌'}
+                </div>
+            `;
+        }
+        
+        function simulateRealScenario() {
+            const resultsDiv = document.getElementById('results');
+            
+            // Simulate a real market comparison scenario
+            console.log('🎭 SIMULATING REAL MARKET SCENARIO');
+            
+            // Step 1: User sets excluded categories
+            window.setExcludedCategories(['6']); // Exclude ships
+            
+            // Step 2: Simulate market data with mixed categories
+            const marketOpportunities = [
+                { typeId: 34, itemName: "Tritanium", categoryId: 4, profit: 1000, profitPercent: 5 },
+                { typeId: 588, itemName: "Rifter", categoryId: 6, profit: 500000, profitPercent: 25 },
+                { typeId: 2488, itemName: "Damage Control II", categoryId: 7, profit: 75000, profitPercent: 15 },
+                { typeId: 637, itemName: "Stabber", categoryId: 6, profit: 2000000, profitPercent: 30 },
+                { typeId: 1234, itemName: "Some Module", categoryId: 7, profit: 100000, profitPercent: 20 }
+            ];
+            
+            console.log('Market opportunities before filtering:', marketOpportunities.length);
+            console.log('Ships in data:', marketOpportunities.filter(o => o.categoryId === 6).length);
+            
+            // Step 3: Apply filtering
+            const filteredOpportunities = window.robustFilterOpportunities(marketOpportunities);
+            
+            const shipsRemaining = filteredOpportunities.filter(o => o.categoryId === 6).length;
+            const totalRemaining = filteredOpportunities.length;
+            
+            const success = shipsRemaining === 0 && totalRemaining === 3;
+            
+            resultsDiv.innerHTML += `
+                <div class="test-result ${success ? 'success' : 'error'}">
+                    <strong>Real Scenario Simulation:</strong>
+                    <br>Original opportunities: ${marketOpportunities.length}
+                    <br>After excluding ships: ${totalRemaining}
+                    <br>Ships remaining: ${shipsRemaining} (expected: 0)
+                    <br>Result: ${success ? '✅ Ships successfully excluded' : '❌ Ships not properly excluded'}
+                </div>
+                <div class="code">
+                    Remaining items:<br>
+                    ${filteredOpportunities.map(o => `• ${o.itemName} (category ${o.categoryId})`).join('<br>')}
+                </div>
+            `;
+        }
+        
+        // Auto-run basic test
+        setTimeout(() => {
+            console.log('Auto-running robust category filter tests...');
+            testRobustSolution();
+        }, 1000);
+    </script>
+</body>
+</html>
