@@ -1,0 +1,130 @@
+{
+  "project_definitions": {
+    "WebScraper": {
+      "description": "Web scraping tools and services",
+      "primary_language": "Python",
+      "expected_features": ["web_scraping", "api_integration", "data_processing"]
+    },
+    "NC Parser": {
+      "description": "CNC G-code parser and visualizer",
+      "primary_language": "Python",
+      "expected_features": ["file_parsing", "3d_visualization", "manufacturing"]
+    },
+    "GimmeDaTools": {
+      "description": "Machine Learning Production System tools",
+      "primary_language": "Python",
+      "expected_features": ["machine_learning", "data_analysis", "automation"]
+    },
+    "NotebookAI": {
+      "description": "AI notebook interface",
+      "primary_language": "JavaScript",
+      "expected_features": ["ai_integration", "user_interface", "data_science"]
+    },
+    "EVEMap": {
+      "description": "EVE game mapping tools",
+      "primary_language": "JavaScript",
+      "expected_features": ["game_integration", "data_visualization", "mapping"]
+    },
+    "STEPViewer": {
+      "description": "STEP file viewer application",
+      "primary_language": "C++",
+      "expected_features": ["3d_rendering", "file_processing", "cad_integration"]
+    },
+    "machinist-runner-game": {
+      "description": "Machinist-themed runner game",
+      "primary_language": "JavaScript",
+      "expected_features": ["game_engine", "user_interface", "entertainment"]
+    },
+    "BOB": {
+      "description": "Book of Becoming website",
+      "primary_language": "HTML",
+      "expected_features": ["web_content", "documentation", "publishing"]
+    },
+    "MachineBooking": {
+      "description": "Machine booking system",
+      "primary_language": "HTML",
+      "expected_features": ["scheduling", "user_management", "booking_system"]
+    },
+    "Machinist Game": {
+      "description": "Machinist game interface",
+      "primary_language": "HTML",
+      "expected_features": ["game_interface", "user_interaction", "entertainment"]
+    }
+  },
+  "evaluation_criteria": {
+    "health_score_weights": {
+      "file_activity": 30,
+      "code_quality": 25,
+      "recent_activity": 25,
+      "code_volume": 20
+    },
+    "completion_thresholds": {
+      "production_ready": {
+        "min_lines": 1000,
+        "requires_tests": true,
+        "requires_docs": true,
+        "requires_package": true
+      },
+      "beta_testing": {
+        "min_lines": 500,
+        "requires_package": true
+      },
+      "alpha_development": {
+        "min_lines": 100
+      },
+      "early_development": {
+        "min_lines": 1
+      }
+    },
+    "file_patterns": {
+      "ignore_patterns": [
+        "node_modules",
+        "__pycache__",
+        ".git",
+        ".DS_Store",
+        "package-lock.json",
+        ".pyc",
+        ".log"
+      ],
+      "test_patterns": [
+        "test",
+        "tests",
+        "spec",
+        "__test__"
+      ],
+      "docs_patterns": [
+        "readme",
+        "docs",
+        "documentation",
+        ".md"
+      ]
+    }
+  },
+  "emo_project_settings": {
+    "search_keywords": [
+      "emo",
+      "demo", 
+      "remove",
+      "emotion",
+      "demonstration"
+    ],
+    "file_search_extensions": [
+      ".py",
+      ".js",
+      ".html",
+      ".md",
+      ".txt"
+    ],
+    "fallback_projects": [
+      "NC Parser",
+      "WebScraper",
+      "GimmeDaTools"
+    ]
+  },
+  "reporting": {
+    "default_format": "text",
+    "date_format": "%Y-%m-%d %H:%M:%S",
+    "max_projects_in_summary": 10,
+    "max_files_to_show": 10
+  }
+}
