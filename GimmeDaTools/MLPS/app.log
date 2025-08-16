@@ -8161,3 +8161,417 @@ TypeError: Can't instantiate abstract class TabModuleInterface without an implem
 2025-07-08 16:31:33,494 - module_system.module_registry - INFO - Shutting down module: example_module
 2025-07-08 16:31:33,494 - dynamic_module_-5338605363484715924 - INFO - Shutting down example module
 2025-07-08 16:31:33,494 - application_core - INFO - Application core shut down successfully
+2025-08-11 18:30:39,537 - main - INFO - Python version: 3.9.6 (default, Mar 12 2025, 20:22:46) 
+[Clang 17.0.0 (clang-1700.0.13.3)]
+2025-08-11 18:30:39,538 - main - INFO - Python executable: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/.venv/bin/python3
+2025-08-11 18:30:39,538 - main - INFO - Python path: ['/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS', '/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python39.zip', '/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9', '/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/lib-dynload', '/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/.venv/lib/python3.9/site-packages']
+2025-08-11 18:30:39,538 - main - INFO - Found requests module spec at: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/.venv/lib/python3.9/site-packages/requests/__init__.py
+2025-08-11 18:30:39,680 - main - INFO - Successfully imported requests module from: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/.venv/lib/python3.9/site-packages/requests/__init__.py
+2025-08-11 18:30:39,680 - main - INFO - Requests version: 2.32.4
+2025-08-11 18:30:39,680 - main - INFO - Starting application
+2025-08-11 18:30:39,689 - main - INFO - Initializing application core
+2025-08-11 18:30:39,689 - module_system.config_manager - INFO - Loaded configuration from /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/config.json
+2025-08-11 18:30:39,689 - module_system.service_registry - INFO - Registering service: service_registry (ServiceRegistry)
+2025-08-11 18:30:39,689 - module_system.service_registry - INFO - Registering service: module_registry (ModuleRegistry)
+2025-08-11 18:30:39,689 - module_system.service_registry - INFO - Registering service: config_manager (ConfigManager)
+2025-08-11 18:30:39,689 - module_system.service_registry - INFO - Registering service: extension_registry (ExtensionRegistry)
+2025-08-11 18:30:39,689 - module_system.service_registry - INFO - Registering service: app_core (ApplicationCore)
+2025-08-11 18:30:39,689 - module_system.extension_registry - INFO - Registered extension point: app.startup
+2025-08-11 18:30:39,689 - module_system.extension_registry - INFO - Registered extension point: app.shutdown
+2025-08-11 18:30:39,689 - module_system.extension_registry - INFO - Registered extension point: ui.menu.file
+2025-08-11 18:30:39,689 - module_system.extension_registry - INFO - Registered extension point: ui.menu.tools
+2025-08-11 18:30:39,690 - module_system.extension_registry - INFO - Registered extension point: ui.menu.help
+2025-08-11 18:30:39,690 - module_system.extension_registry - INFO - Registered extension point: ui.toolbar
+2025-08-11 18:30:39,690 - module_system.extension_registry - INFO - Registered extension point: ui.statusbar
+2025-08-11 18:30:39,690 - main - INFO - Module path: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules
+2025-08-11 18:30:39,690 - main - INFO - Module path: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/modules
+2025-08-11 18:30:39,690 - application_core - INFO - Discovering modules...
+2025-08-11 18:30:39,690 - module_system.module_registry - INFO - Discovering modules in 2 paths
+2025-08-11 18:30:39,690 - module_system.module_registry - INFO - Scanning module path: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules
+2025-08-11 18:30:39,690 - module_system.module_registry - INFO - Discovering modules in /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules
+2025-08-11 18:30:39,690 - module_system.module_registry - INFO - Loading module from file: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules/tabs/machine_tab_module.py
+2025-08-11 18:30:39,690 - module_system.module_registry - DEBUG - Generated module name: dynamic_module_4987721043986397116
+2025-08-11 18:30:39,690 - module_system.module_registry - DEBUG - Creating module spec from file location
+2025-08-11 18:30:39,690 - module_system.module_registry - DEBUG - Creating module from spec
+2025-08-11 18:30:39,690 - module_system.module_registry - DEBUG - Executing module
+2025-08-11 18:30:39,691 - module_system.module_registry - DEBUG - Searching for module classes
+2025-08-11 18:30:39,691 - module_system.module_registry - INFO - Found module class: MachineTabModule
+2025-08-11 18:30:39,691 - module_system.module_registry - DEBUG - Instantiating module class: MachineTabModule
+2025-08-11 18:30:39,691 - module_system.module_registry - INFO - Module instance created with name: machine_tab_module
+2025-08-11 18:30:39,691 - module_system.module_registry - INFO - Registered module: machine_tab_module (version 1.0.0)
+2025-08-11 18:30:39,691 - module_system.module_registry - INFO - Found module class: TabModuleInterface
+2025-08-11 18:30:39,691 - module_system.module_registry - DEBUG - Instantiating module class: TabModuleInterface
+2025-08-11 18:30:39,691 - module_system.module_registry - ERROR - Error instantiating module class TabModuleInterface: Can't instantiate abstract class TabModuleInterface with abstract methods get_description, get_name, get_required_services, get_tab, get_tab_name, get_version, initialize
+2025-08-11 18:30:39,691 - module_system.module_registry - ERROR - Traceback: Traceback (most recent call last):
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/module_system/module_registry.py", line 100, in _load_module_from_file
+    module_instance = obj()
+TypeError: Can't instantiate abstract class TabModuleInterface with abstract methods get_description, get_name, get_required_services, get_tab, get_tab_name, get_version, initialize
+
+2025-08-11 18:30:39,691 - module_system.module_registry - INFO - Loading module from file: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules/tabs/analysis_tab_module.py
+2025-08-11 18:30:39,691 - module_system.module_registry - DEBUG - Generated module name: dynamic_module_1443009244850376753
+2025-08-11 18:30:39,691 - module_system.module_registry - DEBUG - Creating module spec from file location
+2025-08-11 18:30:39,691 - module_system.module_registry - DEBUG - Creating module from spec
+2025-08-11 18:30:39,691 - module_system.module_registry - DEBUG - Executing module
+2025-08-11 18:30:39,698 - module_system.module_registry - DEBUG - Searching for module classes
+2025-08-11 18:30:39,698 - module_system.module_registry - INFO - Found module class: AnalysisTabModule
+2025-08-11 18:30:39,698 - module_system.module_registry - DEBUG - Instantiating module class: AnalysisTabModule
+2025-08-11 18:30:39,698 - module_system.module_registry - INFO - Module instance created with name: analysis_tab_module
+2025-08-11 18:30:39,698 - module_system.module_registry - INFO - Registered module: analysis_tab_module (version 1.0.0)
+2025-08-11 18:30:39,698 - module_system.module_registry - INFO - Found module class: TabModuleInterface
+2025-08-11 18:30:39,698 - module_system.module_registry - DEBUG - Instantiating module class: TabModuleInterface
+2025-08-11 18:30:39,698 - module_system.module_registry - ERROR - Error instantiating module class TabModuleInterface: Can't instantiate abstract class TabModuleInterface with abstract methods get_description, get_name, get_required_services, get_tab, get_tab_name, get_version, initialize
+2025-08-11 18:30:39,698 - module_system.module_registry - ERROR - Traceback: Traceback (most recent call last):
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/module_system/module_registry.py", line 100, in _load_module_from_file
+    module_instance = obj()
+TypeError: Can't instantiate abstract class TabModuleInterface with abstract methods get_description, get_name, get_required_services, get_tab, get_tab_name, get_version, initialize
+
+2025-08-11 18:30:39,698 - module_system.module_registry - INFO - Loading module from file: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules/tabs/results_tab_module.py
+2025-08-11 18:30:39,698 - module_system.module_registry - DEBUG - Generated module name: dynamic_module_6113310872249702527
+2025-08-11 18:30:39,698 - module_system.module_registry - DEBUG - Creating module spec from file location
+2025-08-11 18:30:39,698 - module_system.module_registry - DEBUG - Creating module from spec
+2025-08-11 18:30:39,698 - module_system.module_registry - DEBUG - Executing module
+2025-08-11 18:30:39,699 - module_system.module_registry - DEBUG - Searching for module classes
+2025-08-11 18:30:39,699 - module_system.module_registry - INFO - Found module class: ResultsTabModule
+2025-08-11 18:30:39,699 - module_system.module_registry - DEBUG - Instantiating module class: ResultsTabModule
+2025-08-11 18:30:39,699 - module_system.module_registry - INFO - Module instance created with name: results_tab_module
+2025-08-11 18:30:39,699 - module_system.module_registry - INFO - Registered module: results_tab_module (version 1.0.0)
+2025-08-11 18:30:39,699 - module_system.module_registry - INFO - Found module class: TabModuleInterface
+2025-08-11 18:30:39,699 - module_system.module_registry - DEBUG - Instantiating module class: TabModuleInterface
+2025-08-11 18:30:39,699 - module_system.module_registry - ERROR - Error instantiating module class TabModuleInterface: Can't instantiate abstract class TabModuleInterface with abstract methods get_description, get_name, get_required_services, get_tab, get_tab_name, get_version, initialize
+2025-08-11 18:30:39,699 - module_system.module_registry - ERROR - Traceback: Traceback (most recent call last):
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/module_system/module_registry.py", line 100, in _load_module_from_file
+    module_instance = obj()
+TypeError: Can't instantiate abstract class TabModuleInterface with abstract methods get_description, get_name, get_required_services, get_tab, get_tab_name, get_version, initialize
+
+2025-08-11 18:30:39,699 - module_system.module_registry - INFO - Loading module from file: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules/tabs/scheduler_tab_module.py
+2025-08-11 18:30:39,699 - module_system.module_registry - DEBUG - Generated module name: dynamic_module_-1161954349150318875
+2025-08-11 18:30:39,699 - module_system.module_registry - DEBUG - Creating module spec from file location
+2025-08-11 18:30:39,699 - module_system.module_registry - DEBUG - Creating module from spec
+2025-08-11 18:30:39,699 - module_system.module_registry - DEBUG - Executing module
+2025-08-11 18:30:39,701 - module_system.module_registry - DEBUG - Searching for module classes
+2025-08-11 18:30:39,701 - module_system.module_registry - INFO - Found module class: SchedulerTabModule
+2025-08-11 18:30:39,701 - module_system.module_registry - DEBUG - Instantiating module class: SchedulerTabModule
+2025-08-11 18:30:39,701 - module_system.module_registry - INFO - Module instance created with name: scheduler_tab_module
+2025-08-11 18:30:39,701 - module_system.module_registry - INFO - Registered module: scheduler_tab_module (version 1.0.0)
+2025-08-11 18:30:39,701 - module_system.module_registry - INFO - Found module class: TabModuleInterface
+2025-08-11 18:30:39,701 - module_system.module_registry - DEBUG - Instantiating module class: TabModuleInterface
+2025-08-11 18:30:39,701 - module_system.module_registry - ERROR - Error instantiating module class TabModuleInterface: Can't instantiate abstract class TabModuleInterface with abstract methods get_description, get_name, get_required_services, get_tab, get_tab_name, get_version, initialize
+2025-08-11 18:30:39,701 - module_system.module_registry - ERROR - Traceback: Traceback (most recent call last):
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/module_system/module_registry.py", line 100, in _load_module_from_file
+    module_instance = obj()
+TypeError: Can't instantiate abstract class TabModuleInterface with abstract methods get_description, get_name, get_required_services, get_tab, get_tab_name, get_version, initialize
+
+2025-08-11 18:30:39,701 - module_system.module_registry - INFO - Loading module from file: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules/services/machine_service_module.py
+2025-08-11 18:30:39,701 - module_system.module_registry - DEBUG - Generated module name: dynamic_module_-1910456194967947116
+2025-08-11 18:30:39,701 - module_system.module_registry - DEBUG - Creating module spec from file location
+2025-08-11 18:30:39,701 - module_system.module_registry - DEBUG - Creating module from spec
+2025-08-11 18:30:39,701 - module_system.module_registry - DEBUG - Executing module
+2025-08-11 18:30:39,714 - services.jms.jms_auth - INFO - Successfully imported requests v2.32.4
+2025-08-11 18:30:39,717 - module_system.module_registry - DEBUG - Searching for module classes
+2025-08-11 18:30:39,717 - module_system.module_registry - INFO - Found module class: MachineServiceModule
+2025-08-11 18:30:39,717 - module_system.module_registry - DEBUG - Instantiating module class: MachineServiceModule
+2025-08-11 18:30:39,717 - module_system.module_registry - INFO - Module instance created with name: machine_service_module
+2025-08-11 18:30:39,717 - module_system.module_registry - INFO - Registered module: machine_service_module (version 1.0.0)
+2025-08-11 18:30:39,717 - module_system.module_registry - INFO - Found module class: ServiceModuleInterface
+2025-08-11 18:30:39,717 - module_system.module_registry - DEBUG - Instantiating module class: ServiceModuleInterface
+2025-08-11 18:30:39,717 - module_system.module_registry - ERROR - Error instantiating module class ServiceModuleInterface: Can't instantiate abstract class ServiceModuleInterface with abstract methods get_description, get_name, get_provided_services, get_required_services, get_version, initialize
+2025-08-11 18:30:39,717 - module_system.module_registry - ERROR - Traceback: Traceback (most recent call last):
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/module_system/module_registry.py", line 100, in _load_module_from_file
+    module_instance = obj()
+TypeError: Can't instantiate abstract class ServiceModuleInterface with abstract methods get_description, get_name, get_provided_services, get_required_services, get_version, initialize
+
+2025-08-11 18:30:39,717 - module_system.module_registry - INFO - Loading module from file: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules/services/jms_tools_extension_module.py
+2025-08-11 18:30:39,717 - module_system.module_registry - DEBUG - Generated module name: dynamic_module_-5619704269653914182
+2025-08-11 18:30:39,717 - module_system.module_registry - DEBUG - Creating module spec from file location
+2025-08-11 18:30:39,717 - module_system.module_registry - DEBUG - Creating module from spec
+2025-08-11 18:30:39,717 - module_system.module_registry - DEBUG - Executing module
+2025-08-11 18:30:39,717 - module_system.module_registry - ERROR - Error loading module from /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules/services/jms_tools_extension_module.py: Can't instantiate abstract class JMSToolsExtensionModule with abstract methods get_description, get_name, get_required_services, get_version
+2025-08-11 18:30:39,718 - module_system.module_registry - ERROR - Traceback: Traceback (most recent call last):
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/module_system/module_registry.py", line 84, in _load_module_from_file
+    spec.loader.exec_module(module)
+  File "<frozen importlib._bootstrap_external>", line 850, in exec_module
+  File "<frozen importlib._bootstrap>", line 228, in _call_with_frames_removed
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules/services/jms_tools_extension_module.py", line 208, in <module>
+    module_instance = JMSToolsExtensionModule()
+TypeError: Can't instantiate abstract class JMSToolsExtensionModule with abstract methods get_description, get_name, get_required_services, get_version
+
+2025-08-11 18:30:39,718 - module_system.module_registry - INFO - Loading module from file: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules/services/analysis_service_module.py
+2025-08-11 18:30:39,718 - module_system.module_registry - DEBUG - Generated module name: dynamic_module_-2881717536526844229
+2025-08-11 18:30:39,718 - module_system.module_registry - DEBUG - Creating module spec from file location
+2025-08-11 18:30:39,718 - module_system.module_registry - DEBUG - Creating module from spec
+2025-08-11 18:30:39,718 - module_system.module_registry - DEBUG - Executing module
+2025-08-11 18:30:39,718 - module_system.module_registry - DEBUG - Searching for module classes
+2025-08-11 18:30:39,718 - module_system.module_registry - INFO - Found module class: AnalysisServiceModule
+2025-08-11 18:30:39,718 - module_system.module_registry - DEBUG - Instantiating module class: AnalysisServiceModule
+2025-08-11 18:30:39,718 - module_system.module_registry - INFO - Module instance created with name: analysis_service_module
+2025-08-11 18:30:39,718 - module_system.module_registry - INFO - Registered module: analysis_service_module (version 1.0.0)
+2025-08-11 18:30:39,718 - module_system.module_registry - INFO - Found module class: ServiceModuleInterface
+2025-08-11 18:30:39,718 - module_system.module_registry - DEBUG - Instantiating module class: ServiceModuleInterface
+2025-08-11 18:30:39,718 - module_system.module_registry - ERROR - Error instantiating module class ServiceModuleInterface: Can't instantiate abstract class ServiceModuleInterface with abstract methods get_description, get_name, get_provided_services, get_required_services, get_version, initialize
+2025-08-11 18:30:39,718 - module_system.module_registry - ERROR - Traceback: Traceback (most recent call last):
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/module_system/module_registry.py", line 100, in _load_module_from_file
+    module_instance = obj()
+TypeError: Can't instantiate abstract class ServiceModuleInterface with abstract methods get_description, get_name, get_provided_services, get_required_services, get_version, initialize
+
+2025-08-11 18:30:39,718 - module_system.module_registry - INFO - Loading module from file: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules/services/jms_service_module.py
+2025-08-11 18:30:39,718 - module_system.module_registry - DEBUG - Generated module name: dynamic_module_-3931748265893728867
+2025-08-11 18:30:39,718 - module_system.module_registry - DEBUG - Creating module spec from file location
+2025-08-11 18:30:39,718 - module_system.module_registry - DEBUG - Creating module from spec
+2025-08-11 18:30:39,718 - module_system.module_registry - DEBUG - Executing module
+2025-08-11 18:30:39,720 - dynamic_module_-3931748265893728867 - INFO - Attempting to import JMS modules...
+2025-08-11 18:30:39,720 - dynamic_module_-3931748265893728867 - INFO - Successfully imported JMS modules using absolute imports
+2025-08-11 18:30:39,720 - dynamic_module_-3931748265893728867 - INFO - JMS auth module imported, REQUESTS_AVAILABLE=True
+2025-08-11 18:30:39,720 - module_system.module_registry - DEBUG - Searching for module classes
+2025-08-11 18:30:39,720 - module_system.module_registry - INFO - Found module class: JMSServiceModule
+2025-08-11 18:30:39,720 - module_system.module_registry - DEBUG - Instantiating module class: JMSServiceModule
+2025-08-11 18:30:39,720 - module_system.module_registry - INFO - Module instance created with name: jms_service_module
+2025-08-11 18:30:39,720 - module_system.module_registry - INFO - Registered module: jms_service_module (version 1.0.0)
+2025-08-11 18:30:39,720 - module_system.module_registry - INFO - Found module class: ServiceModuleInterface
+2025-08-11 18:30:39,720 - module_system.module_registry - DEBUG - Instantiating module class: ServiceModuleInterface
+2025-08-11 18:30:39,720 - module_system.module_registry - ERROR - Error instantiating module class ServiceModuleInterface: Can't instantiate abstract class ServiceModuleInterface with abstract methods get_description, get_name, get_provided_services, get_required_services, get_version, initialize
+2025-08-11 18:30:39,720 - module_system.module_registry - ERROR - Traceback: Traceback (most recent call last):
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/module_system/module_registry.py", line 100, in _load_module_from_file
+    module_instance = obj()
+TypeError: Can't instantiate abstract class ServiceModuleInterface with abstract methods get_description, get_name, get_provided_services, get_required_services, get_version, initialize
+
+2025-08-11 18:30:39,720 - module_system.module_registry - INFO - Loading module from file: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules/services/scheduler_service_module.py
+2025-08-11 18:30:39,720 - module_system.module_registry - DEBUG - Generated module name: dynamic_module_1977483106669460215
+2025-08-11 18:30:39,720 - module_system.module_registry - DEBUG - Creating module spec from file location
+2025-08-11 18:30:39,720 - module_system.module_registry - DEBUG - Creating module from spec
+2025-08-11 18:30:39,720 - module_system.module_registry - DEBUG - Executing module
+2025-08-11 18:30:39,720 - module_system.module_registry - DEBUG - Searching for module classes
+2025-08-11 18:30:39,720 - module_system.module_registry - INFO - Found module class: SchedulerServiceModule
+2025-08-11 18:30:39,720 - module_system.module_registry - DEBUG - Instantiating module class: SchedulerServiceModule
+2025-08-11 18:30:39,721 - module_system.module_registry - INFO - Module instance created with name: scheduler_service_module
+2025-08-11 18:30:39,721 - module_system.module_registry - INFO - Registered module: scheduler_service_module (version 1.0.0)
+2025-08-11 18:30:39,721 - module_system.module_registry - INFO - Found module class: ServiceModuleInterface
+2025-08-11 18:30:39,721 - module_system.module_registry - DEBUG - Instantiating module class: ServiceModuleInterface
+2025-08-11 18:30:39,721 - module_system.module_registry - ERROR - Error instantiating module class ServiceModuleInterface: Can't instantiate abstract class ServiceModuleInterface with abstract methods get_description, get_name, get_provided_services, get_required_services, get_version, initialize
+2025-08-11 18:30:39,721 - module_system.module_registry - ERROR - Traceback: Traceback (most recent call last):
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/module_system/module_registry.py", line 100, in _load_module_from_file
+    module_instance = obj()
+TypeError: Can't instantiate abstract class ServiceModuleInterface with abstract methods get_description, get_name, get_provided_services, get_required_services, get_version, initialize
+
+2025-08-11 18:30:39,721 - module_system.module_registry - INFO - Loading module from file: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/core_modules/services/jms_menu_extension_module.py
+2025-08-11 18:30:39,721 - module_system.module_registry - DEBUG - Generated module name: dynamic_module_-1591495470249222723
+2025-08-11 18:30:39,721 - module_system.module_registry - DEBUG - Creating module spec from file location
+2025-08-11 18:30:39,721 - module_system.module_registry - DEBUG - Creating module from spec
+2025-08-11 18:30:39,721 - module_system.module_registry - DEBUG - Executing module
+2025-08-11 18:30:39,721 - dynamic_module_-1591495470249222723 - INFO - Attempting to import JMS config dialog...
+2025-08-11 18:30:39,724 - dynamic_module_-1591495470249222723 - INFO - Successfully imported JMSConfigDialog using absolute import
+2025-08-11 18:30:39,724 - module_system.module_registry - DEBUG - Searching for module classes
+2025-08-11 18:30:39,724 - module_system.module_registry - INFO - Found module class: JMSMenuExtensionModule
+2025-08-11 18:30:39,724 - module_system.module_registry - DEBUG - Instantiating module class: JMSMenuExtensionModule
+2025-08-11 18:30:39,724 - module_system.module_registry - INFO - Module instance created with name: jms_menu_extension_module
+2025-08-11 18:30:39,724 - module_system.module_registry - INFO - Registered module: jms_menu_extension_module (version 1.0.0)
+2025-08-11 18:30:39,724 - module_system.module_registry - INFO - Scanning module path: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/modules
+2025-08-11 18:30:39,724 - module_system.module_registry - INFO - Discovering modules in /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/modules
+2025-08-11 18:30:39,724 - module_system.module_registry - INFO - Loading module from file: /Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/modules/example_module.py
+2025-08-11 18:30:39,724 - module_system.module_registry - DEBUG - Generated module name: dynamic_module_-5637451601784049080
+2025-08-11 18:30:39,724 - module_system.module_registry - DEBUG - Creating module spec from file location
+2025-08-11 18:30:39,724 - module_system.module_registry - DEBUG - Creating module from spec
+2025-08-11 18:30:39,724 - module_system.module_registry - DEBUG - Executing module
+2025-08-11 18:30:39,725 - module_system.module_registry - DEBUG - Searching for module classes
+2025-08-11 18:30:39,725 - module_system.module_registry - INFO - Found module class: ExampleModule
+2025-08-11 18:30:39,725 - module_system.module_registry - DEBUG - Instantiating module class: ExampleModule
+2025-08-11 18:30:39,725 - module_system.module_registry - INFO - Module instance created with name: example_module
+2025-08-11 18:30:39,725 - module_system.module_registry - INFO - Registered module: example_module (version 1.0.0)
+2025-08-11 18:30:39,725 - module_system.module_registry - INFO - Found module class: TabModuleInterface
+2025-08-11 18:30:39,725 - module_system.module_registry - DEBUG - Instantiating module class: TabModuleInterface
+2025-08-11 18:30:39,725 - module_system.module_registry - ERROR - Error instantiating module class TabModuleInterface: Can't instantiate abstract class TabModuleInterface with abstract methods get_description, get_name, get_required_services, get_tab, get_tab_name, get_version, initialize
+2025-08-11 18:30:39,725 - module_system.module_registry - ERROR - Traceback: Traceback (most recent call last):
+  File "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/GimmeDaTools/MLPS/module_system/module_registry.py", line 100, in _load_module_from_file
+    module_instance = obj()
+TypeError: Can't instantiate abstract class TabModuleInterface with abstract methods get_description, get_name, get_required_services, get_tab, get_tab_name, get_version, initialize
+
+2025-08-11 18:30:39,725 - module_system.module_registry - INFO - Module discovery complete. Found 10 modules
+2025-08-11 18:30:39,725 - application_core - INFO - Initializing modules...
+2025-08-11 18:30:39,725 - module_system.module_registry - INFO - Initializing 10 modules
+2025-08-11 18:30:39,725 - module_system.module_registry - INFO - Resolving module dependencies
+2025-08-11 18:30:39,725 - dynamic_module_-3931748265893728867 - WARNING - No JMS service available to provide
+2025-08-11 18:30:39,725 - dynamic_module_-3931748265893728867 - WARNING - No JMS service available to provide
+2025-08-11 18:30:39,725 - dynamic_module_-3931748265893728867 - WARNING - No JMS service available to provide
+2025-08-11 18:30:39,725 - dynamic_module_-3931748265893728867 - WARNING - No JMS service available to provide
+2025-08-11 18:30:39,725 - dynamic_module_-3931748265893728867 - WARNING - No JMS service available to provide
+2025-08-11 18:30:39,725 - dynamic_module_-3931748265893728867 - WARNING - No JMS service available to provide
+2025-08-11 18:30:39,725 - dynamic_module_-3931748265893728867 - WARNING - No JMS service available to provide
+2025-08-11 18:30:39,725 - dynamic_module_-3931748265893728867 - WARNING - No JMS service available to provide
+2025-08-11 18:30:39,725 - dynamic_module_-3931748265893728867 - WARNING - No JMS service available to provide
+2025-08-11 18:30:39,725 - dynamic_module_-3931748265893728867 - WARNING - No JMS service available to provide
+2025-08-11 18:30:39,725 - dynamic_module_-3931748265893728867 - WARNING - No JMS service available to provide
+2025-08-11 18:30:39,725 - dynamic_module_-3931748265893728867 - WARNING - No JMS service available to provide
+2025-08-11 18:30:39,725 - dynamic_module_-3931748265893728867 - WARNING - No JMS service available to provide
+2025-08-11 18:30:39,725 - module_system.module_registry - INFO - Module initialization order: machine_service_module, machine_tab_module, analysis_service_module, scheduler_service_module, analysis_tab_module, results_tab_module, scheduler_tab_module, jms_service_module, jms_menu_extension_module, example_module
+2025-08-11 18:30:39,725 - module_system.module_registry - INFO - Initializing module: machine_service_module
+2025-08-11 18:30:39,725 - module_system.module_registry - INFO - Module machine_service_module requires services: 
+2025-08-11 18:30:39,725 - dynamic_module_-1910456194967947116 - INFO - Initializing machine service module
+2025-08-11 18:30:39,726 - module_system.module_registry - INFO - Module machine_service_module initialized successfully
+2025-08-11 18:30:39,726 - module_system.module_registry - INFO - Module machine_service_module provides services
+2025-08-11 18:30:39,726 - module_system.service_registry - INFO - Registering service: machine_service (MachineService)
+2025-08-11 18:30:39,726 - module_system.module_registry - INFO - Registered service: machine_service from module machine_service_module
+2025-08-11 18:30:39,726 - module_system.module_registry - INFO - Initializing module: machine_tab_module
+2025-08-11 18:30:39,726 - module_system.module_registry - INFO - Module machine_tab_module requires services: machine_service
+2025-08-11 18:30:39,726 - dynamic_module_4987721043986397116 - INFO - Initializing machine tab module
+2025-08-11 18:30:39,726 - module_system.service_registry - INFO - Retrieved service: machine_service (MachineService)
+2025-08-11 18:30:39,726 - module_system.module_registry - INFO - Module machine_tab_module initialized successfully
+2025-08-11 18:30:39,726 - module_system.module_registry - INFO - Module machine_tab_module does not provide services
+2025-08-11 18:30:39,726 - module_system.module_registry - INFO - Initializing module: analysis_service_module
+2025-08-11 18:30:39,726 - module_system.module_registry - INFO - Module analysis_service_module requires services: machine_service
+2025-08-11 18:30:39,726 - dynamic_module_-2881717536526844229 - INFO - Initializing analysis service module
+2025-08-11 18:30:39,726 - module_system.service_registry - INFO - Retrieved service: machine_service (MachineService)
+2025-08-11 18:30:39,726 - module_system.module_registry - INFO - Module analysis_service_module initialized successfully
+2025-08-11 18:30:39,726 - module_system.module_registry - INFO - Module analysis_service_module provides services
+2025-08-11 18:30:39,726 - module_system.service_registry - INFO - Registering service: analysis_service (AnalysisService)
+2025-08-11 18:30:39,726 - module_system.module_registry - INFO - Registered service: analysis_service from module analysis_service_module
+2025-08-11 18:30:39,726 - module_system.module_registry - INFO - Initializing module: scheduler_service_module
+2025-08-11 18:30:39,726 - module_system.module_registry - INFO - Module scheduler_service_module requires services: machine_service
+2025-08-11 18:30:39,726 - dynamic_module_1977483106669460215 - INFO - Initializing scheduler service module
+2025-08-11 18:30:39,726 - module_system.service_registry - INFO - Retrieved service: machine_service (MachineService)
+2025-08-11 18:30:39,727 - module_system.module_registry - INFO - Module scheduler_service_module initialized successfully
+2025-08-11 18:30:39,727 - module_system.module_registry - INFO - Module scheduler_service_module provides services
+2025-08-11 18:30:39,727 - module_system.service_registry - INFO - Registering service: scheduler_service (SchedulerService)
+2025-08-11 18:30:39,727 - module_system.module_registry - INFO - Registered service: scheduler_service from module scheduler_service_module
+2025-08-11 18:30:39,727 - module_system.module_registry - INFO - Initializing module: analysis_tab_module
+2025-08-11 18:30:39,727 - module_system.module_registry - INFO - Module analysis_tab_module requires services: analysis_service, machine_service, scheduler_service
+2025-08-11 18:30:39,727 - dynamic_module_1443009244850376753 - INFO - Initializing analysis tab module
+2025-08-11 18:30:39,727 - module_system.service_registry - INFO - Retrieved service: analysis_service (AnalysisService)
+2025-08-11 18:30:39,727 - module_system.service_registry - INFO - Retrieved service: machine_service (MachineService)
+2025-08-11 18:30:39,727 - module_system.service_registry - INFO - Retrieved service: scheduler_service (SchedulerService)
+2025-08-11 18:30:39,727 - module_system.service_registry - WARNING - Service not found: jms_service
+2025-08-11 18:30:39,727 - module_system.service_registry - DEBUG - Available services: service_registry, module_registry, config_manager, extension_registry, app_core, machine_service, analysis_service, scheduler_service
+2025-08-11 18:30:39,727 - dynamic_module_1443009244850376753 - INFO - JMS service not found - jobs will be created without JMS transfer
+2025-08-11 18:30:39,727 - module_system.module_registry - INFO - Module analysis_tab_module initialized successfully
+2025-08-11 18:30:39,727 - module_system.module_registry - INFO - Module analysis_tab_module does not provide services
+2025-08-11 18:30:39,727 - module_system.module_registry - INFO - Initializing module: results_tab_module
+2025-08-11 18:30:39,727 - module_system.module_registry - INFO - Module results_tab_module requires services: analysis_service
+2025-08-11 18:30:39,727 - dynamic_module_6113310872249702527 - INFO - Initializing results tab module
+2025-08-11 18:30:39,727 - module_system.service_registry - INFO - Retrieved service: analysis_service (AnalysisService)
+2025-08-11 18:30:39,727 - module_system.module_registry - INFO - Module results_tab_module initialized successfully
+2025-08-11 18:30:39,727 - module_system.module_registry - INFO - Module results_tab_module does not provide services
+2025-08-11 18:30:39,727 - module_system.module_registry - INFO - Initializing module: scheduler_tab_module
+2025-08-11 18:30:39,727 - module_system.module_registry - INFO - Module scheduler_tab_module requires services: scheduler_service, machine_service
+2025-08-11 18:30:39,727 - dynamic_module_-1161954349150318875 - INFO - Initializing scheduler tab module
+2025-08-11 18:30:39,727 - module_system.service_registry - INFO - Retrieved service: scheduler_service (SchedulerService)
+2025-08-11 18:30:39,727 - module_system.service_registry - INFO - Retrieved service: machine_service (MachineService)
+2025-08-11 18:30:39,727 - module_system.service_registry - WARNING - Service not found: jms_service
+2025-08-11 18:30:39,727 - module_system.service_registry - DEBUG - Available services: service_registry, module_registry, config_manager, extension_registry, app_core, machine_service, analysis_service, scheduler_service
+2025-08-11 18:30:39,727 - module_system.module_registry - INFO - Module scheduler_tab_module initialized successfully
+2025-08-11 18:30:39,727 - module_system.module_registry - INFO - Module scheduler_tab_module does not provide services
+2025-08-11 18:30:39,727 - module_system.module_registry - INFO - Initializing module: jms_service_module
+2025-08-11 18:30:39,727 - module_system.module_registry - INFO - Module jms_service_module requires services: scheduler_service
+2025-08-11 18:30:39,727 - dynamic_module_-3931748265893728867 - INFO - Initializing JMS service module
+2025-08-11 18:30:39,727 - dynamic_module_-3931748265893728867 - INFO - Looking for scheduler_service in service registry
+2025-08-11 18:30:39,727 - module_system.service_registry - INFO - Retrieved service: scheduler_service (SchedulerService)
+2025-08-11 18:30:39,727 - dynamic_module_-3931748265893728867 - INFO - Found scheduler_service: SchedulerService
+2025-08-11 18:30:39,727 - dynamic_module_-3931748265893728867 - INFO - Looking for config_manager in service registry
+2025-08-11 18:30:39,727 - module_system.service_registry - INFO - Retrieved service: config_manager (ConfigManager)
+2025-08-11 18:30:39,727 - dynamic_module_-3931748265893728867 - INFO - Found config_manager, loading JMS configuration
+2025-08-11 18:30:39,727 - dynamic_module_-3931748265893728867 - INFO - === LOADING JMS CONFIG FROM CONFIG MANAGER ===
+2025-08-11 18:30:39,727 - dynamic_module_-3931748265893728867 - INFO - Raw JMS config: {'enabled': False, 'base_url': 'http://localhost:8080', 'username': None, 'password': None, 'client_id': 'EsbusciClient', 'client_secret': 'DefaultEsbusciClientSecret'}
+2025-08-11 18:30:39,727 - dynamic_module_-3931748265893728867 - INFO - Base URL changed from 'http://localhost:8080' to 'http://localhost:8080'
+2025-08-11 18:30:39,727 - dynamic_module_-3931748265893728867 - INFO - JMS enabled: False
+2025-08-11 18:30:39,727 - dynamic_module_-3931748265893728867 - INFO - Username provided: False
+2025-08-11 18:30:39,727 - dynamic_module_-3931748265893728867 - INFO - === JMS CONFIG LOADING COMPLETE ===
+2025-08-11 18:30:39,727 - dynamic_module_-3931748265893728867 - INFO - Creating JMS service instance
+2025-08-11 18:30:39,727 - services.jms_service - INFO - === JMS SERVICE INITIALIZATION ===
+2025-08-11 18:30:39,727 - services.jms_service - INFO - JMSService instance ID: 4494379328
+2025-08-11 18:30:39,727 - services.jms_service - INFO - Constructor parameter base_url: http://localhost:8080
+2025-08-11 18:30:39,727 - services.jms_service - INFO - Initial base_url set to: http://localhost:8080
+2025-08-11 18:30:39,727 - services.jms_service - INFO - === LOADING CONFIG FROM jms_config.json ===
+2025-08-11 18:30:39,727 - services.jms_service - INFO - Current base_url before loading: http://localhost:8080
+2025-08-11 18:30:39,728 - services.jms_service - INFO - Config loaded from jms_config.json: {}
+2025-08-11 18:30:39,728 - services.jms_service - INFO - No saved JMS configuration found, using defaults
+2025-08-11 18:30:39,728 - services.jms_service - INFO - No JMS config found in config.json
+2025-08-11 18:30:39,728 - services.jms_service - INFO - === CONFIG LOADING COMPLETE ===
+2025-08-11 18:30:39,728 - services.jms_service - INFO - Final base_url: http://localhost:8080
+2025-08-11 18:30:39,728 - services.jms_service - INFO - After _load_config, base_url is: http://localhost:8080
+2025-08-11 18:30:39,728 - services.jms_service - INFO - === JMS SERVICE INITIALIZATION COMPLETE ===
+2025-08-11 18:30:39,728 - services.jms_service - INFO - === INITIALIZING CLIENTS ===
+2025-08-11 18:30:39,728 - services.jms_service - INFO - Using base_url: http://localhost:8080
+2025-08-11 18:30:39,728 - services.jms_service - INFO - Initializing JMS client with URL: http://localhost:8080
+2025-08-11 18:30:39,728 - services.jms_service - INFO - Using client credentials authentication
+2025-08-11 18:30:39,728 - services.jms.jms_client - INFO - === JMS CLIENT INITIALIZATION ===
+2025-08-11 18:30:39,728 - services.jms.jms_client - INFO - JMSClient instance ID: 4494379568
+2025-08-11 18:30:39,728 - services.jms.jms_client - INFO - Constructor parameter base_url: http://localhost:8080
+2025-08-11 18:30:39,728 - services.jms.jms_client - INFO - Constructor parameter client_id: EsbusciClient
+2025-08-11 18:30:39,728 - services.jms.jms_client - INFO - Constructor parameter username: None
+2025-08-11 18:30:39,728 - services.jms.jms_client - INFO - self.base_url set to: http://localhost:8080
+2025-08-11 18:30:39,728 - services.jms.jms_client - INFO - Creating JMSAuthClient with base_url: http://localhost:8080
+2025-08-11 18:30:39,728 - services.jms.jms_auth - INFO - === JMS AUTH CLIENT INITIALIZATION ===
+2025-08-11 18:30:39,728 - services.jms.jms_auth - INFO - JMSAuthClient instance ID: 4494379712
+2025-08-11 18:30:39,728 - services.jms.jms_auth - INFO - Constructor parameter base_url: http://localhost:8080
+2025-08-11 18:30:39,728 - services.jms.jms_auth - INFO - Constructor parameter client_id: EsbusciClient
+2025-08-11 18:30:39,728 - services.jms.jms_auth - INFO - Constructor parameter username: None
+2025-08-11 18:30:39,728 - services.jms.jms_auth - INFO - self.base_url set to: http://localhost:8080
+2025-08-11 18:30:39,728 - services.jms.jms_auth - INFO - === JMS AUTH CLIENT INITIALIZATION COMPLETE ===
+2025-08-11 18:30:39,728 - services.jms.jms_auth - INFO - Final JMSAuthClient base_url: http://localhost:8080
+2025-08-11 18:30:39,728 - services.jms.jms_client - INFO - JMSAuthClient created with ID: 4494379712
+2025-08-11 18:30:39,728 - services.jms.jms_client - INFO - JMSAuthClient base_url: http://localhost:8080
+2025-08-11 18:30:39,728 - services.jms.jms_client - INFO - JMSClient initialized with real HTTP client, base URL: http://localhost:8080
+2025-08-11 18:30:39,728 - services.jms.jms_client - INFO - === JMS CLIENT INITIALIZATION COMPLETE ===
+2025-08-11 18:30:39,728 - services.jms.jms_client - INFO - Final JMSClient base_url: http://localhost:8080
+2025-08-11 18:30:39,728 - services.jms.jms_client - INFO - Final JMSAuthClient base_url: http://localhost:8080
+2025-08-11 18:30:39,728 - services.jms_service - INFO - JMS client initialized successfully with ID: 4494379568
+2025-08-11 18:30:39,728 - services.jms_service - INFO - JMS client base_url: http://localhost:8080
+2025-08-11 18:30:39,728 - services.jms_service - INFO - JMS auth client ID: 4494379712
+2025-08-11 18:30:39,728 - services.jms_service - INFO - JMS auth client base_url: http://localhost:8080
+2025-08-11 18:30:39,728 - services.jms_service - INFO - === CLIENT INITIALIZATION COMPLETE ===
+2025-08-11 18:30:39,728 - dynamic_module_-3931748265893728867 - INFO - JMS service created successfully
+2025-08-11 18:30:39,728 - module_system.module_registry - INFO - Module jms_service_module initialized successfully
+2025-08-11 18:30:39,728 - module_system.module_registry - INFO - Module jms_service_module provides services
+2025-08-11 18:30:39,728 - dynamic_module_-3931748265893728867 - INFO - Providing jms_service to service registry
+2025-08-11 18:30:39,728 - module_system.service_registry - INFO - Registering service: jms_service (JMSService)
+2025-08-11 18:30:39,728 - module_system.module_registry - INFO - Registered service: jms_service from module jms_service_module
+2025-08-11 18:30:39,728 - module_system.module_registry - INFO - Initializing module: jms_menu_extension_module
+2025-08-11 18:30:39,728 - module_system.module_registry - INFO - Module jms_menu_extension_module requires services: jms_service_module, extension_registry
+2025-08-11 18:30:39,728 - dynamic_module_-1591495470249222723 - INFO - Initializing JMS menu extension module
+2025-08-11 18:30:39,728 - dynamic_module_-1591495470249222723 - INFO - Looking for jms_service_module in service registry
+2025-08-11 18:30:39,728 - module_system.service_registry - WARNING - Service not found: jms_service_module
+2025-08-11 18:30:39,728 - module_system.service_registry - DEBUG - Available services: service_registry, module_registry, config_manager, extension_registry, app_core, machine_service, analysis_service, scheduler_service, jms_service
+2025-08-11 18:30:39,728 - dynamic_module_-1591495470249222723 - ERROR - JMS service module not found in service registry
+2025-08-11 18:30:39,728 - dynamic_module_-1591495470249222723 - ERROR - Available services: service_registry, module_registry, config_manager, extension_registry, app_core, machine_service, analysis_service, scheduler_service, jms_service
+2025-08-11 18:30:39,728 - module_system.module_registry - INFO - Module jms_menu_extension_module initialized successfully
+2025-08-11 18:30:39,728 - module_system.module_registry - INFO - Module jms_menu_extension_module does not provide services
+2025-08-11 18:30:39,728 - module_system.module_registry - INFO - Initializing module: example_module
+2025-08-11 18:30:39,728 - module_system.module_registry - INFO - Module example_module requires services: machine_service
+2025-08-11 18:30:39,728 - dynamic_module_-5637451601784049080 - INFO - Initializing example module
+2025-08-11 18:30:39,728 - module_system.service_registry - INFO - Retrieved service: machine_service (MachineService)
+2025-08-11 18:30:39,728 - module_system.module_registry - INFO - Module example_module initialized successfully
+2025-08-11 18:30:39,728 - module_system.module_registry - INFO - Module example_module does not provide services
+2025-08-11 18:30:39,728 - application_core - INFO - Invoking startup extensions...
+2025-08-11 18:30:39,728 - application_core - INFO - Application core initialized successfully
+2025-08-11 18:30:39,728 - main - INFO - Loaded 10 modules:
+2025-08-11 18:30:39,728 - main - INFO -   - machine_tab_module (v1.0.0)
+2025-08-11 18:30:39,728 - main - INFO -   - analysis_tab_module (v1.0.0)
+2025-08-11 18:30:39,728 - main - INFO -   - results_tab_module (v1.0.0)
+2025-08-11 18:30:39,728 - main - INFO -   - scheduler_tab_module (v1.0.0)
+2025-08-11 18:30:39,728 - main - INFO -   - machine_service_module (v1.0.0)
+2025-08-11 18:30:39,728 - main - INFO -   - analysis_service_module (v1.0.0)
+2025-08-11 18:30:39,728 - main - INFO -   - jms_service_module (v1.0.0)
+2025-08-11 18:30:39,728 - main - INFO -   - scheduler_service_module (v1.0.0)
+2025-08-11 18:30:39,728 - main - INFO -   - jms_menu_extension_module (v1.0.0)
+2025-08-11 18:30:39,728 - main - INFO -   - example_module (v1.0.0)
+2025-08-11 18:30:39,728 - main - INFO - Creating main window
+2025-08-11 18:30:39,841 - ui.main_window - INFO - Loading core tabs
+2025-08-11 18:30:39,841 - ui.main_window - INFO - Loading tab from module: machine_tab_module
+2025-08-11 18:30:39,841 - dynamic_module_4987721043986397116 - INFO - Creating machine tab
+2025-08-11 18:30:39,847 - ui.main_window - INFO - Loading tab from module: analysis_tab_module
+2025-08-11 18:30:39,847 - dynamic_module_1443009244850376753 - INFO - Creating analysis tab
+2025-08-11 18:30:39,850 - ui.main_window - INFO - Loading tab from module: results_tab_module
+2025-08-11 18:30:39,850 - dynamic_module_6113310872249702527 - INFO - Creating results tab
+2025-08-11 18:30:39,857 - ui.main_window - INFO - Loading tab from module: scheduler_tab_module
+2025-08-11 18:30:39,857 - dynamic_module_-1161954349150318875 - INFO - Creating scheduler tab
+2025-08-11 18:30:39,928 - ui.main_window - INFO - Loading tab from module: example_module
+2025-08-11 18:30:39,928 - dynamic_module_-5637451601784049080 - INFO - Creating example tab
+2025-08-11 18:30:39,928 - ui.main_window - INFO - Creating application menu
+2025-08-11 18:30:39,930 - ui.main_window - INFO - Creating File menu
+2025-08-11 18:30:39,930 - ui.main_window - INFO - Getting ui.menu.file extension point
+2025-08-11 18:30:39,930 - ui.main_window - INFO - Invoking ui.menu.file extension point
+2025-08-11 18:30:39,930 - ui.main_window - INFO - Creating Tools menu
+2025-08-11 18:30:39,930 - ui.main_window - INFO - Adding Settings menu item
+2025-08-11 18:30:39,931 - ui.main_window - INFO - Checking for JMS service
+2025-08-11 18:30:39,931 - module_system.service_registry - INFO - Retrieved service: jms_service (JMSService)
+2025-08-11 18:30:39,931 - ui.main_window - INFO - JMS service found, adding JMS Configuration menu item
+2025-08-11 18:30:39,931 - ui.main_window - INFO - Getting ui.menu.tools extension point
+2025-08-11 18:30:39,931 - ui.main_window - INFO - Invoking ui.menu.tools extension point
+2025-08-11 18:30:39,931 - main - INFO - Running application
