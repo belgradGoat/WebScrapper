@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "eagle-watchtower": {
+      "command": "node",
+      "args": [
+        "/Users/sebastianszewczyk/Documents/GitHub/WebScrapper/WebScraper/eagle-watchtower-mcp.js"
+      ],
+      "env": {
+        "EAGLE_API_URL": "http://localhost:3000"
+      }
+    }
+  }
+}

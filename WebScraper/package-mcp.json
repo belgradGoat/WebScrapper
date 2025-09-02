@@ -1,0 +1,28 @@
+{
+  "name": "eagle-watchtower-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for Eagle Watchtower news aggregation and analysis platform",
+  "type": "module",
+  "main": "eagle-watchtower-mcp.js",
+  "scripts": {
+    "start": "node eagle-watchtower-mcp.js",
+    "test": "node eagle-watchtower-mcp.js --test"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "eagle-watchtower",
+    "news",
+    "ai",
+    "llm"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.6.0",
+    "node-fetch": "^3.3.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
